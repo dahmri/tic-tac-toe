@@ -776,6 +776,59 @@ kbd {
   margin-top: 8px;
 }
 
+/* Ratings: a small chip next to a name, and the points a round moved */
+.rating-chip {
+  font: 700 0.75rem/1 var(--body);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--chip);
+  border-radius: 999px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+}
+.delta {
+  font: 700 0.85em/1 var(--body);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.delta.up {
+  color: #2e7d32;
+}
+.delta.down {
+  color: var(--o);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .delta.up {
+    color: #7fd18a;
+  }
+}
+:root[data-theme='dark'] .delta.up {
+  color: #7fd18a;
+}
+
+/* Leaderboard dialog */
+#leaderboardDialog .filter {
+  width: 100%;
+}
+.lb-me {
+  margin: 12px 0;
+  font-weight: 700;
+}
+.lb-me:empty {
+  display: none;
+}
+.table .rank {
+  text-align: left;
+  width: 2.5em;
+  color: var(--muted);
+}
+.table tr.me {
+  background: var(--hi);
+}
+#lbMore {
+  margin-top: 8px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .draw {
     animation: none;

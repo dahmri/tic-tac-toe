@@ -2,6 +2,7 @@
 // they reach the database and opened only to show players their own profile.
 
 import { openPII, sealPII } from './security.js';
+import { START_RATING } from './rating.js';
 
 const PII_FIELDS = ['firstName', 'lastName', 'birthDate', 'phone'];
 
@@ -64,9 +65,11 @@ export function createUsers(db, dataKey) {
 
     // What other players may see: never the personal fields
     async publicProfile(id) {
-      const { rows } = await db.query('SELECT id, username, country FROM users WHERE id = $1', [
-        id,
-      ]);
+      const { rows } = await db.query(
+        `SELECT u.id, u.username, u.country, coalesce(s.rating, ${START_RATING}) AS rating
+         FROM users u LEFT JOIN player_stats s ON s.user_id = u.id WHERE u.id = $1`,
+        [id],
+      );
       return rows[0] || null;
     },
 

@@ -99,8 +99,8 @@ export default async function liveRoutes(app) {
   }
 
   app.get('/ws', { websocket: true, preHandler: admit }, async (socket, req) => {
-    const { id, username, country } = req.profile;
-    const me = { id, username, country };
+    const { id, username, country, rating } = req.profile;
+    const me = { id, username, country, rating };
 
     const send = (msg) => {
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(msg));
