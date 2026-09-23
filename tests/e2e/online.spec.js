@@ -2,7 +2,7 @@
 // computers) play over a real WebRTC connection. Needs internet access for
 // the PeerJS matchmaking server; skip with: npm run test:e2e -- --grep-invert @online
 
-import { test, expect, cell, status, chooseMode } from './fixtures.js';
+import { test, expect, cell, status, chooseMode, watchPage } from './fixtures.js';
 
 const CONNECT_TIMEOUT = 30_000;
 test.describe.configure({ timeout: 90_000 });
@@ -10,9 +10,7 @@ test.describe.configure({ timeout: 90_000 });
 async function openPlayer(browser) {
   const context = await browser.newContext();
   const page = await context.newPage();
-  const errors = [];
-  page.on('pageerror', (err) => errors.push(err.message));
-  return { context, page, errors };
+  return { context, page, errors: watchPage(page) };
 }
 
 async function hostGame(page) {
