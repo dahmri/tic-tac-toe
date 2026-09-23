@@ -9,13 +9,18 @@ const OUT = 'dist';
 const FILES = ['index.html', 'css', 'js'];
 
 const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
-let commit = 'unknown';
-try {
-  commit = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
-    .toString()
-    .trim();
-} catch {
-  // not a git checkout: keep "unknown"
+const commit = currentCommit();
+
+// GIT_COMMIT is set by builds without git history, such as the Docker image
+function currentCommit() {
+  if (process.env.GIT_COMMIT) return process.env.GIT_COMMIT.slice(0, 7);
+  try {
+    return execSync('git rev-parse --short=7 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim();
+  } catch {
+    return 'unknown';
+  }
 }
 
 await rm(OUT, { recursive: true, force: true });
