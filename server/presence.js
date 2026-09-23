@@ -17,9 +17,18 @@ const CONNS_TTL = 120; // seconds; refreshed by the heartbeat
 const setKey = (country) => (country ? `online:${country}` : 'online');
 
 export function createPresence(redis) {
-  async function remove(userId, country) {
-    await redis.multi().zrem('online', userId).zrem(setKey(country), userId).exec();
-  }
+  // Closing a connection and taking the player offline must be one step:
+  // otherwise a new tab (or a reload) connecting in between would be
+  // counted, then wiped out, leaving the player connected but not listed
+  redis.defineCommand('ttDisconnect', {
+    numberOfKeys: 3,
+    lua: `if redis.call('DECR', KEYS[1]) > 0 then return 0 end
+          redis.call('DEL', KEYS[1])
+          redis.call('ZREM', KEYS[2], ARGV[1])
+          local country = redis.call('HGET', KEYS[3], 'country')
+          if country then redis.call('ZREM', 'online:' .. country, ARGV[1]) end
+          return 1`,
+  });
 
   return {
     // A connection opened
@@ -44,12 +53,9 @@ export function createPresence(redis) {
 
     // A connection closed. Returns true if it was the player's last one.
     async disconnect(userId) {
-      const left = await redis.decr(`conns:${userId}`);
-      if (left > 0) return false;
-      const country = await redis.hget(`player:${userId}`, 'country');
-      await redis.del(`conns:${userId}`);
-      await remove(userId, country);
-      return true;
+      return (
+        (await redis.ttDisconnect(`conns:${userId}`, 'online', `player:${userId}`, userId)) === 1
+      );
     },
 
     async isConnected(userId) {

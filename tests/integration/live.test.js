@@ -70,6 +70,21 @@ test('a player with two tabs stays online until both are closed', async () => {
   assert.ok(!(await onlineList(viewer)).players.some((p) => p.id === ann.user.id));
 });
 
+test('a reload (one connection closing as another opens) keeps the player online', async () => {
+  const ann = await player(t.app);
+  const viewer = await player(t.app);
+  let tab = await live(t.app, ann);
+  for (let i = 0; i < 20; i++) {
+    const [next] = await Promise.all([live(t.app, ann), tab.close()]);
+    tab = next;
+  }
+  await wait(100);
+  assert.ok((await onlineList(viewer)).players.some((p) => p.id === ann.user.id));
+  await tab.close();
+  await wait(100);
+  assert.ok(!(await onlineList(viewer)).players.some((p) => p.id === ann.user.id));
+});
+
 test('changing country moves you between country lists', async () => {
   const ann = await player(t.app, { country: 'FR' });
   const viewer = await player(t.app);
