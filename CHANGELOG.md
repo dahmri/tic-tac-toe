@@ -24,6 +24,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Online lobby:** see which players are online, filter them by country,
   and invite one to play. Invitations reach players in any mode and last
   60 seconds; they can be accepted, declined or cancelled.
+- **Stats:** online record and win rate, current and best win streak, win
+  rate as X and as O, fastest win, wins by forfeit, most played opponents
+  with your record against each, results against the computer, and your
+  game history. Online results are recorded by the server; games against
+  the computer are replayed and checked before they count.
 - **Online matches run on the game server,** which checks every move, so
   nobody can move out of turn or fake a result. Reloading the page rejoins
   the match; leaving (or staying away for 20 seconds) forfeits a round in
