@@ -16,7 +16,7 @@ export default [
     languageOptions: { globals: { ...globals.browser, Peer: 'readonly' } },
   },
   {
-    files: ['tests/**/*.js', 'scripts/**/*.mjs', '*.config.js'],
+    files: ['server/**/*.js', 'tests/**/*.js', 'scripts/**/*.mjs', '*.config.js'],
     languageOptions: { globals: globals.node },
   },
 ];

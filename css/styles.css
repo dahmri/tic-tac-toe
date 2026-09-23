@@ -132,7 +132,8 @@ h1 .o {
   padding: 8px 12px;
   cursor: pointer;
 }
-.seg button[aria-pressed='true'] {
+.seg button[aria-pressed='true'],
+.seg button[aria-selected='true'] {
   background: var(--chip-on);
   color: var(--chip-on-ink);
 }
@@ -473,6 +474,145 @@ kbd {
   border-radius: 4px;
   padding: 2px 5px;
   background: var(--chip);
+}
+
+/* Accounts: log-in and sign-up forms, account bar, profile dialog */
+.loading {
+  color: var(--muted);
+  margin: 0;
+}
+.auth,
+.game {
+  display: grid;
+  gap: 20px;
+}
+.auth .seg {
+  justify-self: start;
+}
+.form {
+  display: grid;
+  gap: 14px;
+}
+.form > .btn {
+  justify-self: start;
+}
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+}
+@media (max-width: 360px) {
+  .pair {
+    grid-template-columns: 1fr;
+  }
+}
+.field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.field > span {
+  font: 700 0.72rem/1.2 var(--body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.field em {
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.field input,
+.field select {
+  font: 1rem/1.2 var(--body);
+  color: var(--ink);
+  background: var(--chip);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 42px;
+  width: 100%;
+  min-width: 0;
+}
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.field input[aria-invalid='true'],
+.field select[aria-invalid='true'] {
+  border-color: var(--o);
+}
+.help,
+.privacy {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.privacy {
+  margin: 0;
+}
+.err,
+.form-msg {
+  color: var(--o);
+  font-size: 0.85rem;
+}
+.err:empty,
+.form-msg:empty {
+  display: none;
+}
+.form-msg {
+  margin: 0;
+}
+[role='status'].form-msg {
+  color: var(--ink);
+}
+
+.account-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px 8px;
+  flex-wrap: wrap;
+}
+.account-bar .me {
+  margin-right: auto;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.account-bar .btn {
+  padding: 8px 6px;
+}
+
+.dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 18px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+.dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.dialog h2,
+.dialog h3 {
+  font: 700 1.9rem/1 var(--display);
+  margin: 0;
+}
+.dialog h3 {
+  font-size: 1.5rem;
+  margin: 24px 0 12px;
 }
 
 @media (prefers-reduced-motion: reduce) {

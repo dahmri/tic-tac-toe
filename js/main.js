@@ -5,6 +5,7 @@ import { pickMove } from './ai.js';
 import { hostGame, joinGame } from './net.js';
 import { normalizeCode, codeFromHash, inviteLink } from './room.js';
 import { stateMessage, parseState, parseMove } from './protocol.js';
+import { initAccount } from './account.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
@@ -469,7 +470,8 @@ $('copyLink').addEventListener('click', copyInvite);
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.target instanceof HTMLInputElement) return; // typing a code
+  if ($('gameView').hidden || $('profileDialog').open) return;
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   if (e.key in KEYMAP) humanMove(KEYMAP[e.key]);
   else if (e.key === 'n' || e.key === 'N') newRound();
 });
@@ -478,14 +480,27 @@ window.addEventListener('beforeunload', () => net?.session?.leave());
 
 resetBoard();
 render();
-maybeCpu();
 
-// Opened from an invite link: jump straight into the game
-const invited = codeFromHash(location.hash);
-if (invited) {
-  if (!online()) {
-    state.mode = 'online';
-    save();
-  }
-  startOnline('guest', invited);
-}
+// Opened from an invite link: join that game once logged in
+let invited = codeFromHash(location.hash);
+
+initAccount({
+  onSignIn() {
+    resetBoard();
+    render();
+    maybeCpu();
+    if (invited) {
+      if (!online()) {
+        state.mode = 'online';
+        save();
+      }
+      startOnline('guest', invited);
+      invited = null;
+    }
+  },
+  onSignOut() {
+    leaveOnline();
+    resetBoard();
+    render();
+  },
+});
