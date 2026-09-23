@@ -4,15 +4,17 @@
 [![Deploy](https://github.com/dahmri/tic-tac-toe/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/dahmri/tic-tac-toe/actions/workflows/deploy.yml)
 
 A hand-drawn tic-tac-toe game for the browser. Play the computer, pass the
-device to a friend, or play a friend on another computer. Players have
-accounts; a Node.js game server with PostgreSQL and Redis keeps them.
+device to a friend, or invite any player who is online. Players have
+accounts; a Node.js game server with PostgreSQL and Redis runs it all.
 
 ## Features
 
 - **Player accounts:** sign up with your name, username, date of birth, country and an
   optional phone number; edit your profile or password at any time. Other players only
   see your username and country, and personal details are stored encrypted.
-- **Three modes:** vs Computer, Same screen (two players, one device), and Online (two computers).
+- **Three modes:** vs Computer, Same screen (two players, one device), and Online.
+- **Online lobby:** see who is online, filter players by country, and invite one to play.
+  They can accept or decline; invitations reach them whatever mode they're in.
 - **Two difficulty levels:** _Casual_ can be beaten; _Unbeatable_ uses minimax and never loses.
 - **Tally-mark scoreboard**, saved in your browser between visits.
 - **Keyboard play:** `1`–`9` place a mark (keypad layout, `7` is top-left), `N` starts a new round.
@@ -20,23 +22,19 @@ accounts; a Node.js game server with PostgreSQL and Redis keeps them.
 
 ## Playing online
 
-1. One player picks **Online → Start a game** and gets a 6-character code (like `K7PQ2M`).
-2. They send the code, or the invite link, to a friend.
-3. The friend picks **Online**, types the code and clicks **Join**, or just opens the invite link.
+1. Pick **Online**. You see the players who are online now, most recently active
+   first, with their country. Use the country list to show only one country.
+2. Click **Invite** next to a player. They get the invitation wherever they are in
+   the game and have 60 seconds to **Accept** or **Decline**. You can cancel it.
+3. Once they accept, the match starts. You (the inviter) play X and open the first
+   round; after that, players take turns opening. Either player can start a new
+   round, and **Leave** ends the match.
 
-The host plays X and opens the first round; after that, players alternate who starts.
-
-**How it works:** the two browsers connect directly to each other (WebRTC) through
-[PeerJS](https://peerjs.com/). PeerJS's free public server is used only to introduce the
-two browsers; the moves themselves travel directly between the two players. The host's
-browser is the referee: it checks every move and sends the full game state back to the
-other player, so the two screens can't get out of sync. Both computers need an internet
-connection. A few very strict networks (some offices and schools) block direct
-connections; if joining times out, try another network.
-
-**Where your friend opens the game:** each player needs the game page open on their own
-computer. That can be a copy served on your local network (see below) or a deployed
-copy (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). The two players don't need to use the same copy.
+**How it works:** the game server runs every match. Players only send the square they
+want; the server checks it's their turn and the square is free, then sends the new
+board to both. Nobody can move out of turn or fake a result. Reloading the page puts
+you back into your match. Closing it for more than 20 seconds, or clicking **Leave**,
+ends the match, and a round in progress counts as a win for the other player.
 
 ## Getting started
 
@@ -92,10 +90,11 @@ The other computer then opens `http://<that-ip>:8000`.
 
 Unit tests cover win and draw detection, prove the Unbeatable computer never
 loses against every possible sequence of moves, and check the account rules,
-password hashing and encryption. Integration tests drive the API against real
-databases: sign-up, login, sessions, profile edits, rate limits, and that
-personal data is really encrypted in the database. Browser tests play real
-games and go through sign-up and the profile.
+password hashing, encryption and the rules of online matches. Integration tests
+drive the API and the live connection against real databases: sign-up, login,
+sessions, profile edits, rate limits, encrypted personal data, who's online,
+invitations, and full matches including two moves racing for the same turn.
+Browser tests play real games, including online matches between two browsers.
 
 ## Project structure
 
@@ -104,15 +103,14 @@ index.html            Page markup and Content-Security-Policy
 css/styles.css        Styles and light/dark theme tokens
 js/rules.js           Board rules: win/draw detection, helpers
 js/ai.js              Computer opponent (casual + minimax)
-js/room.js            Online room codes and invite links
-js/protocol.js        Online messages and their validation
-js/net.js             Online connection (PeerJS / WebRTC)
 js/account.js         Log in, sign up, profile dialog
+js/lobby.js           Online players, country filter, invitations
+js/live.js            Live connection to the game server (WebSocket)
 js/validation.js      Account rules, shared by browser and server
 js/countries.js       Country codes, names and flags
 js/api.js             Calls to the game server
-js/main.js            UI: rendering, input, scoring, online sessions
-server/               Game server: API, sessions, database access
+js/main.js            UI: rendering, input, scoring, online matches
+server/               Game server: API, live connection, presence, matches
 server/migrations/    Database schema changes, in order
 tests/unit/           Unit tests (node --test)
 tests/integration/    API tests against PostgreSQL and Redis
