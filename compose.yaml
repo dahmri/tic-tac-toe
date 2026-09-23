@@ -1,0 +1,94 @@
+# The whole game on one machine: nginx (web), the game server (api),
+# PostgreSQL (db) and Redis (redis). Settings come from a .env file next to
+# this one: copy .env.example and fill it in. See docs/DEPLOYMENT.md.
+#
+#   docker compose up -d --build --wait
+#
+# To run more game servers behind nginx: API_REPLICAS=4 docker compose up -d
+
+name: tic-tac-toe
+
+x-api: &api
+  build:
+    context: .
+    target: api
+  image: tic-tac-toe-api:${GIT_COMMIT:-local}
+  environment:
+    DATABASE_URL: postgres://tictactoe:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/tictactoe
+    REDIS_URL: redis://redis:6379
+    DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?set DATA_ENCRYPTION_KEY in .env}
+    DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+    TRUST_PROXY: '1' # nginx
+    # Only the CI stack changes these two; keep the defaults in production
+    COOKIE_SECURE: ${COOKIE_SECURE:-true}
+    RATE_LIMITS: ${RATE_LIMITS:-on}
+
+services:
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+    image: tic-tac-toe-web:${GIT_COMMIT:-local}
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    <<: *api
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    deploy:
+      replicas: ${API_REPLICAS:-1}
+    restart: unless-stopped
+
+  # Brings the database schema up to date, then exits
+  migrate:
+    <<: *api
+    command: ['node', 'server/migrate.js']
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: tictactoe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: tictactoe
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U tictactoe -d tictactoe']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:8-alpine
+    # Append-only file so sessions survive a restart; never evict keys,
+    # since sessions and live games must not silently disappear
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

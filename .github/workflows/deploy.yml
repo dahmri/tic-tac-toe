@@ -1,9 +1,8 @@
 name: Deploy
 
 # test -> staging environment, main -> production environment.
-# Each deploy first runs the full CI suite. Production waits for a manual
-# approval (configured on the GitHub environment). Deploys are skipped with
-# a notice until a server is configured: see docs/DEPLOYMENT.md.
+# Each deploy first runs the full CI suite. Deploys are skipped with a
+# notice until a server is configured: see docs/DEPLOYMENT.md.
 on:
   push:
     branches: [test, main]
@@ -32,18 +31,13 @@ jobs:
       SITE_URL: ${{ vars.SITE_URL }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-      - run: npm run build
-        env:
-          GIT_COMMIT: ${{ github.sha }}
 
       - name: Skip upload (no server configured)
         if: env.DEPLOY_HOST == ''
         run: echo "::notice title=Deploy skipped::No DEPLOY_HOST secret on this environment yet. See docs/DEPLOYMENT.md."
 
-      - name: Upload to server
+      # The server builds and starts the images with Docker Compose
+      - name: Upload to server and restart
         if: env.DEPLOY_HOST != ''
         run: scripts/deploy.sh
         env:
