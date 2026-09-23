@@ -6,6 +6,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- CD: merging into `main` now deploys to production automatically, with no
+  manual approval step.
+- Docker build image updated from Node 24 to Node 25.
+
 ## [1.1.0] - 2026-09-23
 
 ### Added
