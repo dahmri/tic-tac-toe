@@ -1,10 +1,13 @@
-// UI: renders the board, handles input, keeps score, runs online sessions.
+// UI: renders the board, handles input, keeps score, and runs online
+// matches (played on the game server) through the live connection.
 
 import { winner, emptyBoard, other } from './rules.js';
 import { pickMove } from './ai.js';
-import { hostGame, joinGame } from './net.js';
-import { normalizeCode, codeFromHash, inviteLink } from './room.js';
-import { stateMessage, parseState, parseMove } from './protocol.js';
+import { initAccount } from './account.js';
+import { connectLive } from './live.js';
+import { countryFlag } from './countries.js';
+import { handleLobbyMessage, initLobby, lobbyError, resetLobby, setLobby } from './lobby.js';
+import { initStats, recordCpuGame } from './stats.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
@@ -27,14 +30,20 @@ let turn;
 let over;
 let busy = false;
 let cpuTimer = null;
-// Online session: { role: 'host' | 'guest', code, status, session }
-// status: 'starting' | 'waiting' | 'connecting' | 'connected' | 'closed'
-let net = null;
+// The round in progress, recorded when a game against the computer ends
+let round = { moves: [], starter: 'X', diff: 'casual', startedAt: 0 };
+
+// Online: the live connection, the signed-in player, and the current match
+// exactly as the server last sent it (the server is the referee)
+let live = null;
+let liveStatus = 'offline'; // 'connecting' | 'online' | 'offline'
+let me = null;
+let match = null;
 
 const online = () => state.mode === 'online';
-const isGuest = () => online() && net?.role === 'guest';
-const connected = () => net?.status === 'connected';
-const mySymbol = () => (net?.role === 'guest' ? 'O' : 'X');
+const inMatch = () => !!match && !match.ended;
+const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X');
+const opponent = () => (match ? match.players[other(mySymbol())] : null);
 
 function load() {
   const base = { mode: 'cpu', diff: 'casual', scores: zeroScores(), starter: 'X' };
@@ -56,7 +65,7 @@ function load() {
 }
 
 function save() {
-  // Online scores belong to the session, not this browser
+  // Online scores belong to the match, not this browser
   const data = online() ? { ...state, scores: zeroScores(), starter: 'X' } : state;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -95,21 +104,24 @@ function isHumanTurn() {
   if (over) return false;
   if (state.mode === 'cpu') return turn === 'X';
   if (state.mode === 'pvp') return true;
-  return connected() && turn === mySymbol();
+  return inMatch() && liveStatus === 'online' && turn === mySymbol();
 }
 
 function statusHTML() {
   const tag = (t) => `<span class="${t.toLowerCase()}">${t}</span>`;
 
-  if (online() && !connected()) {
-    if (!net) return 'Start a game, or join a friend with their code.';
-    if (net.status === 'starting') return 'Setting up a game…';
-    if (net.status === 'waiting') return `Waiting for your friend… code <mark>${net.code}</mark>`;
-    if (net.status === 'connecting') return 'Connecting…';
-    return 'The game has ended.';
+  if (online() && !inMatch()) {
+    if (liveStatus !== 'online') return 'Connecting…';
+    return 'Invite a player, or wait for an invitation.';
   }
 
   const w = winner(board);
+  const rival = opponent()?.username;
+  if (online() && match.forfeit && over) {
+    return match.result === mySymbol()
+      ? `<mark>You win!</mark> ${rival} left.`
+      : `<mark>${rival} wins.</mark>`;
+  }
   if (w && w.p === 'D') return `<mark>Cat's game.</mark> Nobody wins.`;
   if (w) {
     if (state.mode === 'cpu') {
@@ -120,19 +132,25 @@ function statusHTML() {
     if (online()) {
       return w.p === mySymbol()
         ? `<mark>You win!</mark> Nice line.`
-        : `<mark>Your friend wins.</mark> Go again?`;
+        : `<mark>${rival} wins.</mark> Go again?`;
     }
     return `<mark>${tag(w.p)} wins!</mark>`;
   }
   if (state.mode === 'cpu')
     return turn === 'X' ? `Your move, ${tag('X')}` : 'Computer is thinking…';
-  if (online()) return turn === mySymbol() ? `Your move, ${tag(turn)}` : 'Your friend is thinking…';
+  if (online()) {
+    if (liveStatus !== 'online') return 'Reconnecting…';
+    return turn === mySymbol() ? `Your move, ${tag(turn)}` : `${rival} is thinking…`;
+  }
   return `${tag(turn)} to play`;
 }
 
 function playerLabel(p) {
   if (state.mode === 'cpu') return p === 'X' ? 'You · X' : 'Computer · O';
-  if (online()) return p === mySymbol() ? `You · ${p}` : `Friend · ${p}`;
+  if (online()) {
+    if (!inMatch()) return `Player ${p}`;
+    return p === mySymbol() ? `You · ${p}` : `${match.players[p].username} · ${p}`;
+  }
   return `Player ${p}`;
 }
 
@@ -144,7 +162,7 @@ function render() {
     const col = (i % 3) + 1;
     c.disabled = !!v || !humanTurn || busy;
     c.setAttribute('aria-label', `Row ${row}, column ${col}: ${v || 'empty'}`);
-    if (!v) c.innerHTML = humanTurn ? markSVG(turn, 'ghost') : '';
+    if (!v) c.innerHTML = humanTurn && !busy ? markSVG(turn, 'ghost') : '';
   });
 
   statusEl.innerHTML = statusHTML();
@@ -159,18 +177,22 @@ function render() {
     .forEach((b) => b.setAttribute('aria-pressed', b.dataset.diff === state.diff));
 
   $('onlinePanel').hidden = !online();
-  $('lobby').hidden = !!net;
-  $('roomInfo').hidden = !net;
-  if (net) {
-    $('roomCode').textContent = net.code || '······';
+  $('lobby').hidden = inMatch();
+  $('roomInfo').hidden = !inMatch();
+  $('board').hidden = online() && !inMatch();
+  document.querySelector('.scores').hidden = online() && !inMatch();
+  if (inMatch()) {
+    const rival = opponent();
+    $('opponentName').textContent = `${countryFlag(rival.country)} ${rival.username}`;
     $('roomRole').textContent =
-      net.role === 'host' ? 'You are X and open the first round.' : 'You are O.';
-    $('invite').value = net.code ? inviteLink(location, net.code) : '';
-    $('shareRow').hidden = net.role !== 'host' || !net.code;
+      mySymbol() === 'X' ? 'You are X and open the first round.' : 'You are O.';
   }
-  const locked = online() && !connected();
-  $('next').disabled = locked;
-  $('reset').disabled = locked;
+  const locked = online() && !inMatch();
+  $('next').disabled = locked || (online() && !over);
+  $('reset').hidden = online();
+  $('next').closest('.actions').hidden = online() && !inMatch();
+
+  setLobby({ visible: online() && !$('gameView').hidden, inMatch: inMatch() });
 
   tally($('tX'), state.scores.X);
   tally($('tO'), state.scores.O);
@@ -204,9 +226,20 @@ function tally(el, n) {
 function place(i, p) {
   board[i] = p;
   drawMark(i, p);
+  // A game counts at the difficulty it started with, from its first move
+  if (!round.moves.length) round = { ...round, diff: state.diff, startedAt: Date.now() };
+  round.moves.push(i);
   const w = winner(board);
   if (w) {
     over = true;
+    if (state.mode === 'cpu' && state.diff === round.diff) {
+      recordCpuGame({
+        difficulty: round.diff,
+        starter: round.starter,
+        moves: round.moves,
+        seconds: Math.round((Date.now() - round.startedAt) / 1000),
+      });
+    }
     state.scores[w.p]++;
     state.starter = other(state.starter); // alternate who opens the next round
     save();
@@ -232,14 +265,13 @@ function drawWin(line) {
 
 function humanMove(i) {
   if (board[i] || !isHumanTurn() || busy) return;
-  if (isGuest()) {
-    net.session.send({ type: 'move', i }); // the host applies it and sends back the new state
-    busy = true;
+  if (online()) {
+    // The server checks the move and sends everyone the new board
+    busy = live.send({ t: 'move', match: match.id, square: i });
     render();
     return;
   }
   place(i, turn);
-  broadcast();
   maybeCpu();
 }
 
@@ -263,6 +295,7 @@ function resetBoard() {
   cpuTimer = null;
   board = emptyBoard();
   turn = state.starter;
+  round = { moves: [], starter: turn, diff: state.diff, startedAt: Date.now() };
   over = false;
   busy = false;
   winEl.innerHTML = '';
@@ -275,23 +308,17 @@ function resetBoard() {
 }
 
 function newRound() {
-  if (online() && !connected()) return;
-  if (isGuest()) {
-    net.session.send({ type: 'new-round' });
+  if (online()) {
+    if (inMatch() && over) live.send({ t: 'next-round', match: match.id });
     return;
   }
   resetBoard();
   render();
-  broadcast();
   maybeCpu();
 }
 
 function resetScores() {
-  if (online() && !connected()) return;
-  if (isGuest()) {
-    net.session.send({ type: 'reset' });
-    return;
-  }
+  if (online()) return;
   state.scores = zeroScores();
   state.starter = 'X';
   save();
@@ -300,12 +327,20 @@ function resetScores() {
 
 function setMode(mode) {
   if (state.mode === mode) return;
-  leaveOnline();
+  if (inMatch()) {
+    const ok = window.confirm(
+      `Leave your game with ${opponent().username}? A round in progress counts as a loss.`,
+    );
+    if (!ok) return;
+    live.send({ t: 'leave', match: match.id });
+    match = null;
+  }
   state.mode = mode;
   state.scores = zeroScores();
   state.starter = 'X';
   save();
   resetBoard();
+  setNetMessage('');
   render();
   maybeCpu();
 }
@@ -316,122 +351,93 @@ function setNetMessage(text) {
   $('netMsg').textContent = text || '';
 }
 
-// Host only: send the whole game to the guest after every change
-function broadcast() {
-  if (online() && net?.role === 'host' && connected()) {
-    net.session.send(
-      stateMessage({ board, turn, over, scores: state.scores, starter: state.starter }),
-    );
+// Shows the match exactly as the server sent it
+function showMatch(next) {
+  const newRound = !match || match.id !== next.id || match.round !== next.round;
+  match = next;
+  if (!online()) {
+    state.mode = 'online';
+    save();
   }
-}
-
-function onHostMessage(msg) {
-  if (msg.type === 'move') {
-    const i = parseMove(msg);
-    if (i >= 0 && !over && turn === 'O' && !board[i]) place(i, 'O');
-    broadcast(); // also resyncs the guest after a rejected move
-  } else if (msg.type === 'new-round') {
-    newRound();
-  } else if (msg.type === 'reset') {
-    resetScores();
-  }
-}
-
-function onGuestMessage(msg) {
-  const s = parseState(msg);
-  if (!s) return;
-  if (board.some((v, i) => v && v !== s.board[i])) resetBoard(); // a new round started
-  board = s.board;
-  turn = s.turn;
-  over = s.over;
+  if (newRound) resetBoard();
+  board = next.board.slice();
+  turn = next.turn;
+  over = next.over;
   busy = false;
-  state.scores = s.scores;
-  state.starter = s.starter;
+  state.scores = { ...next.score };
   board.forEach((v, i) => {
     if (v && cells[i].dataset.mark !== v) drawMark(i, v);
   });
-  const w = winner(board);
-  if (w?.line && !boardEl.classList.contains('won')) drawWin(w.line);
-  render();
+  if (next.line && !boardEl.classList.contains('won')) drawWin(next.line);
 }
 
-function startOnline(role, code) {
-  leaveOnline();
-  state.scores = zeroScores();
-  state.starter = 'X';
-  resetBoard();
-  setNetMessage('');
-  net = { role, code, status: role === 'host' ? 'starting' : 'connecting', session: null };
-  const current = net;
-  const live =
-    (fn) =>
-    (...args) => {
-      if (net === current) fn(...args);
-    }; // ignore stale sessions
-
-  const callbacks = {
-    onReady: live((c) => {
-      current.code = c;
-      current.status = 'waiting';
-      render();
-    }),
-    onConnect: live(() => {
-      current.status = 'connected';
-      setNetMessage('');
-      if (role === 'host') {
-        resetBoard();
-        broadcast();
-      }
-      render();
-    }),
-    onData: live(role === 'host' ? onHostMessage : onGuestMessage),
-    onLeave: live(() => {
+function onMatch(next) {
+  if (next.ended) {
+    const rival = next.players[other(next.players.O.id === me.id ? 'O' : 'X')].username;
+    const iLeft = next.leftBy === (next.players.O.id === me.id ? 'O' : 'X');
+    if (match?.id === next.id || !match) {
+      setNetMessage(
+        iLeft
+          ? ''
+          : next.forfeit
+            ? `${rival} left the game. You win the round.`
+            : `${rival} left the game.`,
+      );
+      match = null;
       state.scores = zeroScores();
-      state.starter = 'X';
       resetBoard();
-      if (role === 'host') {
-        current.status = 'waiting';
-        setNetMessage('Your friend left. Share the code again to keep playing.');
-      } else {
-        current.status = 'closed';
-        setNetMessage('The host left the game.');
-      }
-      render();
-    }),
-    onError: live((message) => {
-      if (role === 'guest' || current.status === 'starting') leaveOnline();
-      setNetMessage(message);
-      render();
-    }),
-  };
-
-  current.session = role === 'host' ? hostGame(callbacks) : joinGame(code, callbacks);
+    }
+  } else {
+    if (!match || match.id !== next.id) setNetMessage('');
+    showMatch(next);
+  }
   render();
 }
 
-function leaveOnline() {
-  if (!net) return;
-  net.session?.leave();
-  net = null;
-  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-  if (online()) {
-    state.scores = zeroScores();
-    resetBoard();
+function onLiveMessage(msg) {
+  switch (msg.t) {
+    case 'hello':
+      me = msg.me;
+      if (msg.match && !msg.match.ended) showMatch(msg.match);
+      else if (match) {
+        match = null; // it ended while we were away
+        resetBoard();
+      }
+      handleLobbyMessage(msg); // pending invitations
+      break;
+    case 'match':
+      onMatch(msg.match);
+      return;
+    case 'error':
+      busy = false;
+      setNetMessage(msg.message);
+      if (msg.re?.startsWith('invite')) lobbyError();
+      break;
+    default:
+      handleLobbyMessage(msg);
+      return;
   }
+  render();
 }
 
-async function copyInvite() {
-  const field = $('invite');
-  try {
-    await navigator.clipboard.writeText(field.value);
-    $('copyLink').textContent = 'Copied';
-    setTimeout(() => {
-      $('copyLink').textContent = 'Copy link';
-    }, 1600);
-  } catch {
-    field.focus();
-    field.select();
-  }
+function goOnline() {
+  live?.close();
+  live = connectLive({
+    onMessage: onLiveMessage,
+    onStatus: (status) => {
+      liveStatus = status;
+      render();
+    },
+  });
+}
+
+function goOffline() {
+  live?.close();
+  live = null;
+  liveStatus = 'offline';
+  me = null;
+  match = null;
+  resetLobby();
 }
 
 /* ---------- Wiring ---------- */
@@ -449,43 +455,38 @@ document.querySelectorAll('[data-diff]').forEach((b) =>
 );
 $('next').addEventListener('click', newRound);
 $('reset').addEventListener('click', resetScores);
-
-$('hostBtn').addEventListener('click', () => startOnline('host', null));
-$('joinForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const code = normalizeCode($('joinCode').value);
-  if (!code) {
-    setNetMessage('Codes are 6 letters and numbers, like K7PQ2M.');
-    return;
-  }
-  startOnline('guest', code);
-});
 $('leave').addEventListener('click', () => {
-  leaveOnline();
-  setNetMessage('');
-  render();
+  if (inMatch()) live.send({ t: 'leave', match: match.id });
 });
-$('copyLink').addEventListener('click', copyInvite);
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if (e.target instanceof HTMLInputElement) return; // typing a code
+  if ($('gameView').hidden || document.querySelector('dialog[open]')) return;
+  if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   if (e.key in KEYMAP) humanMove(KEYMAP[e.key]);
   else if (e.key === 'n' || e.key === 'N') newRound();
 });
 
-window.addEventListener('beforeunload', () => net?.session?.leave());
+initStats();
+initLobby({
+  send: (msg) => live?.send(msg),
+  message: setNetMessage,
+});
 
 resetBoard();
-render();
-maybeCpu();
 
-// Opened from an invite link: jump straight into the game
-const invited = codeFromHash(location.hash);
-if (invited) {
-  if (!online()) {
-    state.mode = 'online';
-    save();
-  }
-  startOnline('guest', invited);
-}
+initAccount({
+  onSignIn() {
+    resetBoard();
+    goOnline();
+    render();
+    maybeCpu();
+  },
+  onSignOut() {
+    goOffline();
+    if (online()) state.scores = zeroScores();
+    resetBoard();
+    setNetMessage('');
+    render();
+  },
+});

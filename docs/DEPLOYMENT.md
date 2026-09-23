@@ -1,50 +1,89 @@
 # Deployment
 
-The game is a static site: `npm run build` produces `dist/` (HTML, CSS, JS
-and a `version.json`). Any web server can host it. Online play also needs the
-public PeerJS matchmaking server (`0.peerjs.com`), which browsers reach
-directly, so there is no backend to run.
+The game runs as four containers, defined in [`compose.yaml`](../compose.yaml):
+
+| Service   | Image                       | Role                                              |
+| --------- | --------------------------- | ------------------------------------------------- |
+| `web`     | nginx (`Dockerfile`, `web`) | Serves the site, forwards `/api` and `/ws`        |
+| `api`     | Node (`Dockerfile`, `api`)  | The game server; scale with `API_REPLICAS`        |
+| `migrate` | same as `api`               | Brings the database schema up to date, then exits |
+| `db`      | `postgres:18-alpine`        | Accounts; data in the `pgdata` volume             |
+| `redis`   | `redis:8-alpine`            | Sessions and live state; data in `redisdata`      |
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for why, and how it scales.
 
 ## Pipeline
 
-| Event             | What happens                                                                           |
-| ----------------- | -------------------------------------------------------------------------------------- |
-| Pull request      | CI: lint, formatting, unit tests, build, Docker image, browser tests against the image |
-| Merge into `dev`  | CI                                                                                     |
-| Merge into `test` | CI, then deploy to the **staging** environment                                         |
-| Merge into `main` | CI, then **production** deploy after manual approval, then tag and GitHub release      |
+| Event             | What happens                                                                                       |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| Pull request      | CI: lint, formatting, unit and integration tests, then browser tests against the full Docker stack |
+| Merge into `dev`  | CI                                                                                                 |
+| Merge into `test` | CI, then deploy to the **staging** environment                                                     |
+| Merge into `main` | CI, then deploy to the **production** environment, then tag and GitHub release                     |
 
 Workflows: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) and
 [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml).
 
-Until a server is configured, the deploy job builds the site and ends with a
-"Deploy skipped" notice. Nothing fails.
+Until a server is configured, the deploy job ends with a "Deploy skipped"
+notice. Nothing fails.
 
-## Option A: a Linux server with nginx (SSH deploy)
+## Setting up a server
 
-The deploy job uploads each build to `DEPLOY_PATH/releases/<timestamp>-<commit>/`
-and points the `DEPLOY_PATH/current` symlink at it in one step. The last 5
-releases are kept.
+The deploy job uploads each commit's source to
+`DEPLOY_PATH/releases/<timestamp>-<commit>/`, points `DEPLOY_PATH/current` at
+it, and runs `docker compose up -d --build` there. Compose rebuilds and
+restarts only what changed; the `migrate` service applies any new database
+changes before the new game server starts. The last 5 releases are kept.
 
 ### 1. Prepare the server (once)
 
+Any Linux machine with Docker. As root:
+
 ```sh
-# On the server, as root
+curl -fsSL https://get.docker.com | sh          # Docker Engine + Compose plugin
 adduser --disabled-password --gecos "" deploy
-mkdir -p /var/www/tic-tac-toe
-chown deploy:deploy /var/www/tic-tac-toe
-apt install nginx rsync
+usermod -aG docker deploy
+mkdir -p /srv/tic-tac-toe && chown deploy:deploy /srv/tic-tac-toe
 ```
 
-Copy [`deploy/nginx.conf`](../deploy/nginx.conf) to
-`/etc/nginx/sites-available/tic-tac-toe`, then:
+### 2. Create the secrets file (once)
 
-- set `root /var/www/tic-tac-toe/current;`
-- set `server_name` to your domain
-- enable it: `ln -s /etc/nginx/sites-available/tic-tac-toe /etc/nginx/sites-enabled/ && nginx -t && systemctl reload nginx`
-- add HTTPS: `apt install certbot python3-certbot-nginx && certbot --nginx -d your.domain`
+As `deploy`, create `/srv/tic-tac-toe/.env` from
+[`.env.example`](../.env.example):
 
-### 2. Create a deploy key
+```sh
+cat > /srv/tic-tac-toe/.env <<EOF
+POSTGRES_PASSWORD=$(openssl rand -hex 24)
+DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)
+WEB_PORT=8080
+API_REPLICAS=2
+EOF
+chmod 600 /srv/tic-tac-toe/.env
+```
+
+**Back up `DATA_ENCRYPTION_KEY` somewhere safe** (a password manager). It
+encrypts players' names, birth dates and phone numbers; without it that data
+can't be read, and changing it makes existing accounts unreadable.
+
+### 3. HTTPS
+
+nginx listens on `WEB_PORT` over plain http. Put a TLS proxy in front, for
+example [Caddy](https://caddyserver.com/), which gets certificates by itself:
+
+```
+# /etc/caddy/Caddyfile
+ttt.example.com {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+The session cookie is marked `Secure`, so logging in only works over HTTPS.
+If the proxy is on another machine, have it pass `X-Forwarded-For` and
+`X-Forwarded-Proto`, change `X-Forwarded-For $remote_addr` in
+`deploy/nginx.conf` to `$proxy_add_x_forwarded_for`, and set `TRUST_PROXY`
+to `2` in `compose.yaml`, so rate limits see players' real addresses.
+
+### 4. Create a deploy key
 
 ```sh
 # On your computer
@@ -53,7 +92,7 @@ ssh-copy-id -i deploy_key.pub deploy@your.server   # or append it to ~deploy/.ss
 ssh-keyscan -H your.server                          # output = DEPLOY_KNOWN_HOSTS
 ```
 
-### 3. Add secrets to the GitHub environments
+### 5. Add secrets to the GitHub environments
 
 In **Settings → Environments**, open `staging` (test server) and
 `production` (prod server), and add:
@@ -62,7 +101,7 @@ In **Settings → Environments**, open `staging` (test server) and
 | -------------------- | -------------------------------------- |
 | `DEPLOY_HOST`        | `203.0.113.10` or `prod.example.com`   |
 | `DEPLOY_USER`        | `deploy`                               |
-| `DEPLOY_PATH`        | `/var/www/tic-tac-toe`                 |
+| `DEPLOY_PATH`        | `/srv/tic-tac-toe`                     |
 | `DEPLOY_SSH_KEY`     | contents of `deploy_key` (private key) |
 | `DEPLOY_KNOWN_HOSTS` | output of `ssh-keyscan -H your.server` |
 | `DEPLOY_PORT`        | optional, defaults to `22`             |
@@ -75,46 +114,63 @@ And one variable:
 
 Delete the local `deploy_key` files once the secret is saved.
 
-### Rollback
+## Running it by hand
+
+On any machine with Docker:
+
+```sh
+cp .env.example .env        # then fill in the two secrets
+docker compose up -d --build
+curl http://localhost:8080/api/health
+docker compose logs -f api  # follow the game server's log
+```
+
+## Backups
+
+Player data lives in PostgreSQL. Back it up daily, for example with a cron
+job on the server:
+
+```sh
+cd /srv/tic-tac-toe/current
+docker compose exec -T db pg_dump -U tictactoe -Fc tictactoe > /backups/ttt-$(date +%F).dump
+```
+
+Restore with `pg_restore -U tictactoe -d tictactoe --clean`. Keep backups
+off the server, and keep `DATA_ENCRYPTION_KEY` apart from them.
+
+## Rollback
 
 ```sh
 ssh deploy@your.server
-cd /var/www/tic-tac-toe
+cd /srv/tic-tac-toe
 ls -1t releases/                      # newest first
 ln -sfn releases/<previous> current.new && mv -Tf current.new current
+cd current && docker compose up -d --build
 ```
 
-Or revert the bad commit on `main` through a PR, which redeploys.
-
-## Option B: Docker
-
-The [`Dockerfile`](../Dockerfile) builds an nginx image with the same config.
-CI builds it and runs the browser tests against it on every pull request.
-
-```sh
-docker build --build-arg GIT_COMMIT=$(git rev-parse HEAD) -t tic-tac-toe .
-docker run -d --restart unless-stopped -p 8080:80 --name tic-tac-toe tic-tac-toe
-curl http://localhost:8080/version.json
-```
-
-Put a TLS-terminating proxy (Caddy, Traefik, nginx) in front for HTTPS.
-To deploy containers from CI, the next step would be publishing the image to
-GitHub Container Registry (`ghcr.io`) in `deploy.yml` and pulling it on the server.
+Database changes are not undone by a rollback; migrations are written so the
+previous release keeps working with the new schema. Or revert the bad commit
+on `main` through a PR, which redeploys.
 
 ## Checking what's live
 
-Every build serves `/version.json`:
+`/version.json` shows the site's build, and `/api/health` whether the game
+server can reach PostgreSQL and Redis:
 
 ```json
-{ "version": "1.1.0", "commit": "9a3f7d3", "builtAt": "2026-09-23T18:01:20.248Z" }
+{ "version": "1.2.0", "commit": "9a3f7d3", "builtAt": "2026-09-23T18:01:20.248Z" }
 ```
 
 ## Security
 
-- `index.html` sets a Content-Security-Policy that allows scripts only from
-  this site and `cdn.jsdelivr.net`, and network connections only to this
-  site and the PeerJS server. Browser tests fail on any policy violation.
-  Update both if you add a new external service.
+- Passwords are hashed with Argon2id; names, birth dates and phone numbers
+  are encrypted in the database. Details in [ARCHITECTURE.md](ARCHITECTURE.md).
+- `.env` holds the secrets and never leaves the server. It is ignored by git
+  and Docker builds.
+- `index.html` sets a Content-Security-Policy. Browser tests fail on any
+  policy violation. Update it if you add a new external service.
 - `deploy/nginx.conf` adds `X-Frame-Options`, `X-Content-Type-Options`,
   `Referrer-Policy` and `Permissions-Policy`, and refuses hidden files.
+- PostgreSQL and Redis are reachable only inside the Compose network, never
+  from outside the machine.
 - Serve production over HTTPS.

@@ -1,7 +1,8 @@
 import { test, expect, cell, status, chooseMode } from './fixtures.js';
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, player }) => {
   await page.goto('/');
+  await expect(page.locator('#meName')).toHaveText(player.username);
 });
 
 test('vs computer: the computer answers each move', async ({ page }) => {

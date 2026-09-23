@@ -13,10 +13,10 @@ export default [
   },
   {
     files: ['js/**/*.js'],
-    languageOptions: { globals: { ...globals.browser, Peer: 'readonly' } },
+    languageOptions: { globals: globals.browser },
   },
   {
-    files: ['tests/**/*.js', 'scripts/**/*.mjs', '*.config.js'],
+    files: ['server/**/*.js', 'tests/**/*.js', 'scripts/**/*.mjs', '*.config.js'],
     languageOptions: { globals: globals.node },
   },
 ];
