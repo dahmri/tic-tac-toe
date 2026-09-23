@@ -8,16 +8,18 @@ import { stateMessage, parseState, parseMove } from './protocol.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
-const CENTER = i => [50 + (i % 3) * 100, 50 + Math.floor(i / 3) * 100];
+const CENTER = (i) => [50 + (i % 3) * 100, 50 + Math.floor(i / 3) * 100];
 const X_PATHS = ['M22 22 C40 40 58 60 79 79', 'M78 21 C60 40 42 58 22 80'];
 const O_PATH = 'M52 17 C73 16 85 33 83 51 C81 72 65 84 47 83 C28 81 16 65 18 46 C20 29 34 18 56 21';
 // Keypad layout: 7 8 9 on top, 1 2 3 on the bottom
 const KEYMAP = { 7: 0, 8: 1, 9: 2, 4: 3, 5: 4, 6: 5, 1: 6, 2: 7, 3: 8 };
 
-const $ = id => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 const boardEl = $('board');
 const statusEl = $('status');
 const winEl = $('winline');
+
+const zeroScores = () => ({ X: 0, O: 0, D: 0 });
 
 const state = load();
 let board;
@@ -29,7 +31,6 @@ let cpuTimer = null;
 // status: 'starting' | 'waiting' | 'connecting' | 'connected' | 'closed'
 let net = null;
 
-const zeroScores = () => ({ X: 0, O: 0, D: 0 });
 const online = () => state.mode === 'online';
 const isGuest = () => online() && net?.role === 'guest';
 const connected = () => net?.status === 'connected';
@@ -42,17 +43,26 @@ function load() {
     if (saved && saved.scores) {
       const s = { ...base, ...saved };
       if (!MODES.includes(s.mode)) s.mode = 'cpu';
-      if (s.mode === 'online') { s.scores = zeroScores(); s.starter = 'X'; }
+      if (s.mode === 'online') {
+        s.scores = zeroScores();
+        s.starter = 'X';
+      }
       return s;
     }
-  } catch (e) { /* storage unavailable: start fresh */ }
+  } catch {
+    /* storage unavailable: start fresh */
+  }
   return base;
 }
 
 function save() {
   // Online scores belong to the session, not this browser
   const data = online() ? { ...state, scores: zeroScores(), starter: 'X' } : state;
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    /* ignore */
+  }
 }
 
 // Build the nine squares
@@ -89,7 +99,7 @@ function isHumanTurn() {
 }
 
 function statusHTML() {
-  const tag = t => `<span class="${t.toLowerCase()}">${t}</span>`;
+  const tag = (t) => `<span class="${t.toLowerCase()}">${t}</span>`;
 
   if (online() && !connected()) {
     if (!net) return 'Start a game, or join a friend with their code.';
@@ -103,14 +113,19 @@ function statusHTML() {
   if (w && w.p === 'D') return `<mark>Cat's game.</mark> Nobody wins.`;
   if (w) {
     if (state.mode === 'cpu') {
-      return w.p === 'X' ? `<mark>You win!</mark> Nice line.` : `<mark>Computer wins.</mark> Go again?`;
+      return w.p === 'X'
+        ? `<mark>You win!</mark> Nice line.`
+        : `<mark>Computer wins.</mark> Go again?`;
     }
     if (online()) {
-      return w.p === mySymbol() ? `<mark>You win!</mark> Nice line.` : `<mark>Your friend wins.</mark> Go again?`;
+      return w.p === mySymbol()
+        ? `<mark>You win!</mark> Nice line.`
+        : `<mark>Your friend wins.</mark> Go again?`;
     }
     return `<mark>${tag(w.p)} wins!</mark>`;
   }
-  if (state.mode === 'cpu') return turn === 'X' ? `Your move, ${tag('X')}` : 'Computer is thinking…';
+  if (state.mode === 'cpu')
+    return turn === 'X' ? `Your move, ${tag('X')}` : 'Computer is thinking…';
   if (online()) return turn === mySymbol() ? `Your move, ${tag(turn)}` : 'Your friend is thinking…';
   return `${tag(turn)} to play`;
 }
@@ -136,15 +151,20 @@ function render() {
   $('lblX').textContent = playerLabel('X');
   $('lblO').textContent = playerLabel('O');
   $('diffGroup').hidden = state.mode !== 'cpu';
-  document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === state.mode));
-  document.querySelectorAll('[data-diff]').forEach(b => b.setAttribute('aria-pressed', b.dataset.diff === state.diff));
+  document
+    .querySelectorAll('[data-mode]')
+    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === state.mode));
+  document
+    .querySelectorAll('[data-diff]')
+    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.diff === state.diff));
 
   $('onlinePanel').hidden = !online();
   $('lobby').hidden = !!net;
   $('roomInfo').hidden = !net;
   if (net) {
     $('roomCode').textContent = net.code || '······';
-    $('roomRole').textContent = net.role === 'host' ? 'You are X and open the first round.' : 'You are O.';
+    $('roomRole').textContent =
+      net.role === 'host' ? 'You are X and open the first round.' : 'You are O.';
     $('invite').value = net.code ? inviteLink(location, net.code) : '';
     $('shareRow').hidden = net.role !== 'host' || !net.code;
   }
@@ -160,7 +180,10 @@ function render() {
 // Scores as tally marks: four uprights and a slash per gate of five
 function tally(el, n) {
   el.setAttribute('aria-label', String(n));
-  if (n === 0) { el.innerHTML = '<span class="zero">—</span>'; return; }
+  if (n === 0) {
+    el.innerHTML = '<span class="zero">—</span>';
+    return;
+  }
   const groups = Math.min(Math.ceil(n / 5), 4);
   let html = '';
   for (let g = 0; g < groups; g++) {
@@ -198,13 +221,13 @@ function drawWin(line) {
   const [x1, y1] = CENTER(line[0]);
   const [x2, y2] = CENTER(line[2]);
   const len = Math.hypot(x2 - x1, y2 - y1);
-  const ex = (x2 - x1) / len * 38;
-  const ey = (y2 - y1) / len * 38;
+  const ex = ((x2 - x1) / len) * 38;
+  const ey = ((y2 - y1) / len) * 38;
   const bend = 4;
   winEl.innerHTML = `<path class="draw" pathLength="1"
     d="M${x1 - ex} ${y1 - ey} Q${(x1 + x2) / 2 + bend} ${(y1 + y2) / 2 - bend} ${x2 + ex} ${y2 + ey}"/>`;
   boardEl.classList.add('won');
-  line.forEach(i => cells[i].classList.add('hit'));
+  line.forEach((i) => cells[i].classList.add('hit'));
 }
 
 function humanMove(i) {
@@ -224,11 +247,14 @@ function maybeCpu() {
   if (over || state.mode !== 'cpu' || turn !== 'O') return;
   busy = true;
   render();
-  cpuTimer = setTimeout(() => {
-    cpuTimer = null;
-    busy = false;
-    place(pickMove(board, 'O', state.diff), 'O');
-  }, 420 + Math.random() * 250);
+  cpuTimer = setTimeout(
+    () => {
+      cpuTimer = null;
+      busy = false;
+      place(pickMove(board, 'O', state.diff), 'O');
+    },
+    420 + Math.random() * 250,
+  );
 }
 
 // Clears the board locally without telling anyone
@@ -241,12 +267,19 @@ function resetBoard() {
   busy = false;
   winEl.innerHTML = '';
   boardEl.classList.remove('won');
-  cells.forEach(c => { c.classList.remove('hit'); delete c.dataset.mark; c.innerHTML = ''; });
+  cells.forEach((c) => {
+    c.classList.remove('hit');
+    delete c.dataset.mark;
+    c.innerHTML = '';
+  });
 }
 
 function newRound() {
   if (online() && !connected()) return;
-  if (isGuest()) { net.session.send({ type: 'new-round' }); return; }
+  if (isGuest()) {
+    net.session.send({ type: 'new-round' });
+    return;
+  }
   resetBoard();
   render();
   broadcast();
@@ -255,7 +288,10 @@ function newRound() {
 
 function resetScores() {
   if (online() && !connected()) return;
-  if (isGuest()) { net.session.send({ type: 'reset' }); return; }
+  if (isGuest()) {
+    net.session.send({ type: 'reset' });
+    return;
+  }
   state.scores = zeroScores();
   state.starter = 'X';
   save();
@@ -283,7 +319,9 @@ function setNetMessage(text) {
 // Host only: send the whole game to the guest after every change
 function broadcast() {
   if (online() && net?.role === 'host' && connected()) {
-    net.session.send(stateMessage({ board, turn, over, scores: state.scores, starter: state.starter }));
+    net.session.send(
+      stateMessage({ board, turn, over, scores: state.scores, starter: state.starter }),
+    );
   }
 }
 
@@ -309,7 +347,9 @@ function onGuestMessage(msg) {
   busy = false;
   state.scores = s.scores;
   state.starter = s.starter;
-  board.forEach((v, i) => { if (v && cells[i].dataset.mark !== v) drawMark(i, v); });
+  board.forEach((v, i) => {
+    if (v && cells[i].dataset.mark !== v) drawMark(i, v);
+  });
   const w = winner(board);
   if (w?.line && !boardEl.classList.contains('won')) drawWin(w.line);
   render();
@@ -323,14 +363,25 @@ function startOnline(role, code) {
   setNetMessage('');
   net = { role, code, status: role === 'host' ? 'starting' : 'connecting', session: null };
   const current = net;
-  const live = fn => (...args) => { if (net === current) fn(...args); }; // ignore stale sessions
+  const live =
+    (fn) =>
+    (...args) => {
+      if (net === current) fn(...args);
+    }; // ignore stale sessions
 
   const callbacks = {
-    onReady: live(c => { current.code = c; current.status = 'waiting'; render(); }),
+    onReady: live((c) => {
+      current.code = c;
+      current.status = 'waiting';
+      render();
+    }),
     onConnect: live(() => {
       current.status = 'connected';
       setNetMessage('');
-      if (role === 'host') { resetBoard(); broadcast(); }
+      if (role === 'host') {
+        resetBoard();
+        broadcast();
+      }
       render();
     }),
     onData: live(role === 'host' ? onHostMessage : onGuestMessage),
@@ -347,7 +398,7 @@ function startOnline(role, code) {
       }
       render();
     }),
-    onError: live(message => {
+    onError: live((message) => {
       if (role === 'guest' || current.status === 'starting') leaveOnline();
       setNetMessage(message);
       render();
@@ -363,7 +414,10 @@ function leaveOnline() {
   net.session?.leave();
   net = null;
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-  if (online()) { state.scores = zeroScores(); resetBoard(); }
+  if (online()) {
+    state.scores = zeroScores();
+    resetBoard();
+  }
 }
 
 async function copyInvite() {
@@ -371,8 +425,10 @@ async function copyInvite() {
   try {
     await navigator.clipboard.writeText(field.value);
     $('copyLink').textContent = 'Copied';
-    setTimeout(() => { $('copyLink').textContent = 'Copy link'; }, 1600);
-  } catch (e) {
+    setTimeout(() => {
+      $('copyLink').textContent = 'Copy link';
+    }, 1600);
+  } catch {
     field.focus();
     field.select();
   }
@@ -380,18 +436,22 @@ async function copyInvite() {
 
 /* ---------- Wiring ---------- */
 
-document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
-document.querySelectorAll('[data-diff]').forEach(b => b.addEventListener('click', () => {
-  if (state.diff === b.dataset.diff) return;
-  state.diff = b.dataset.diff;
-  save();
-  render();
-}));
+document
+  .querySelectorAll('[data-mode]')
+  .forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+document.querySelectorAll('[data-diff]').forEach((b) =>
+  b.addEventListener('click', () => {
+    if (state.diff === b.dataset.diff) return;
+    state.diff = b.dataset.diff;
+    save();
+    render();
+  }),
+);
 $('next').addEventListener('click', newRound);
 $('reset').addEventListener('click', resetScores);
 
 $('hostBtn').addEventListener('click', () => startOnline('host', null));
-$('joinForm').addEventListener('submit', e => {
+$('joinForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const code = normalizeCode($('joinCode').value);
   if (!code) {
@@ -400,10 +460,14 @@ $('joinForm').addEventListener('submit', e => {
   }
   startOnline('guest', code);
 });
-$('leave').addEventListener('click', () => { leaveOnline(); setNetMessage(''); render(); });
+$('leave').addEventListener('click', () => {
+  leaveOnline();
+  setNetMessage('');
+  render();
+});
 $('copyLink').addEventListener('click', copyInvite);
 
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if (e.target instanceof HTMLInputElement) return; // typing a code
   if (e.key in KEYMAP) humanMove(KEYMAP[e.key]);
@@ -419,6 +483,9 @@ maybeCpu();
 // Opened from an invite link: jump straight into the game
 const invited = codeFromHash(location.hash);
 if (invited) {
-  if (!online()) { state.mode = 'online'; save(); }
+  if (!online()) {
+    state.mode = 'online';
+    save();
+  }
   startOnline('guest', invited);
 }

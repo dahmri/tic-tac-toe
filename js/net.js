@@ -11,10 +11,11 @@ const JOIN_TIMEOUT_MS = 15000;
 
 const ERRORS = {
   'peer-unavailable': 'No game found with that code. Check it and try again.',
-  'network': 'Lost the connection. Check your internet and try again.',
+  network: 'Lost the connection. Check your internet and try again.',
   'socket-error': 'Lost the connection. Check your internet and try again.',
   'server-error': 'The matchmaking server is unavailable. Try again in a minute.',
-  'browser-incompatible': 'This browser does not support online play. Try a recent Chrome, Firefox or Safari.',
+  'browser-incompatible':
+    'This browser does not support online play. Try a recent Chrome, Firefox or Safari.',
   'unavailable-id': 'Could not create a game code. Try again.',
 };
 
@@ -33,7 +34,9 @@ function peerLibraryMissing(cb) {
 function wire(conn, { onData, onClose }) {
   let lastSeen = Date.now();
   let closed = false;
-  const send = msg => { if (conn.open) conn.send(msg); };
+  const send = (msg) => {
+    if (conn.open) conn.send(msg);
+  };
   const timer = setInterval(() => {
     if (Date.now() - lastSeen > TIMEOUT_MS) finish();
     else send({ type: 'ping' });
@@ -42,7 +45,11 @@ function wire(conn, { onData, onClose }) {
   function stop() {
     closed = true;
     clearInterval(timer);
-    try { conn.close(); } catch (e) { /* already closed */ }
+    try {
+      conn.close();
+    } catch {
+      /* already closed */
+    }
   }
   function finish() {
     if (closed) return;
@@ -50,7 +57,7 @@ function wire(conn, { onData, onClose }) {
     onClose();
   }
 
-  conn.on('data', msg => {
+  conn.on('data', (msg) => {
     lastSeen = Date.now();
     if (msg && typeof msg === 'object' && msg.type !== 'ping') onData(msg);
   });
@@ -70,7 +77,7 @@ export function hostGame(cb) {
     const code = newRoomCode();
     peer = new window.Peer(peerIdFor(code));
     peer.on('open', () => cb.onReady(code));
-    peer.on('connection', conn => {
+    peer.on('connection', (conn) => {
       conn.on('open', () => {
         if (link) {
           conn.send({ type: 'full' });
@@ -79,13 +86,18 @@ export function hostGame(cb) {
         }
         link = wire(conn, {
           onData: cb.onData,
-          onClose: () => { link = null; cb.onLeave(); },
+          onClose: () => {
+            link = null;
+            cb.onLeave();
+          },
         });
         cb.onConnect();
       });
     });
-    peer.on('disconnected', () => { if (!destroyed) peer.reconnect(); });
-    peer.on('error', err => {
+    peer.on('disconnected', () => {
+      if (!destroyed) peer.reconnect();
+    });
+    peer.on('error', (err) => {
       if (err.type === 'unavailable-id' && attempt < 3) {
         peer.destroy();
         start(attempt + 1);
@@ -98,7 +110,7 @@ export function hostGame(cb) {
   if (!peerLibraryMissing(cb)) start(0);
 
   return {
-    send: msg => link?.send(msg),
+    send: (msg) => link?.send(msg),
     leave() {
       destroyed = true;
       link?.close();
@@ -114,7 +126,7 @@ export function joinGame(code, cb) {
   let peer = null;
   let joinTimer = null;
 
-  const fail = message => {
+  const fail = (message) => {
     if (failed) return;
     failed = true;
     clearTimeout(joinTimer);
@@ -124,7 +136,10 @@ export function joinGame(code, cb) {
   if (!peerLibraryMissing(cb)) {
     peer = new window.Peer();
     joinTimer = setTimeout(() => {
-      if (!link) fail("Couldn't reach that game. Ask your friend to check the code, or try another network.");
+      if (!link)
+        fail(
+          "Couldn't reach that game. Ask your friend to check the code, or try another network.",
+        );
     }, JOIN_TIMEOUT_MS);
 
     peer.on('open', () => {
@@ -132,17 +147,20 @@ export function joinGame(code, cb) {
       conn.on('open', () => {
         clearTimeout(joinTimer);
         link = wire(conn, {
-          onData: msg => (msg.type === 'full' ? fail('That game already has two players.') : cb.onData(msg)),
-          onClose: () => { if (!failed) cb.onLeave(); },
+          onData: (msg) =>
+            msg.type === 'full' ? fail('That game already has two players.') : cb.onData(msg),
+          onClose: () => {
+            if (!failed) cb.onLeave();
+          },
         });
         cb.onConnect();
       });
     });
-    peer.on('error', err => fail(describe(err)));
+    peer.on('error', (err) => fail(describe(err)));
   }
 
   return {
-    send: msg => link?.send(msg),
+    send: (msg) => link?.send(msg),
     leave() {
       failed = true;
       clearTimeout(joinTimer);

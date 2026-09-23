@@ -1,0 +1,91 @@
+name: Deploy
+
+# test -> staging environment, main -> production environment.
+# Each deploy first runs the full CI suite. Production waits for a manual
+# approval (configured on the GitHub environment). Deploys are skipped with
+# a notice until a server is configured: see docs/DEPLOYMENT.md.
+on:
+  push:
+    branches: [test, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    needs: ci
+    if: github.ref_name == 'main' || github.ref_name == 'test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    concurrency:
+      group: deploy-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: npm run build
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+
+      - name: Skip upload (no server configured)
+        if: env.DEPLOY_HOST == ''
+        run: echo "::notice title=Deploy skipped::No DEPLOY_HOST secret on this environment yet. See docs/DEPLOYMENT.md."
+
+      - name: Upload to server
+        if: env.DEPLOY_HOST != ''
+        run: scripts/deploy.sh
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+      - name: Check the site serves this commit
+        if: env.DEPLOY_HOST != '' && env.SITE_URL != ''
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS "$SITE_URL/version.json" | grep -q "${GITHUB_SHA::7}"; then
+              echo "Live: $SITE_URL"; exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::$SITE_URL/version.json does not report commit ${GITHUB_SHA::7}"
+          exit 1
+
+  release:
+    name: Tag release
+    needs: deploy
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Create tag and GitHub release for a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists; bump the version in package.json to release again."
+            exit 0
+          fi
+          # Release notes: this version's section of CHANGELOG.md
+          notes=$(awk -v v="$version" 'index($0, "## [" v "]") == 1 { on = 1; next } /^## \[/ { on = 0 } on' CHANGELOG.md)
+          gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes "${notes:-Release $tag}"

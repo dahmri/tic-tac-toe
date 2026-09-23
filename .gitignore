@@ -4,3 +4,6 @@ node_modules/
 .env
 .vscode/
 .idea/
+dist/
+playwright-report/
+test-results/

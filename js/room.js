@@ -16,9 +16,11 @@ export function newRoomCode(rng = Math.random) {
 // Accepts what a person might type ("abc 234", "ABC-234") and returns the
 // canonical code, or null if it can't be a valid code.
 export function normalizeCode(input) {
-  const code = String(input ?? '').toUpperCase().replace(/[\s-]/g, '');
+  const code = String(input ?? '')
+    .toUpperCase()
+    .replace(/[\s-]/g, '');
   if (code.length !== CODE_LENGTH) return null;
-  return [...code].every(ch => ALPHABET.includes(ch)) ? code : null;
+  return [...code].every((ch) => ALPHABET.includes(ch)) ? code : null;
 }
 
 // The host registers under this id, so a friend can find it from the code alone.

@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { winner, empties, emptyBoard, other, LINES } from '../js/rules.js';
+import { winner, empties, emptyBoard, other, LINES } from '../../js/rules.js';
 
-const parse = s => [...s].map(c => (c === '.' ? null : c));
+const parse = (s) => [...s].map((c) => (c === '.' ? null : c));
 
 test('empty board has no result', () => {
   assert.equal(winner(emptyBoard()), null);
@@ -11,7 +11,9 @@ test('empty board has no result', () => {
 test('detects every winning line', () => {
   for (const line of LINES) {
     const b = emptyBoard();
-    line.forEach(i => { b[i] = 'O'; });
+    line.forEach((i) => {
+      b[i] = 'O';
+    });
     assert.deepEqual(winner(b), { p: 'O', line });
   }
 });
