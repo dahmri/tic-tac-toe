@@ -6,7 +6,7 @@ device to a friend, or play a friend on another computer. No build step.
 ## Features
 
 - **Three modes:** vs Computer, Same screen (two players, one device), and Online (two computers).
-- **Two difficulty levels:** *Casual* can be beaten; *Unbeatable* uses minimax and never loses.
+- **Two difficulty levels:** _Casual_ can be beaten; _Unbeatable_ uses minimax and never loses.
 - **Tally-mark scoreboard**, saved in your browser between visits.
 - **Keyboard play:** `1`–`9` place a mark (keypad layout, `7` is top-left), `N` starts a new round.
 - Light and dark themes, works on phones.

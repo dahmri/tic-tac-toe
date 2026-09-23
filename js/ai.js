@@ -41,8 +41,10 @@ export function bestMove(board, me, rng = Math.random) {
     b[i] = me;
     const s = minimax(b, other(me), me, 1);
     b[i] = null;
-    if (s > bestScore) { bestScore = s; moves = [i]; }
-    else if (s === bestScore) moves.push(i);
+    if (s > bestScore) {
+      bestScore = s;
+      moves = [i];
+    } else if (s === bestScore) moves.push(i);
   }
   return moves[Math.floor(rng() * moves.length)];
 }

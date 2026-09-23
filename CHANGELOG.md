@@ -7,6 +7,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+
 - **Online mode:** play a friend on another computer. Start a game to get a
   6-character code or invite link; your friend joins with either. Moves travel
   over a direct browser-to-browser connection (WebRTC via PeerJS), with the
@@ -15,15 +16,18 @@ and the project uses [Semantic Versioning](https://semver.org/).
   code so a friend can rejoin.
 
 ### Changed
+
 - "2 Players" mode is now called "Same screen", to set it apart from Online.
 
 ### Fixed
+
 - Switching modes while the computer was thinking could place its move on
   the next board.
 
 ## [1.0.0] - 2026-09-23
 
 ### Added
+
 - Hand-drawn graph-paper board with animated pencil marks and win line.
 - Play against the computer (Casual or Unbeatable) or a second player.
 - Scoreboard shown as tally marks, saved in the browser.
