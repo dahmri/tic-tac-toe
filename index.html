@@ -123,6 +123,7 @@
             <span id="meFlag" aria-hidden="true"></span>
             <strong id="meName"></strong>
           </span>
+          <button id="statsBtn" type="button" class="btn ghostbtn">Stats</button>
           <button id="profileBtn" type="button" class="btn ghostbtn">Profile</button>
           <button id="logoutBtn" type="button" class="btn ghostbtn">Log out</button>
         </div>
@@ -290,6 +291,43 @@
         <p class="form-msg" role="status"></p>
         <button type="submit" class="btn">Change password</button>
       </form>
+    </dialog>
+
+    <dialog class="dialog stats" id="statsDialog" aria-labelledby="statsTitle">
+      <div class="dialog-head">
+        <h2 id="statsTitle">Your stats</h2>
+        <button type="button" class="btn ghostbtn" data-close>Close</button>
+      </div>
+      <p class="form-msg" id="statsMsg" role="alert"></p>
+      <div id="statsBody" hidden>
+        <h3>Online</h3>
+        <div class="tiles" id="onlineTiles"></div>
+        <dl class="facts" id="onlineFacts"></dl>
+
+        <h3>Most played opponents</h3>
+        <p class="empty" id="opponentsEmpty">No online games yet. Invite someone from the lobby!</p>
+        <table class="table" id="opponentsTable" hidden>
+          <thead>
+            <tr>
+              <th scope="col">Player</th>
+              <th scope="col" class="num">Played</th>
+              <th scope="col" class="num">Won</th>
+              <th scope="col" class="num">Lost</th>
+              <th scope="col" class="num">Drawn</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <h3>Against the computer</h3>
+        <div class="tiles" id="cpuTiles"></div>
+        <p class="note" id="cpuNote"></p>
+
+        <h3>Recent games</h3>
+        <p class="empty" id="historyEmpty">No games yet.</p>
+        <ol class="history" id="historyList"></ol>
+        <button type="button" class="btn ghostbtn" id="moreHistory" hidden>Show more</button>
+      </div>
     </dialog>
 
     <script type="module" src="js/main.js"></script>
