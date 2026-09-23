@@ -1,0 +1,193 @@
+/* Pencil Tic-Tac-Toe — graph-paper theme with light and dark palettes. */
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+:root {
+  --paper: #F6F7F2;
+  --grid: #DDE5E9;
+  --margin: #E9AFA6;
+  --ink: #2A2E35;
+  --muted: #666D75;
+  --x: #2447A8;
+  --o: #C0392B;
+  --hi: #FFF1A0;
+  --chip: #ECEEE6;
+  --chip-on: #2A2E35;
+  --chip-on-ink: #F6F7F2;
+  --display: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #1C2420;
+    --grid: #26312C;
+    --margin: #5B3833;
+    --ink: #E4E8E1;
+    --muted: #99A49E;
+    --x: #93B5FF;
+    --o: #FF8B7B;
+    --hi: #4A4526;
+    --chip: #25302B;
+    --chip-on: #E4E8E1;
+    --chip-on-ink: #1C2420;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1C2420;
+  --grid: #26312C;
+  --margin: #5B3833;
+  --ink: #E4E8E1;
+  --muted: #99A49E;
+  --x: #93B5FF;
+  --o: #FF8B7B;
+  --hi: #4A4526;
+  --chip: #25302B;
+  --chip-on: #E4E8E1;
+  --chip-on-ink: #1C2420;
+}
+
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(90deg, transparent 0 calc(16px + 1.5rem), var(--margin) calc(16px + 1.5rem) calc(16px + 1.5rem + 2px), transparent 0),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100% 100%, 24px 24px, 24px 24px;
+  color: var(--ink);
+  font: 16px/1.5 var(--body);
+  padding-inline: 16px;
+  padding-block: 28px 40px;
+}
+
+.sheet {
+  max-width: 400px;
+  margin: 0 auto;
+  display: grid;
+  gap: 20px;
+}
+
+header { display: grid; gap: 2px; }
+h1 {
+  font: 700 3.25rem/0.95 var(--display);
+  margin: 0;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+h1 .x { color: var(--x); }
+h1 .o { color: var(--o); }
+.sub { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.seg {
+  display: inline-flex;
+  background: var(--chip);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+.seg button {
+  font: 700 0.82rem/1 var(--body);
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-ink); }
+.seg button:focus-visible, .actions button:focus-visible { outline: 2px dashed var(--ink); outline-offset: 2px; }
+
+.status {
+  font: 700 2rem/1.1 var(--display);
+  min-height: 2.2rem;
+  margin: 0;
+}
+.status mark {
+  background: linear-gradient(transparent 35%, var(--hi) 35% 88%, transparent 88%);
+  color: inherit;
+  padding: 0 4px;
+}
+.status .x { color: var(--x); }
+.status .o { color: var(--o); }
+
+.board {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.board > svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.board .gridlines path { stroke: var(--ink); stroke-width: 3.2; fill: none; stroke-linecap: round; }
+.board .winline path { stroke: var(--ink); stroke-width: 6; fill: none; stroke-linecap: round; opacity: 0.85; }
+
+.cell {
+  position: relative;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 10px;
+}
+.cell:disabled { cursor: default; }
+.cell:focus-visible { outline: 2px dashed var(--muted); outline-offset: -8px; }
+.cell svg { position: absolute; inset: 8%; width: 84%; height: 84%; overflow: visible; }
+.cell path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cell .mx path { stroke: var(--x); stroke-width: 8; }
+.cell .mo path { stroke: var(--o); stroke-width: 7; }
+.cell .ghost { opacity: 0; transition: opacity .15s; }
+.cell:not(:disabled):hover .ghost { opacity: 0.18; }
+
+.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ink .28s ease-out forwards; }
+.draw.d2 { animation-delay: .16s; }
+.winline .draw { animation-duration: .45s; animation-delay: .25s; }
+@keyframes ink { to { stroke-dashoffset: 0; } }
+.ghost path { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+
+.board.won .cell:not(.hit) svg:not(.ghost) { opacity: 0.35; transition: opacity .4s .3s; }
+
+.scores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.score { display: grid; gap: 4px; align-content: start; }
+.score .who {
+  font: 700 0.72rem/1 var(--body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.score .tally { min-height: 30px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.score .tally svg { width: 32px; height: 28px; overflow: visible; }
+.score .tally path { fill: none; stroke-width: 2.4; stroke-linecap: round; }
+.score.sx path { stroke: var(--x); }
+.score.so path { stroke: var(--o); }
+.score.sd path { stroke: var(--muted); }
+.score .n { font: 700 1.5rem/1 var(--display); color: var(--muted); }
+.score .zero { font: 500 1.25rem/1 var(--display); color: var(--muted); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.actions button {
+  font: 700 0.9rem/1 var(--body);
+  border-radius: 8px;
+  padding: 11px 16px;
+  cursor: pointer;
+  border: 2px solid var(--ink);
+}
+.actions .primary { background: var(--ink); color: var(--paper); }
+.actions .ghostbtn { background: transparent; color: var(--ink); border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
+
+.hint { margin: 0; font-size: 0.8rem; color: var(--muted); }
+kbd { font: 0.75rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--grid); border-radius: 4px; padding: 2px 5px; background: var(--chip); }
+
+@media (prefers-reduced-motion: reduce) {
+  .draw { animation: none; stroke-dashoffset: 0; }
+  .board.won .cell:not(.hit) svg:not(.ghost) { transition: none; }
+}
