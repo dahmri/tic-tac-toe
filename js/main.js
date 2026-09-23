@@ -19,6 +19,8 @@ const boardEl = $('board');
 const statusEl = $('status');
 const winEl = $('winline');
 
+const zeroScores = () => ({ X: 0, O: 0, D: 0 });
+
 const state = load();
 let board;
 let turn;
@@ -29,7 +31,6 @@ let cpuTimer = null;
 // status: 'starting' | 'waiting' | 'connecting' | 'connected' | 'closed'
 let net = null;
 
-const zeroScores = () => ({ X: 0, O: 0, D: 0 });
 const online = () => state.mode === 'online';
 const isGuest = () => online() && net?.role === 'guest';
 const connected = () => net?.status === 'connected';
