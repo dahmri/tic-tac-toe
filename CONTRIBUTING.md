@@ -4,13 +4,13 @@ This guide covers how code moves from an idea to production.
 
 ## Branches
 
-| Branch      | Purpose                                         | Deploys to                      |
-| ----------- | ----------------------------------------------- | ------------------------------- |
-| `main`      | What's in production. Every merge is a release. | **production** (after approval) |
-| `test`      | Release candidate, checked before production.   | **staging**                     |
-| `dev`       | Integration: finished features land here.       | —                               |
-| `feature/*` | One feature or fix, branched from `dev`.        | —                               |
-| `hotfix/*`  | Urgent production fix, branched from `main`.    | —                               |
+| Branch      | Purpose                                         | Deploys to     |
+| ----------- | ----------------------------------------------- | -------------- |
+| `main`      | What's in production. Every merge is a release. | **production** |
+| `test`      | Release candidate, checked before production.   | **staging**    |
+| `dev`       | Integration: finished features land here.       | —              |
+| `feature/*` | One feature or fix, branched from `dev`.        | —              |
+| `hotfix/*`  | Urgent production fix, branched from `main`.    | —              |
 
 All three long-lived branches are protected: no direct pushes, and CI must
 pass before a pull request can merge.
@@ -55,9 +55,9 @@ gitGraph
    breaking change → major).
 2. Open a PR **`dev → test`**. When it merges, the site deploys to **staging**.
    Check it there.
-3. Open a PR **`test → main`**. When it merges, the production deploy waits
-   for approval in the Actions tab. Once approved, it deploys and the
-   `vN.N.N` tag and GitHub release are created from the changelog.
+3. Open a PR **`test → main`**. When it merges, the site deploys to
+   **production** and the `vN.N.N` tag and GitHub release are created from
+   the changelog.
 
 Use **merge commits** (not squash) for `dev → test` and `test → main`, so the
 three branches share the same history.

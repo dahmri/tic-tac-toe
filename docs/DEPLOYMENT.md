@@ -12,7 +12,7 @@ directly, so there is no backend to run.
 | Pull request      | CI: lint, formatting, unit tests, build, Docker image, browser tests against the image |
 | Merge into `dev`  | CI                                                                                     |
 | Merge into `test` | CI, then deploy to the **staging** environment                                         |
-| Merge into `main` | CI, then **production** deploy after manual approval, then tag and GitHub release      |
+| Merge into `main` | CI, then deploy to the **production** environment, then tag and GitHub release         |
 
 Workflows: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) and
 [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml).

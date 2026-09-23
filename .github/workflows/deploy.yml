@@ -1,9 +1,8 @@
 name: Deploy
 
 # test -> staging environment, main -> production environment.
-# Each deploy first runs the full CI suite. Production waits for a manual
-# approval (configured on the GitHub environment). Deploys are skipped with
-# a notice until a server is configured: see docs/DEPLOYMENT.md.
+# Each deploy first runs the full CI suite. Deploys are skipped with a
+# notice until a server is configured: see docs/DEPLOYMENT.md.
 on:
   push:
     branches: [test, main]
