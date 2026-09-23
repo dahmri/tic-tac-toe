@@ -64,3 +64,45 @@ export const status = (page) => page.locator('#status');
 export async function chooseMode(page, name) {
   await page.getByRole('button', { name, exact: true }).click();
 }
+
+// A second, independent player: own browser context (cookies, storage)
+export async function openPlayer(browser, overrides) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const errors = watchPage(page);
+  const player = await signUp(page, overrides);
+  await page.goto('/');
+  await expect(page.locator('#meName')).toHaveText(player.username);
+  return { context, page, errors, player };
+}
+
+export async function closePlayers(...players) {
+  for (const p of players) {
+    expect(p.errors, `${p.player.username}: page errors`).toEqual([]);
+    await p.context.close();
+  }
+}
+
+export const lobbyRow = (page, username) => page.locator('.player', { hasText: username });
+
+// Opens the lobby and waits until `username` appears in the list
+export async function findInLobby(page, username) {
+  await chooseMode(page, 'Online');
+  await expect(lobbyRow(page, username)).toBeVisible({ timeout: 15_000 });
+}
+
+// Ann (FR) invites Bob (MA), Bob accepts; Ann plays X
+export async function startMatch(browser) {
+  const ann = await openPlayer(browser, { country: 'FR' });
+  const bob = await openPlayer(browser, { country: 'MA' });
+  await findInLobby(ann.page, bob.player.username);
+  await lobbyRow(ann.page, bob.player.username)
+    .getByRole('button', { name: /^Invite/ })
+    .click();
+  const invite = bob.page.locator('.invite', { hasText: ann.player.username });
+  await expect(invite).toContainText('invites you to play');
+  await invite.getByRole('button', { name: 'Accept' }).click();
+  await expect(status(ann.page)).toContainText('Your move');
+  await expect(status(bob.page)).toContainText(`${ann.player.username} is thinking`);
+  return { ann, bob };
+}

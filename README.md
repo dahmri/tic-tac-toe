@@ -15,6 +15,9 @@ accounts; a Node.js game server with PostgreSQL and Redis runs it all.
 - **Three modes:** vs Computer, Same screen (two players, one device), and Online.
 - **Online lobby:** see who is online, filter players by country, and invite one to play.
   They can accept or decline; invitations reach them whatever mode they're in.
+- **Stats:** your online record (played, won, lost, drawn, win rate), win streaks, win
+  rate as X and as O, fastest win, the opponents you've played most and your record
+  against each, your results against the computer, and your full game history.
 - **Two difficulty levels:** _Casual_ can be beaten; _Unbeatable_ uses minimax and never loses.
 - **Tally-mark scoreboard**, saved in your browser between visits.
 - **Keyboard play:** `1`–`9` place a mark (keypad layout, `7` is top-left), `N` starts a new round.
@@ -93,7 +96,8 @@ loses against every possible sequence of moves, and check the account rules,
 password hashing, encryption and the rules of online matches. Integration tests
 drive the API and the live connection against real databases: sign-up, login,
 sessions, profile edits, rate limits, encrypted personal data, who's online,
-invitations, and full matches including two moves racing for the same turn.
+invitations, full matches including two moves racing for the same turn, and
+the statistics those games produce.
 Browser tests play real games, including online matches between two browsers.
 
 ## Project structure
@@ -106,6 +110,7 @@ js/ai.js              Computer opponent (casual + minimax)
 js/account.js         Log in, sign up, profile dialog
 js/lobby.js           Online players, country filter, invitations
 js/live.js            Live connection to the game server (WebSocket)
+js/stats.js           Stats dialog, recording games against the computer
 js/validation.js      Account rules, shared by browser and server
 js/countries.js       Country codes, names and flags
 js/api.js             Calls to the game server

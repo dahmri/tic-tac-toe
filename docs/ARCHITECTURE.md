@@ -18,7 +18,7 @@ How the game is built, and how it grows from one server to millions of players.
 | Site                   | HTML, CSS, vanilla JS | Rendering, input, the computer opponent                  |
 | Web server             | nginx                 | Serves the site; forwards `/api` and `/ws` to the api    |
 | Game server (`server`) | Node.js + Fastify     | Nothing between requests: every instance is identical    |
-| Database               | PostgreSQL 18         | Accounts (and game history and stats, as they are added) |
+| Database               | PostgreSQL 18         | Accounts, game history, statistics                       |
 | Cache and messaging    | Redis 8               | Sessions, rate limits, presence, invitations, live games |
 
 ## Why these choices
@@ -126,19 +126,53 @@ Every message from a browser is checked: its type, that the player is in
 the match, that it's their turn and the square is free. Each connection may
 send at most 60 messages per 10 seconds, and 4 KB per message.
 
+## Game history and statistics
+
+Every finished round is saved in PostgreSQL
+([`server/stats.js`](../server/stats.js),
+[`migrations/002_games.sql`](../server/migrations/002_games.sql)):
+
+| Table          | Holds                                                              |
+| -------------- | ------------------------------------------------------------------ |
+| `games`        | One row per round: players, result, moves, start and end           |
+| `player_games` | One row per player per round, keyed `(user_id, ended_at, game_id)` |
+| `player_stats` | Running totals per player: record, streaks, X/O split, fastest win |
+| `head_to_head` | Running totals per pair of players                                 |
+
+The game and every total it changes are written in one transaction, so the
+numbers always add up, and reading a player's stats is a single-row lookup
+however many games they've played. History is paged by `(ended_at,
+game_id)`, a straight walk down the primary key, never an `OFFSET`.
+Players' rows are always locked in id order, so two games can't deadlock.
+
+**Online rounds** are recorded by the server the moment they end, so their
+results can be trusted. Each round is recorded once (a unique index on
+`match_id, round`); if the database is briefly unreachable, the round waits
+in Redis and is retried every 30 seconds.
+
+**Games against the computer** run in the browser, so the server replays
+the moves before counting them ([`server/cpu-game.js`](../server/cpu-game.js)):
+they must be legal and finished, and the computer's moves must be ones it
+could make. "Unbeatable" must play perfectly (so a win against it is
+refused), "Casual" always takes a winning move. The server works out the
+result itself. They are counted apart from online games.
+
 ## API
 
-| Method   | Path                  | What it does                                    |
-| -------- | --------------------- | ----------------------------------------------- |
-| `POST`   | `/api/account`        | Create an account and log in                    |
-| `POST`   | `/api/session`        | Log in                                          |
-| `DELETE` | `/api/session`        | Log out                                         |
-| `GET`    | `/api/me`             | Your profile                                    |
-| `PATCH`  | `/api/me`             | Change any profile fields                       |
-| `PUT`    | `/api/me/password`    | Change password (logs out your other devices)   |
-| `GET`    | `/api/players/online` | Online players: `?country=FR&offset=0&limit=30` |
-| `GET`    | `/ws`                 | The live connection (WebSocket), see above      |
-| `GET`    | `/api/health`         | `{ ok: true }` when PostgreSQL and Redis answer |
+| Method   | Path                  | What it does                                         |
+| -------- | --------------------- | ---------------------------------------------------- |
+| `POST`   | `/api/account`        | Create an account and log in                         |
+| `POST`   | `/api/session`        | Log in                                               |
+| `DELETE` | `/api/session`        | Log out                                              |
+| `GET`    | `/api/me`             | Your profile                                         |
+| `PATCH`  | `/api/me`             | Change any profile fields                            |
+| `PUT`    | `/api/me/password`    | Change password (logs out your other devices)        |
+| `GET`    | `/api/players/online` | Online players: `?country=FR&offset=0&limit=30`      |
+| `GET`    | `/api/me/stats`       | Your totals, streaks and most played opponents       |
+| `GET`    | `/api/me/games`       | Your game history, newest first: `?cursor=&limit=20` |
+| `POST`   | `/api/games/cpu`      | Record a finished game against the computer          |
+| `GET`    | `/ws`                 | The live connection (WebSocket), see above           |
+| `GET`    | `/api/health`         | `{ ok: true }` when PostgreSQL and Redis answer      |
 
 Errors are JSON: `{ "error": "message", "fields": { "username": "message" } }`.
 

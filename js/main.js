@@ -7,6 +7,7 @@ import { initAccount } from './account.js';
 import { connectLive } from './live.js';
 import { countryFlag } from './countries.js';
 import { handleLobbyMessage, initLobby, lobbyError, resetLobby, setLobby } from './lobby.js';
+import { initStats, recordCpuGame } from './stats.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
@@ -29,6 +30,8 @@ let turn;
 let over;
 let busy = false;
 let cpuTimer = null;
+// The round in progress, recorded when a game against the computer ends
+let round = { moves: [], starter: 'X', diff: 'casual', startedAt: 0 };
 
 // Online: the live connection, the signed-in player, and the current match
 // exactly as the server last sent it (the server is the referee)
@@ -223,9 +226,20 @@ function tally(el, n) {
 function place(i, p) {
   board[i] = p;
   drawMark(i, p);
+  // A game counts at the difficulty it started with, from its first move
+  if (!round.moves.length) round = { ...round, diff: state.diff, startedAt: Date.now() };
+  round.moves.push(i);
   const w = winner(board);
   if (w) {
     over = true;
+    if (state.mode === 'cpu' && state.diff === round.diff) {
+      recordCpuGame({
+        difficulty: round.diff,
+        starter: round.starter,
+        moves: round.moves,
+        seconds: Math.round((Date.now() - round.startedAt) / 1000),
+      });
+    }
     state.scores[w.p]++;
     state.starter = other(state.starter); // alternate who opens the next round
     save();
@@ -281,6 +295,7 @@ function resetBoard() {
   cpuTimer = null;
   board = emptyBoard();
   turn = state.starter;
+  round = { moves: [], starter: turn, diff: state.diff, startedAt: Date.now() };
   over = false;
   busy = false;
   winEl.innerHTML = '';
@@ -446,12 +461,13 @@ $('leave').addEventListener('click', () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
-  if ($('gameView').hidden || $('profileDialog').open) return;
+  if ($('gameView').hidden || document.querySelector('dialog[open]')) return;
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   if (e.key in KEYMAP) humanMove(KEYMAP[e.key]);
   else if (e.key === 'n' || e.key === 'N') newRound();
 });
 
+initStats();
 initLobby({
   send: (msg) => live?.send(msg),
   message: setNetMessage,
