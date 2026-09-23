@@ -62,6 +62,14 @@ export function createUsers(db, dataKey) {
       return rows[0] ? toProfile(rows[0]) : null;
     },
 
+    // What other players may see: never the personal fields
+    async publicProfile(id) {
+      const { rows } = await db.query('SELECT id, username, country FROM users WHERE id = $1', [
+        id,
+      ]);
+      return rows[0] || null;
+    },
+
     async passwordHash(id) {
       const { rows } = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
       return rows[0]?.password_hash ?? null;

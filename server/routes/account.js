@@ -15,7 +15,7 @@ import { COOKIE, SESSION_TTL } from '../sessions.js';
 const TAKEN = { username: 'That username is taken. Try another.' };
 
 export default async function accountRoutes(app) {
-  const { users, sessions, rateLimit, config } = app.ctx;
+  const { users, sessions, rateLimit, presence, config } = app.ctx;
 
   const cookieOptions = {
     path: '/',
@@ -94,8 +94,10 @@ export default async function accountRoutes(app) {
     if (!ok)
       return reply.code(400).send({ error: 'Check the highlighted fields.', fields: errors });
     try {
+      const before = await users.publicProfile(req.userId);
       const user = await users.update(req.userId, value);
       if (!user) return reply.code(401).send({ error: 'Please log in.' });
+      await presence.updateProfile(user, before?.country);
       return { user };
     } catch (err) {
       if (err instanceof UsernameTakenError) {

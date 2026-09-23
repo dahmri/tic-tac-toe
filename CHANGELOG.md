@@ -21,8 +21,19 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Docker Compose stack (nginx, game server, PostgreSQL, Redis) used by CI,
   deployments and local runs. Integration tests against real databases.
 - docs/ARCHITECTURE.md: how the game is built and how it scales.
+- **Online lobby:** see which players are online, filter them by country,
+  and invite one to play. Invitations reach players in any mode and last
+  60 seconds; they can be accepted, declined or cancelled.
+- **Online matches run on the game server,** which checks every move, so
+  nobody can move out of turn or fake a result. Reloading the page rejoins
+  the match; leaving (or staying away for 20 seconds) forfeits a round in
+  progress.
 
 ### Changed
+
+- Online play no longer uses game codes and a direct browser-to-browser
+  connection (PeerJS); the page loads no third-party scripts any more, and
+  its Content-Security-Policy only allows this site.
 
 - CD: merging into `main` now deploys to production automatically, with no
   manual approval step.

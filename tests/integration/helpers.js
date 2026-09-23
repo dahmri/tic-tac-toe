@@ -22,6 +22,7 @@ export async function setup(env = {}) {
   await db.query('TRUNCATE users RESTART IDENTITY CASCADE');
   await redis.flushdb();
   const app = await buildApp({ config, db, redis });
+  await app.ready(); // app.inject() does this itself, app.injectWS() doesn't
 
   return {
     app,
@@ -76,3 +77,53 @@ export function client(app) {
     },
   };
 }
+
+// Opens the live connection (/ws) as the client's player. Messages are
+// queued; next(type) waits for the next message of that type.
+export async function live(app, c) {
+  const ws = await app.injectWS('/ws', { headers: { cookie: c.cookie } });
+  const queue = [];
+  const waiters = [];
+  ws.on('message', (data) => {
+    const msg = JSON.parse(data.toString());
+    const i = waiters.findIndex((w) => w.type === msg.t);
+    if (i >= 0) waiters.splice(i, 1)[0].resolve(msg);
+    else queue.push(msg);
+  });
+  const closed = new Promise((resolve) => ws.on('close', (code) => resolve(code)));
+  const next = (type, timeout = 3000) => {
+    const i = queue.findIndex((m) => m.t === type);
+    if (i >= 0) return Promise.resolve(queue.splice(i, 1)[0]);
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`No '${type}' message within ${timeout} ms`)),
+        timeout,
+      );
+      waiters.push({ type, resolve: (m) => (clearTimeout(timer), resolve(m)) });
+    });
+  };
+  const hello = await next('hello');
+  return {
+    ws,
+    hello,
+    next,
+    closed,
+    queue,
+    send: (msg) => ws.send(JSON.stringify(msg)),
+    close() {
+      ws.terminate();
+      return closed;
+    },
+  };
+}
+
+// Signs up a new player and returns their API client
+export async function player(app, overrides = {}) {
+  const c = client(app);
+  const details = newPlayer(overrides);
+  const res = await c.post('/api/account', details);
+  if (res.status !== 201) throw new Error(JSON.stringify(res.body));
+  return Object.assign(c, { user: res.body.user });
+}
+
+export const wait = (ms) => new Promise((r) => setTimeout(r, ms));

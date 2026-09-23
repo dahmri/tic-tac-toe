@@ -19,7 +19,7 @@ How the game is built, and how it grows from one server to millions of players.
 | Web server             | nginx                 | Serves the site; forwards `/api` and `/ws` to the api    |
 | Game server (`server`) | Node.js + Fastify     | Nothing between requests: every instance is identical    |
 | Database               | PostgreSQL 18         | Accounts (and game history and stats, as they are added) |
-| Cache and messaging    | Redis 8               | Sessions, rate limits (and presence, invitations, games) |
+| Cache and messaging    | Redis 8               | Sessions, rate limits, presence, invitations, live games |
 
 ## Why these choices
 
@@ -77,17 +77,68 @@ code the browser downloads is the game's own.
   unless they come from the site's own pages (`Origin` check), on top of
   the `SameSite` cookie.
 
+## Online players, invitations and matches
+
+While a player has the game open, their browser keeps a WebSocket
+connection to `/ws` ([`server/routes/live.js`](../server/routes/live.js)).
+It is refused before the handshake for anyone not logged in or for pages
+on other sites.
+
+- **Who's online** ([`server/presence.js`](../server/presence.js)): Redis
+  sorted sets of user id → last seen, one for everyone and one per country,
+  so the country filter is a single range read however many players are
+  online. Each server instance refreshes its own players every 30 seconds;
+  anyone not seen for 90 seconds (a crashed instance, a lost network) drops
+  off. A connection counter keeps a player with two tabs online until both
+  close. The lobby asks for one page at a time (`/api/players/online`) and
+  refreshes every 10 seconds while it is on screen, rather than pushing
+  every arrival to every player, which would not scale.
+- **Messages between instances** ([`server/bus.js`](../server/bus.js)):
+  every player has a Redis pub/sub channel. The instance holding their
+  connection listens to it, so an invitation or a move handled by any
+  instance reaches them.
+- **Invitations** ([`server/invites.js`](../server/invites.js)) live for 60
+  seconds in Redis. Accepting, declining and cancelling each start by
+  deleting the invitation, and only the request that actually deleted it
+  goes on, so an invitation can't be both accepted and cancelled.
+- **Matches** ([`server/match.js`](../server/match.js) for the rules,
+  [`server/matches.js`](../server/matches.js) for storage) are played on
+  the server: browsers only send the square they want. The match is stored
+  in Redis and every change is a compare-and-set, so two moves racing for
+  the same turn can't both land. Starting a match claims both players
+  atomically, so nobody ends up in two matches. After a disconnect a player
+  has 20 seconds to come back (a reload rejoins the match); after that, or
+  on **Leave**, a round in progress is won by the other player.
+
+### Live messages
+
+| Direction        | Message                                                           |
+| ---------------- | ----------------------------------------------------------------- |
+| browser → server | `invite {to}`, `invite-accept {id}`, `invite-decline {id}`        |
+|                  | `invite-cancel {id}`, `move {match, square}`                      |
+|                  | `next-round {match}`, `leave {match}`, `ping`                     |
+| server → browser | `hello {me, match, invites}` on connect                           |
+|                  | `match {match}` after every change, to both players               |
+|                  | `invite {invite}`, `invite-sent {invite}`                         |
+|                  | `invite-declined {id, by}`, `invite-gone {id}`, `error {message}` |
+
+Every message from a browser is checked: its type, that the player is in
+the match, that it's their turn and the square is free. Each connection may
+send at most 60 messages per 10 seconds, and 4 KB per message.
+
 ## API
 
-| Method   | Path               | What it does                                    |
-| -------- | ------------------ | ----------------------------------------------- |
-| `POST`   | `/api/account`     | Create an account and log in                    |
-| `POST`   | `/api/session`     | Log in                                          |
-| `DELETE` | `/api/session`     | Log out                                         |
-| `GET`    | `/api/me`          | Your profile                                    |
-| `PATCH`  | `/api/me`          | Change any profile fields                       |
-| `PUT`    | `/api/me/password` | Change password (logs out your other devices)   |
-| `GET`    | `/api/health`      | `{ ok: true }` when PostgreSQL and Redis answer |
+| Method   | Path                  | What it does                                    |
+| -------- | --------------------- | ----------------------------------------------- |
+| `POST`   | `/api/account`        | Create an account and log in                    |
+| `POST`   | `/api/session`        | Log in                                          |
+| `DELETE` | `/api/session`        | Log out                                         |
+| `GET`    | `/api/me`             | Your profile                                    |
+| `PATCH`  | `/api/me`             | Change any profile fields                       |
+| `PUT`    | `/api/me/password`    | Change password (logs out your other devices)   |
+| `GET`    | `/api/players/online` | Online players: `?country=FR&offset=0&limit=30` |
+| `GET`    | `/ws`                 | The live connection (WebSocket), see above      |
+| `GET`    | `/api/health`         | `{ ok: true }` when PostgreSQL and Redis answer |
 
 Errors are JSON: `{ "error": "message", "fields": { "username": "message" } }`.
 

@@ -3,12 +3,19 @@
 
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
+import websocket from '@fastify/websocket';
 import fastifyStatic from '@fastify/static';
 import { resolve } from 'node:path';
 import { createUsers } from './users.js';
 import { createSessions, COOKIE } from './sessions.js';
 import { createRateLimiter } from './rate-limit.js';
+import { createPresence } from './presence.js';
+import { createBus } from './bus.js';
+import { createMatches } from './matches.js';
+import { createInvites } from './invites.js';
 import accountRoutes from './routes/account.js';
+import playersRoutes from './routes/players.js';
+import liveRoutes from './routes/live.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -22,6 +29,9 @@ export async function buildApp({ config, db, redis }) {
     },
   });
 
+  const presence = createPresence(redis);
+  const bus = createBus(redis);
+  const matches = createMatches(redis, { bus });
   app.decorate('ctx', {
     config,
     db,
@@ -29,9 +39,15 @@ export async function buildApp({ config, db, redis }) {
     users: createUsers(db, config.dataKey),
     sessions: createSessions(redis),
     rateLimit: createRateLimiter(redis, config.rateLimits),
+    presence,
+    bus,
+    matches,
+    invites: createInvites(redis, { bus, presence, matches }),
   });
+  app.addHook('onClose', () => bus.close());
 
   await app.register(cookie);
+  await app.register(websocket, { options: { maxPayload: 4096 } });
 
   // Fastify's JSON parser (it refuses __proto__ tricks), except that an
   // empty body, e.g. on a DELETE, simply means "no body"
@@ -93,6 +109,8 @@ export async function buildApp({ config, db, redis }) {
   });
 
   await app.register(accountRoutes);
+  await app.register(playersRoutes);
+  await app.register(liveRoutes);
 
   app.setNotFoundHandler((req, reply) => reply.code(404).send({ error: 'Not found.' }));
 
