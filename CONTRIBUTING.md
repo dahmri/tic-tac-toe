@@ -40,11 +40,13 @@ gitGraph
 2. **Commit in small, logical steps** (see [commit messages](#commit-messages)).
 3. **Check before pushing.**
    ```sh
-   npm run check        # lint + formatting + unit tests
-   npm run test:e2e     # browser tests
+   npm run check              # lint + formatting + unit tests
+   npm run test:integration   # API tests (needs PostgreSQL and Redis)
+   npm run test:e2e           # browser tests
    ```
 4. **Open a pull request into `dev`.** Fill in the template. CI runs lint,
-   unit tests and browser tests against the production Docker image.
+   unit and integration tests, and browser tests against the production
+   Docker stack.
 5. **Merge when CI is green.** The feature branch is deleted automatically.
 
 ### Releasing

@@ -6,6 +6,22 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Player accounts.** Sign up with first name, last name, username, date of
+  birth, country, optional phone number and password; log in and out; edit
+  your profile and change your password at any time. You must be logged in
+  to play. Other players only see your username and country.
+- Game server (Node.js + Fastify) with PostgreSQL for accounts and Redis
+  for sessions and rate limits. Built to run as many identical instances
+  behind nginx.
+- Security: passwords hashed with Argon2id; names, birth dates and phone
+  numbers encrypted in the database with AES-256-GCM; HttpOnly session
+  cookies; login and sign-up rate limits; cross-site request checks.
+- Docker Compose stack (nginx, game server, PostgreSQL, Redis) used by CI,
+  deployments and local runs. Integration tests against real databases.
+- docs/ARCHITECTURE.md: how the game is built and how it scales.
+
 ### Changed
 
 - CD: merging into `main` now deploys to production automatically, with no
