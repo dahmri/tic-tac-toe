@@ -13,9 +13,11 @@ import { createPresence } from './presence.js';
 import { createBus } from './bus.js';
 import { createMatches } from './matches.js';
 import { createInvites } from './invites.js';
+import { createStats } from './stats.js';
 import accountRoutes from './routes/account.js';
 import playersRoutes from './routes/players.js';
 import liveRoutes from './routes/live.js';
+import statsRoutes from './routes/stats.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -31,7 +33,9 @@ export async function buildApp({ config, db, redis }) {
 
   const presence = createPresence(redis);
   const bus = createBus(redis);
-  const matches = createMatches(redis, { bus });
+  const stats = createStats(db, redis, app.log);
+  // Every finished online round goes into the history and statistics
+  const matches = createMatches(redis, { bus, onRoundFinished: stats.recordRound });
   app.decorate('ctx', {
     config,
     db,
@@ -43,8 +47,18 @@ export async function buildApp({ config, db, redis }) {
     bus,
     matches,
     invites: createInvites(redis, { bus, presence, matches }),
+    stats,
   });
-  app.addHook('onClose', () => bus.close());
+
+  // Save rounds that couldn't be recorded earlier (database briefly down)
+  const retry = setInterval(() => {
+    stats.retryPending().catch((err) => app.log.error({ err }, 'Retrying game records failed'));
+  }, 30_000);
+  retry.unref();
+  app.addHook('onClose', () => {
+    clearInterval(retry);
+    return bus.close();
+  });
 
   await app.register(cookie);
   await app.register(websocket, { options: { maxPayload: 4096 } });
@@ -111,6 +125,7 @@ export async function buildApp({ config, db, redis }) {
   await app.register(accountRoutes);
   await app.register(playersRoutes);
   await app.register(liveRoutes);
+  await app.register(statsRoutes);
 
   app.setNotFoundHandler((req, reply) => reply.code(404).send({ error: 'Not found.' }));
 

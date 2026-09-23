@@ -19,7 +19,7 @@ export async function setup(env = {}) {
   const db = createDb(config);
   const redis = createRedis(config);
   await migrate(db, () => {});
-  await db.query('TRUNCATE users RESTART IDENTITY CASCADE');
+  await db.query('TRUNCATE users, games RESTART IDENTITY CASCADE');
   await redis.flushdb();
   const app = await buildApp({ config, db, redis });
   await app.ready(); // app.inject() does this itself, app.injectWS() doesn't

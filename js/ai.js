@@ -32,8 +32,8 @@ function minimax(board, toMove, me, depth) {
   return best;
 }
 
-// Perfect play; picks randomly among equally good moves for variety.
-export function bestMove(board, me, rng = Math.random) {
+// Every move that plays perfectly (all equally good)
+export function bestMoves(board, me) {
   const b = board.slice();
   let bestScore = -Infinity;
   let moves = [];
@@ -46,6 +46,12 @@ export function bestMove(board, me, rng = Math.random) {
       moves = [i];
     } else if (s === bestScore) moves.push(i);
   }
+  return moves;
+}
+
+// Perfect play; picks randomly among equally good moves for variety.
+export function bestMove(board, me, rng = Math.random) {
+  const moves = bestMoves(board, me);
   return moves[Math.floor(rng() * moves.length)];
 }
 
