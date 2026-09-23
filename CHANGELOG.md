@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-09-23
+
 ### Added
 
 - **Online mode:** play a friend on another computer. Start a game to get a
@@ -14,6 +16,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   host's browser validating every move.
 - Detects when the other player disconnects, and the host can keep the same
   code so a friend can rejoin.
+- `/version.json` on every build shows which version and commit is live.
+- Content-Security-Policy and security headers for production.
 
 ### Changed
 
@@ -21,8 +25,18 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- The game failed to load after online mode was added (a startup error).
 - Switching modes while the computer was thinking could place its move on
   the next board.
+
+### Project
+
+- Branching model `feature/* → dev → test → main` with protected branches.
+- ESLint, Prettier and Playwright browser tests (including real online games).
+- CI on every pull request; tests run against the production Docker image.
+- CD: `test` deploys to staging, `main` deploys to production after approval
+  and creates a tagged GitHub release.
+- Contributing guide, deployment guide, PR and issue templates, Dependabot.
 
 ## [1.0.0] - 2026-09-23
 
