@@ -2,9 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
 const CI = !!process.env.CI;
+// Set E2E_BASE_URL to test an already running site (CI points it at the
+// Docker image); otherwise the production build (dist/) is served locally.
+const EXTERNAL_URL = process.env.E2E_BASE_URL;
 
-// Browser tests run against the production build (dist/), so they test
-// exactly what gets deployed.
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
@@ -12,7 +13,7 @@ export default defineConfig({
   retries: CI ? 2 : 0,
   reporter: CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
-    baseURL: `http://127.0.0.1:${PORT}`,
+    baseURL: EXTERNAL_URL || `http://127.0.0.1:${PORT}`,
     trace: 'retain-on-failure',
   },
   projects: [
@@ -25,10 +26,12 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: `npm run build && node scripts/serve.mjs dist`,
-    url: `http://127.0.0.1:${PORT}`,
-    env: { PORT: String(PORT) },
-    reuseExistingServer: !CI,
-  },
+  webServer: EXTERNAL_URL
+    ? undefined
+    : {
+        command: `npm run build && node scripts/serve.mjs dist`,
+        url: `http://127.0.0.1:${PORT}`,
+        env: { PORT: String(PORT) },
+        reuseExistingServer: !CI,
+      },
 });
