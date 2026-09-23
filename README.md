@@ -15,6 +15,8 @@ accounts; a Node.js game server with PostgreSQL and Redis runs it all.
 - **Three modes:** vs Computer, Same screen (two players, one device), and Online.
 - **Online lobby:** see who is online, filter players by country, and invite one to play.
   They can accept or decline; invitations reach them whatever mode they're in.
+- **Ratings and leaderboard:** a skill rating (Elo, starting at 1200) that every online
+  round moves; the leaderboard ranks players worldwide or by country.
 - **Stats:** your online record (played, won, lost, drawn, win rate), win streaks, win
   rate as X and as O, fastest win, the opponents you've played most and your record
   against each, your results against the computer, and your full game history.

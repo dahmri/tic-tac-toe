@@ -33,7 +33,13 @@ test('connected players are listed as online, filtered by country, without yours
   const names = all.players.map((p) => p.username);
   assert.ok(names.includes(fr.user.username) && names.includes(ma.user.username));
   assert.ok(!names.includes(viewer.user.username));
-  assert.deepEqual(Object.keys(all.players[0]).sort(), ['country', 'id', 'playing', 'username']);
+  assert.deepEqual(Object.keys(all.players[0]).sort(), [
+    'country',
+    'id',
+    'playing',
+    'rating',
+    'username',
+  ]);
 
   const france = await onlineList(viewer, '?country=fr');
   assert.ok(france.players.every((p) => p.country === 'FR'));

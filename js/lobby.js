@@ -35,6 +35,11 @@ function who(p) {
   const span = el('span', 'who-line');
   span.append(el('span', 'flag', countryFlag(p.country)), el('strong', 'name', p.username));
   span.querySelector('.flag').setAttribute('aria-hidden', 'true');
+  if (p.rating) {
+    const chip = el('span', 'rating-chip', String(p.rating));
+    chip.title = 'Rating';
+    span.append(chip);
+  }
   return span;
 }
 

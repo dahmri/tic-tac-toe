@@ -34,8 +34,25 @@ export async function buildApp({ config, db, redis }) {
   const presence = createPresence(redis);
   const bus = createBus(redis);
   const stats = createStats(db, redis, app.log);
-  // Every finished online round goes into the history and statistics
-  const matches = createMatches(redis, { bus, onRoundFinished: stats.recordRound });
+  // Every finished online round goes into the history and statistics, and
+  // both players hear how their ratings moved
+  async function roundFinished(finished) {
+    const saved = await stats.recordRound(finished);
+    if (!saved) return;
+    try {
+      const ratings = saved.players;
+      const msg = { t: 'ratings', match: finished.matchId, round: finished.round, ratings };
+      await Promise.all(
+        Object.entries(ratings).map(async ([id, { rating }]) => {
+          await presence.setRating(Number(id), rating);
+          await bus.send(Number(id), msg);
+        }),
+      );
+    } catch (err) {
+      app.log.error({ err }, 'Could not announce new ratings');
+    }
+  }
+  const matches = createMatches(redis, { bus, onRoundFinished: roundFinished });
   app.decorate('ctx', {
     config,
     db,

@@ -33,6 +33,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
   nobody can move out of turn or fake a result. Reloading the page rejoins
   the match; leaving (or staying away for 20 seconds) forfeits a round in
   progress.
+- **Ratings and leaderboard:** every player has a skill rating (Elo),
+  starting at 1200. Each online round moves both players' ratings; beating a
+  stronger player earns more. The result shows the points won or lost, and
+  ratings appear next to names in the lobby and in matches. A new
+  Leaderboard ranks players worldwide or by country, and Stats shows your
+  rating, rank and best rating.
 
 ### Changed
 

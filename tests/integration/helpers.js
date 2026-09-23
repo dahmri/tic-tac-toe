@@ -117,6 +117,45 @@ export async function live(app, c) {
   };
 }
 
+// Starts a match: `x` invites `o`. play(squares) plays them in order, each
+// by whoever's turn it is.
+export async function startMatch(app, x, o) {
+  const a = await live(app, x);
+  const b = await live(app, o);
+  a.send({ t: 'invite', to: o.user.id });
+  const { invite } = await b.next('invite');
+  b.send({ t: 'invite-accept', id: invite.id });
+  const [{ match: m }] = await Promise.all([a.next('match'), b.next('match')]);
+  const socketFor = { [x.user.id]: a, [o.user.id]: b };
+  let current = m;
+  return {
+    id: m.id,
+    a,
+    b,
+    // Plays squares in order; whoever's turn it is moves
+    async play(squares) {
+      for (const square of squares) {
+        const mover = socketFor[current.players[current.turn].id];
+        mover.send({ t: 'move', match: m.id, square });
+        const [next] = await Promise.all([a.next('match'), b.next('match')]);
+        current = next.match;
+      }
+      return current;
+    },
+    async nextRound() {
+      a.send({ t: 'next-round', match: m.id });
+      const [next] = await Promise.all([a.next('match'), b.next('match')]);
+      current = next.match;
+    },
+    // Ends the match, so both players are free to play again
+    async leave() {
+      a.send({ t: 'leave', match: m.id });
+      await Promise.all([a.next('match'), b.next('match')]);
+    },
+    close: () => Promise.all([a.close(), b.close()]),
+  };
+}
+
 // Signs up a new player and returns their API client
 export async function player(app, overrides = {}) {
   const c = client(app);
