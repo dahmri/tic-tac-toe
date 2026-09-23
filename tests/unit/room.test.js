@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { newRoomCode, normalizeCode, peerIdFor, codeFromHash, inviteLink, CODE_LENGTH } from '../js/room.js';
+import {
+  newRoomCode,
+  normalizeCode,
+  peerIdFor,
+  codeFromHash,
+  inviteLink,
+  CODE_LENGTH,
+} from '../../js/room.js';
 
 test('new codes are valid and the right length', () => {
   for (let n = 0; n < 200; n++) {

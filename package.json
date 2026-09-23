@@ -1,12 +1,29 @@
 {
   "name": "pencil-tic-tac-toe",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A hand-drawn tic-tac-toe game for the browser: play the computer or a friend.",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "start": "npx --yes serve .",
-    "test": "node --test tests/*.test.js"
+    "start": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "npm run build && node scripts/serve.mjs dist",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test \"tests/unit/**/*.test.js\"",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run format:check && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "eslint": "10.11.0",
+    "globals": "17.12.0",
+    "prettier": "3.9.9"
   },
   "license": "MIT"
 }

@@ -1,16 +1,69 @@
 name: CI
 
+# Runs on every pull request and on pushes to dev. The Deploy workflow
+# calls it before deploying test and main, so nothing ships untested.
 on:
-  push:
-    branches: [main]
   pull_request:
+  push:
+    branches: [dev]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  quality:
+    name: Lint & unit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
       - run: npm test
+      - run: npm run build
+
+  e2e:
+    name: Browser tests
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      # Test the production Docker image (nginx + security headers), not a dev server
+      - name: Build Docker image
+        run: docker build --build-arg GIT_COMMIT=${{ github.sha }} -t tic-tac-toe:ci .
+      - name: Start container
+        run: |
+          docker run -d --name ttt -p 8080:80 tic-tac-toe:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/version.json && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8080/ | grep -q "<title>Pencil Tic-Tac-Toe</title>"
+      - name: Run browser tests against the container
+        run: npm run test:e2e
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8080
+      - name: Container logs
+        if: failure()
+        run: docker logs ttt
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

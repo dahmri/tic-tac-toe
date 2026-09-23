@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { stateMessage, parseState, parseMove } from '../js/protocol.js';
+import { stateMessage, parseState, parseMove } from '../../js/protocol.js';
 
 const game = () => ({
   board: ['X', null, 'O', null, 'X', null, null, null, null],

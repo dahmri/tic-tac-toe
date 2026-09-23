@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { winner, empties, emptyBoard } from '../js/rules.js';
-import { bestMove, casualMove, findWinningMove } from '../js/ai.js';
+import { winner, empties, emptyBoard } from '../../js/rules.js';
+import { bestMove, casualMove, findWinningMove } from '../../js/ai.js';
 
-const parse = s => [...s].map(c => (c === '.' ? null : c));
+const parse = (s) => [...s].map((c) => (c === '.' ? null : c));
 const first = () => 0;
 
 test('findWinningMove spots an open line', () => {
@@ -20,18 +20,27 @@ test('unbeatable blocks a threat', () => {
 });
 
 test('casual always takes a win', () => {
-  assert.equal(casualMove(parse('OO.XX....'), 'O', () => 0.99), 2);
+  assert.equal(
+    casualMove(parse('OO.XX....'), 'O', () => 0.99),
+    2,
+  );
 });
 
 test('casual blocks when the roll allows it', () => {
-  assert.equal(casualMove(parse('XX..O....'), 'O', () => 0), 2);
+  assert.equal(
+    casualMove(parse('XX..O....'), 'O', () => 0),
+    2,
+  );
 });
 
 // Play every possible sequence of human (X) moves against the unbeatable
 // computer (O), with either side opening. O must never lose.
 function explore(board, toMove, counts) {
   const w = winner(board);
-  if (w) { counts[w.p]++; return; }
+  if (w) {
+    counts[w.p]++;
+    return;
+  }
   if (toMove === 'O') {
     const b = board.slice();
     b[bestMove(b, 'O', first)] = 'O';
