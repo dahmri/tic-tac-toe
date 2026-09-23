@@ -2,7 +2,7 @@
 # Build:  docker build --build-arg GIT_COMMIT=$(git rev-parse HEAD) -t tic-tac-toe .
 # Run:    docker run -d -p 8080:80 tic-tac-toe
 
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 ARG GIT_COMMIT=unknown
 ENV GIT_COMMIT=$GIT_COMMIT
