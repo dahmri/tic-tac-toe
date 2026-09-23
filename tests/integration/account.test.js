@@ -165,6 +165,15 @@ test('cross-site requests are refused', async () => {
   assert.equal(res.status, 403);
 });
 
+test('same-site requests pass, including on a non-standard port', async () => {
+  const res = await client(t.app).post(
+    '/api/session',
+    { username: 'nobody_here', password: 'x' },
+    { origin: 'http://games.example:8080', host: 'games.example:8080' },
+  );
+  assert.equal(res.status, 401); // past the Origin check, then a normal failed login
+});
+
 test('the health check reports the database and Redis', async () => {
   assert.deepEqual((await client(t.app).get('/api/health')).body, { ok: true });
 });
