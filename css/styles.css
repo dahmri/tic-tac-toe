@@ -360,50 +360,121 @@ h1 .o {
   background: var(--paper);
 }
 .lobby {
+  display: grid;
+  gap: 10px;
+}
+.lobby-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 12px;
+  justify-content: space-between;
+  gap: 8px 12px;
 }
-.lobby .or {
+.panel-title {
+  font: 700 1.6rem/1 var(--display);
+  margin: 0;
+}
+.panel-title .count {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 1.2rem;
 }
-.join,
-.share {
-  display: flex;
-  gap: 8px;
-  min-width: 0;
-}
-.join input,
-.share input {
-  font:
-    700 1rem/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
+.filter {
+  font: 0.9rem/1.2 var(--body);
   color: var(--ink);
   background: var(--chip);
   border: 2px solid transparent;
   border-radius: 8px;
-  padding: 9px 10px;
+  padding: 6px 8px;
+  max-width: 100%;
   min-width: 0;
 }
-.join input {
-  width: 7.5em;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-.share input {
-  flex: 1;
-  font-size: 0.78rem;
-  font-weight: 400;
-  color: var(--muted);
-}
-.join input:focus,
-.share input:focus {
+.filter:focus {
   outline: none;
   border-color: var(--ink);
+}
+.players {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.player {
+  display: flex;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--grid);
+  min-width: 0;
+}
+.player:last-child {
+  border-bottom: 0;
+}
+.player .where {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-right: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.player .btn {
+  padding: 7px 12px;
+  flex-shrink: 0;
+}
+.who-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tag {
+  font: 700 0.72rem/1 var(--body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Invitations: notes stuck above the board, in every mode */
+.invites {
+  display: grid;
+  gap: 8px;
+}
+.invite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  background: var(--hi);
+  border-radius: 10px;
+}
+.invite.outgoing {
+  background: var(--chip);
+}
+.invite-text {
+  margin-right: auto;
+  min-width: 0;
+}
+.invite .timer {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.invite .btn {
+  padding: 8px 12px;
+}
+.opponent {
+  font: 700 1.3rem/1 var(--display);
 }
 .room {
   display: grid;
@@ -424,15 +495,6 @@ h1 .o {
 .room-head .btn {
   margin-left: auto;
   padding-inline: 4px;
-}
-.code {
-  font:
-    700 1.6rem/1 ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    monospace;
-  letter-spacing: 0.14em;
-  font-variant-numeric: tabular-nums;
 }
 .room-role {
   margin: 0;

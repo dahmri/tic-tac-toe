@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       name="description"
-      content="A hand-drawn tic-tac-toe game: play the computer or a friend."
+      content="A hand-drawn tic-tac-toe game: play the computer, a friend, or players online."
     />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://0.peerjs.com wss://0.peerjs.com; img-src 'self' data:; base-uri 'self'; form-action 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; base-uri 'self'; form-action 'none'"
     />
     <title>Pencil Tic-Tac-Toe</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -127,6 +127,8 @@
           <button id="logoutBtn" type="button" class="btn ghostbtn">Log out</button>
         </div>
 
+        <div class="invites" id="invites" aria-live="polite"></div>
+
         <div class="controls">
           <div class="seg" role="group" aria-label="Opponent">
             <button id="mode-cpu" type="button" data-mode="cpu" aria-pressed="true">
@@ -151,35 +153,26 @@
 
         <section class="online" id="onlinePanel" aria-label="Online game" hidden>
           <div class="lobby" id="lobby">
-            <button id="hostBtn" type="button" class="btn primary">Start a game</button>
-            <span class="or">or join one</span>
-            <form class="join" id="joinForm" autocomplete="off">
-              <label class="sr-only" for="joinCode">Game code</label>
-              <input
-                id="joinCode"
-                name="joinCode"
-                type="text"
-                inputmode="text"
-                maxlength="7"
-                placeholder="Code"
-                spellcheck="false"
-                autocapitalize="characters"
-              />
-              <button type="submit" class="btn">Join</button>
-            </form>
+            <div class="lobby-head">
+              <h2 class="panel-title">
+                Players online <span class="count" id="onlineCount"></span>
+              </h2>
+              <label class="sr-only" for="countryFilter">Show players from</label>
+              <select id="countryFilter" class="filter">
+                <option value="">All countries</option>
+              </select>
+            </div>
+            <ul class="players" id="playerList" aria-label="Players online"></ul>
+            <p class="empty" id="playersEmpty" hidden></p>
+            <button id="morePlayers" type="button" class="btn ghostbtn" hidden>Show more</button>
           </div>
           <div class="room" id="roomInfo" hidden>
             <div class="room-head">
-              <span class="who">Game code</span>
-              <strong class="code" id="roomCode">······</strong>
+              <span class="who">Playing</span>
+              <strong class="opponent" id="opponentName"></strong>
               <button id="leave" type="button" class="btn ghostbtn">Leave</button>
             </div>
             <p class="room-role" id="roomRole"></p>
-            <div class="share" id="shareRow">
-              <label class="sr-only" for="invite">Invite link</label>
-              <input id="invite" type="text" readonly />
-              <button id="copyLink" type="button" class="btn">Copy link</button>
-            </div>
           </div>
           <p class="net-msg" id="netMsg" role="alert"></p>
         </section>
@@ -299,7 +292,6 @@
       </form>
     </dialog>
 
-    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
     <script type="module" src="js/main.js"></script>
   </body>
 </html>

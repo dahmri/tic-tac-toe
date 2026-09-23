@@ -13,7 +13,7 @@ export default [
   },
   {
     files: ['js/**/*.js'],
-    languageOptions: { globals: { ...globals.browser, Peer: 'readonly' } },
+    languageOptions: { globals: globals.browser },
   },
   {
     files: ['server/**/*.js', 'tests/**/*.js', 'scripts/**/*.mjs', '*.config.js'],
