@@ -12,6 +12,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   link to your confirmed email address (it works once, for an hour, and
   stops working if your password changes). Recovery codes still work:
   choose "Use a recovery code instead".
+- **Friends.** Tap the ☆ next to any player (in the lobby, or your last
+  opponent) or add them by username. Your friends show at the top of the
+  Online lobby, online ones first, with an Invite button when they're
+  free. Friends are one way, like bookmarks: adding someone asks nothing
+  of them.
 
 ## [1.7.0] - 2026-09-24
 

@@ -328,6 +328,27 @@
               >
               <button id="cancelSearch" type="button" class="btn ghostbtn">Cancel</button>
             </div>
+            <div class="friends" id="friendsBox">
+              <h2 class="panel-title">Friends <span class="count" id="friendsCount"></span></h2>
+              <ul class="players" id="friendList" aria-label="Friends"></ul>
+              <p class="empty" id="friendsEmpty">
+                No friends yet. Add players you like with the ☆ next to their name, or by username.
+              </p>
+              <form class="add-friend" id="addFriendForm" novalidate>
+                <label class="sr-only" for="friendName">Add a friend by username</label>
+                <input
+                  id="friendName"
+                  name="username"
+                  placeholder="Add a friend by username"
+                  autocomplete="off"
+                  spellcheck="false"
+                  autocapitalize="none"
+                  maxlength="20"
+                />
+                <button type="submit" class="btn">Add</button>
+              </form>
+              <p class="form-msg" id="friendMsg" role="alert"></p>
+            </div>
             <div class="lobby-head">
               <h2 class="panel-title">
                 Players online <span class="count" id="onlineCount"></span>

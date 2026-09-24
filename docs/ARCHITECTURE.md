@@ -258,6 +258,9 @@ sentence to its translation, and anything missing falls back to English.
 | `POST`   | `/api/me/email/resend`      | Send the confirmation email again                        |
 | `POST`   | `/api/email/verify`         | Confirm an address: `{ token }` from the email link      |
 | `GET`    | `/api/players/online`       | Online players: `?country=FR&offset=0&limit=30`          |
+| `GET`    | `/api/friends`              | Your friends, with whether they're online or playing     |
+| `POST`   | `/api/friends`              | Add a friend: `{ id }` or `{ username }`                 |
+| `DELETE` | `/api/friends/:id`          | Remove a friend                                          |
 | `GET`    | `/api/me/stats`             | Your totals, streaks and most played opponents           |
 | `GET`    | `/api/me/games`             | Your game history, newest first: `?cursor=&limit=20`     |
 | `POST`   | `/api/games/cpu`            | Record a finished game against the computer              |
