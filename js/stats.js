@@ -5,6 +5,7 @@
 import { api } from './api.js';
 import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag } from './countries.js';
+import { openReplay } from './replay.js';
 
 const $ = (id) => document.getElementById(id);
 let nextCursor = null;
@@ -80,8 +81,8 @@ function renderSummary({ stats, opponents }) {
     ['Win rate as O', `${pct(o.asO.winRate)} of ${o.asO.played}`],
     ['Fastest win', o.fastestWin ? `${o.fastestWin} moves` : '—'],
     ['Opponents', String(opponents.total)],
-    ['Won when they left', String(o.winsByForfeit)],
-    ['Left mid-round', String(o.lossesByForfeit)],
+    ['Won when they left or timed out', String(o.winsByForfeit)],
+    ['Left or ran out of time', String(o.lossesByForfeit)],
     ['Playing since', since],
   ]);
 
@@ -113,14 +114,20 @@ function renderSummary({ stats, opponents }) {
 }
 
 const OUTCOME = { W: 'Won', L: 'Lost', D: 'Draw' };
+const LEVEL = { casual: 'Casual', medium: 'Medium', hard: 'Unbeatable' };
 
 function historyItem(g) {
   const li = el('li', 'history-item');
   const who = el('span', 'game-who');
   if (g.opponent) who.append('vs ', playerName(g.opponent));
-  else who.append(`vs Computer (${g.difficulty === 'hard' ? 'Unbeatable' : 'Casual'})`);
+  else {
+    // In the 3-mark game the top level is "Hard": it isn't unbeatable there
+    const level = g.variant === 'vanish' && g.difficulty === 'hard' ? 'Hard' : LEVEL[g.difficulty];
+    who.append(`vs Computer (${level ?? 'Casual'})`);
+  }
   const outcome = el('strong', `outcome o-${g.outcome}`, OUTCOME[g.outcome]);
   const detail = [`as ${g.symbol}`, `${g.moves} moves`];
+  if (g.variant === 'vanish') detail.unshift('3 marks');
   if (g.forfeit) detail.push(g.outcome === 'W' ? 'they left' : 'you left');
   const meta = el(
     'span',
@@ -131,6 +138,14 @@ function historyItem(g) {
     meta.append(' · ', deltaEl(g.ratingChange));
   }
   li.append(outcome, who, meta);
+  if (g.squares?.length) {
+    const b = el('button', 'btn ghostbtn replay-btn', 'Replay');
+    b.type = 'button';
+    const title = `${OUTCOME[g.outcome]} · ${who.textContent}`;
+    b.setAttribute('aria-label', `Replay: ${title}`);
+    b.addEventListener('click', () => openReplay(g, title));
+    li.append(b);
+  }
   return li;
 }
 
@@ -164,6 +179,41 @@ async function open() {
 // never waits for this.
 export function recordCpuGame(game) {
   api('POST', '/api/games/cpu', game).catch(() => {});
+}
+
+// Guests' games wait in this browser, and join their stats if they sign up
+const GUEST_GAMES_KEY = 'pencil-ttt-guest-games';
+const GUEST_GAMES_MAX = 100;
+
+export function recordGuestGame(game) {
+  try {
+    const games = JSON.parse(localStorage.getItem(GUEST_GAMES_KEY) || '[]');
+    games.push({ ...game, endedAt: Date.now() });
+    localStorage.setItem(GUEST_GAMES_KEY, JSON.stringify(games.slice(-GUEST_GAMES_MAX)));
+  } catch {
+    /* storage unavailable: nothing to carry over */
+  }
+}
+
+// Sends the guest games to the new account; returns how many counted
+export async function uploadGuestGames() {
+  let games;
+  try {
+    games = JSON.parse(localStorage.getItem(GUEST_GAMES_KEY) || '[]');
+    localStorage.removeItem(GUEST_GAMES_KEY);
+  } catch {
+    return 0;
+  }
+  let added = 0;
+  for (const game of Array.isArray(games) ? games : []) {
+    try {
+      await api('POST', '/api/games/cpu', game);
+      added++;
+    } catch {
+      /* a game the server doesn't accept is skipped */
+    }
+  }
+  return added;
 }
 
 export function initStats() {

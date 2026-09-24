@@ -60,6 +60,8 @@ test('a win ends the round, scores it, and produces a record', () => {
     result: 'X',
     forfeit: false,
     moves: [0, 3, 1, 4, 2],
+    variant: 'classic',
+    starter: 'X',
     startedAt: 1000,
     endedAt: 2000,
   });
@@ -114,4 +116,42 @@ test('versions only go up', () => {
   const a = applyMove(m, 1, 0).match;
   const b = applyMove(a, 2, 1).match;
   assert.ok(m.version < a.version && a.version < b.version);
+});
+
+test('vanish matches: a fourth mark wipes the oldest, and the round is recorded with its rules', () => {
+  const m = newMatch({ id: 'v1', x: ann, o: bob, variant: 'vanish', now: 1000 });
+  // X 0, O 3, X 1, O 4, X 8, O 6 -> X plays 7: X's 0 vanishes
+  const { match } = play(m, [0, 3, 1, 4, 8, 6, 7]);
+  assert.equal(match.board[0], null);
+  assert.deepEqual(
+    [1, 7, 8].map((i) => match.board[i]),
+    ['X', 'X', 'X'],
+  );
+  assert.equal(match.over, false, '1 7 8 is not a line');
+  // O plays 2: O's 3 vanishes, leaving 2 4 6, a diagonal
+  const { match: after, finished } = play(match, [2]);
+  assert.equal(after.result, 'O');
+  assert.equal(finished.variant, 'vanish');
+  assert.equal(finished.starter, 'X');
+});
+
+test('classic is the default and fills the board', () => {
+  const m = fresh();
+  assert.equal(m.variant, 'classic');
+  const { match } = play(m, [0, 1, 2, 4, 3, 5, 7, 6, 8]);
+  assert.equal(match.result, 'D');
+});
+
+test('running out of time gives the round to the other player', async () => {
+  const { timeUp } = await import('../../server/match.js');
+  const m = newMatch({ id: 't1', x: ann, o: bob, turnMs: 30_000, now: 1000 });
+  assert.equal(m.deadline, 31_000);
+  assert.equal(timeUp(m, 30_999).match, m, 'not yet');
+  const { match, finished } = timeUp(m, 31_000);
+  assert.equal(match.result, 'O');
+  assert.equal(match.timeout, true);
+  assert.equal(finished.forfeit, true);
+  const moved = applyMove(m, 1, 4, 5000).match;
+  assert.equal(moved.deadline, 35_000, 'each move restarts the clock');
+  assert.equal(nextRound(match, 1, 40_000).match.deadline, 70_000);
 });

@@ -6,6 +6,50 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-09-24
+
+### Added
+
+- **3 marks rules.** A new rule set for every mode (vs Computer, Same
+  screen and Online): each player keeps only their last three marks, and
+  a fourth makes the oldest one vanish. The mark about to go is drawn
+  faded. The board never fills up, so games rarely end in a draw. Pick
+  **Classic** or **3 marks** above the board; invitations and quick match
+  use your choice, and quick match only pairs players who picked the same
+  rules. Against the computer the top level is called **Hard** here: it
+  looks seven moves ahead, but it isn't unbeatable.
+- **Medium computer.** Between Casual and Unbeatable: it always takes a
+  win and blocks yours, and plays well most of the time, but slips now
+  and then.
+- **Hints.** The **Hint** button (or <kbd>H</kbd>) highlights a good square
+  to play, against the computer or on the same screen. Not available
+  online.
+- **Replays.** Every game in your Stats history has a **Replay** button:
+  watch it play back move by move, or step through it with the controls.
+- **Move clock online.** Each player has 30 seconds per move in an online
+  match, shown as a countdown under the status (red for the last 10).
+  Running out of time loses the round, so nobody can stall a game.
+- **Reactions online.** Send a quick 👍 👏 😂 😮 😱 🔥 🤝 😅 during a match.
+  It floats up over the board for both players. Only these emoji can be
+  sent, and at most one every 1.5 seconds.
+- **Forgot your password?** You get a recovery code when you sign up;
+  with it, **Forgot your password?** on the log-in screen sets a new
+  password. Using it logs out your other devices and gives you a fresh
+  code. Make a new code any time in your profile (players who signed up
+  before today can make their first one there).
+- **Download your data** from your profile: your profile, stats and every
+  game, as a JSON file.
+- **Delete your account** from your profile, with your password. Your
+  stats and games against the computer go with it; your online games stay
+  in your opponents' histories as "Deleted player".
+- **Public leaderboard.** Guests can open the leaderboard too.
+- **Guest games carry over.** Games a guest plays against the computer
+  are added to their stats when they create an account.
+- **Install it, play offline.** The game can be installed as an app
+  (Add to Home Screen, or the install button in the address bar) and
+  keeps working without a connection after one visit: play the computer
+  or a friend as a guest. Updates still arrive as soon as you're online.
+
 ## [1.4.0] - 2026-09-24
 
 ### Added

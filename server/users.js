@@ -28,11 +28,11 @@ export function createUsers(db, dataKey) {
   }
 
   return {
-    async create(fields, passwordHash) {
+    async create(fields, passwordHash, recoveryHash = null) {
       try {
         const { rows } = await db.query(
-          `INSERT INTO users (username, country, avatar, pii, password_hash)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO users (username, country, avatar, pii, password_hash, recovery_hash)
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING id, username, country, avatar, pii, created_at`,
           [
             fields.username,
@@ -40,6 +40,7 @@ export function createUsers(db, dataKey) {
             fields.avatar,
             sealPII(pick(fields, PII_FIELDS), dataKey),
             passwordHash,
+            recoveryHash,
           ],
         );
         return toProfile(rows[0]);
@@ -109,6 +110,31 @@ export function createUsers(db, dataKey) {
         if (isUniqueViolation(err)) throw new UsernameTakenError();
         throw err;
       }
+    },
+
+    // For a password reset: the account and its recovery code's hash
+    async findRecovery(username) {
+      const { rows } = await db.query(
+        'SELECT id, username, recovery_hash FROM users WHERE lower(username) = lower($1)',
+        [username],
+      );
+      return rows[0] || null;
+    },
+
+    async setRecoveryHash(id, hash) {
+      await db.query('UPDATE users SET recovery_hash = $2, updated_at = now() WHERE id = $1', [
+        id,
+        hash,
+      ]);
+    },
+
+    // Deletes the account and everything that is only about this player.
+    // Online games stay in opponents' histories (see migration 006).
+    async remove(id) {
+      await db.tx(async (client) => {
+        await client.query(`DELETE FROM games WHERE mode = 'cpu' AND x_id = $1`, [id]);
+        await client.query('DELETE FROM users WHERE id = $1', [id]);
+      });
     },
 
     async setPasswordHash(id, passwordHash) {

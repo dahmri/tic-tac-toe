@@ -7,6 +7,7 @@ import {
   createDecipheriv,
   createHash,
   randomBytes,
+  randomInt,
   timingSafeEqual,
 } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -77,6 +78,25 @@ export function openPII(sealed, key) {
   decipher.setAuthTag(sealed.subarray(13, 29));
   const json = Buffer.concat([decipher.update(sealed.subarray(29)), decipher.final()]);
   return JSON.parse(json.toString('utf8'));
+}
+
+// Recovery codes: 20 characters from an alphabet without look-alikes
+// (no 0/O, 1/I/L), shown as XXXXX-XXXXX-XXXXX-XXXXX: about 99 random bits.
+// Only a hash is stored. Typed codes are matched ignoring case, spaces and
+// dashes.
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export function newRecoveryCode() {
+  const chars = Array.from({ length: 20 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]);
+  return chars.join('').match(/.{5}/g).join('-');
+}
+export const normalizeRecoveryCode = (code) =>
+  typeof code === 'string' ? code.toUpperCase().replace(/[\s-]/g, '') : '';
+export const hashRecoveryCode = (code) => hashToken(normalizeRecoveryCode(code));
+
+// Compares two hashes without leaking where they differ
+export function sameHash(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
 // Session tokens: 256 random bits for the cookie; only their SHA-256 is

@@ -12,6 +12,11 @@
       content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self'; img-src 'self' data:; base-uri 'self'; form-action 'none'"
     />
     <title>Pencil Tic-Tac-Toe</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#f6f7f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1c2420" media="(prefers-color-scheme: dark)" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -49,7 +54,42 @@
             <input name="password" type="password" autocomplete="current-password" required />
           </label>
           <p class="form-msg" role="alert"></p>
-          <button type="submit" class="btn primary">Log in</button>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Log in</button>
+            <button type="button" class="btn ghostbtn" id="forgotBtn">Forgot your password?</button>
+          </div>
+        </form>
+
+        <form class="form" id="resetForm" novalidate hidden>
+          <p class="help">
+            Use the recovery code you saved when you signed up. It lets you choose a new password.
+          </p>
+          <label class="field">
+            <span>Username</span>
+            <input name="username" autocomplete="username" required spellcheck="false" />
+          </label>
+          <label class="field">
+            <span>Recovery code</span>
+            <input
+              name="recoveryCode"
+              autocomplete="off"
+              required
+              spellcheck="false"
+              autocapitalize="characters"
+              placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+            />
+            <small class="err" data-err="recoveryCode"></small>
+          </label>
+          <label class="field">
+            <span>New password</span>
+            <input name="newPassword" type="password" autocomplete="new-password" required />
+            <small class="err" data-err="newPassword"></small>
+          </label>
+          <p class="form-msg" role="alert"></p>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Set new password</button>
+            <button type="button" class="btn ghostbtn" id="backToLogin">Back to log in</button>
+          </div>
         </form>
 
         <form class="form" id="signupForm" novalidate hidden>
@@ -124,8 +164,8 @@
         <div class="guest-cta">
           <button id="guestBtn" type="button" class="btn">Play as a guest 👻</button>
           <small class="help"
-            >No account needed: play the computer or a friend on this screen. Online games, stats
-            and the leaderboard need a free account.</small
+            >No account needed: play the computer or a friend on this screen. Online games and stats
+            need a free account; sign up later and your games come with you.</small
           >
         </div>
       </section>
@@ -148,9 +188,7 @@
           >
             🔊
           </button>
-          <button id="leaderboardBtn" type="button" class="btn ghostbtn" data-member>
-            Leaderboard
-          </button>
+          <button id="leaderboardBtn" type="button" class="btn ghostbtn">Leaderboard</button>
           <button id="statsBtn" type="button" class="btn ghostbtn" data-member>Stats</button>
           <button id="profileBtn" type="button" class="btn ghostbtn" data-member>Profile</button>
           <button id="logoutBtn" type="button" class="btn ghostbtn" data-member>Log out</button>
@@ -177,10 +215,27 @@
             <button id="diff-casual" type="button" data-diff="casual" aria-pressed="true">
               Casual
             </button>
+            <button id="diff-medium" type="button" data-diff="medium" aria-pressed="false">
+              Medium
+            </button>
             <button id="diff-hard" type="button" data-diff="hard" aria-pressed="false">
               Unbeatable
             </button>
           </div>
+        </div>
+
+        <div class="rules-row" id="rulesRow">
+          <div class="seg" role="group" aria-label="Rules" id="variantGroup">
+            <button id="variant-classic" type="button" data-variant="classic" aria-pressed="true">
+              Classic
+            </button>
+            <button id="variant-vanish" type="button" data-variant="vanish" aria-pressed="false">
+              3 marks
+            </button>
+          </div>
+          <p class="rule-note" id="ruleNote" hidden>
+            You keep only your last 3 marks: the faded one vanishes when you play again.
+          </p>
         </div>
 
         <section class="guest-locked" id="guestLocked" aria-label="Online game" hidden>
@@ -229,11 +284,14 @@
               <button id="leave" type="button" class="btn ghostbtn">Leave</button>
             </div>
             <p class="room-role" id="roomRole"></p>
+            <div class="reactions" id="reactions" role="group" aria-label="Send a reaction"></div>
           </div>
           <p class="net-msg" id="netMsg" role="alert"></p>
+          <p class="sr-only" id="reactionSaid" aria-live="polite"></p>
         </section>
 
         <p class="status" id="status" aria-live="polite"></p>
+        <p class="turn-clock" id="turnClock" hidden></p>
 
         <div class="board" id="board">
           <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
@@ -244,6 +302,7 @@
           </svg>
           <svg class="winline" id="winline" viewBox="0 0 300 300" aria-hidden="true"></svg>
           <svg class="confetti" id="confetti" viewBox="0 0 300 300" aria-hidden="true"></svg>
+          <div class="reaction-feed" id="reactionFeed" aria-hidden="true"></div>
         </div>
 
         <section class="scores" aria-label="Score">
@@ -263,11 +322,12 @@
 
         <div class="actions">
           <button id="next" type="button" class="primary">New round</button>
+          <button id="hintBtn" type="button" class="ghostbtn">Hint</button>
           <button id="reset" type="button" class="ghostbtn">Wipe scores</button>
         </div>
         <p class="hint">
           Tip: press <kbd>1</kbd>–<kbd>9</kbd> to play a square (keypad layout, <kbd>7</kbd> is
-          top-left), <kbd>N</kbd> for a new round.
+          top-left), <kbd>N</kbd> for a new round, <kbd>H</kbd> for a hint.
         </p>
       </div>
     </main>
@@ -352,6 +412,60 @@
         <p class="form-msg" role="status"></p>
         <button type="submit" class="btn">Change password</button>
       </form>
+
+      <h3>Recovery code</h3>
+      <form class="form" id="recoveryForm" novalidate>
+        <p class="help">
+          If you forget your password, a recovery code lets you set a new one. Making a new code
+          replaces your old one.
+        </p>
+        <input name="username" autocomplete="username" hidden />
+        <label class="field">
+          <span>Your password</span>
+          <input name="password" type="password" autocomplete="current-password" required />
+          <small class="err" data-err="password"></small>
+        </label>
+        <p class="form-msg" role="status"></p>
+        <button type="submit" class="btn">Make a new recovery code</button>
+      </form>
+
+      <h3>Your data</h3>
+      <p class="help">
+        Download everything we keep about you: your profile, stats and every game, as a JSON file.
+      </p>
+      <a class="btn" id="exportLink" href="/api/me/export" download>Download my data</a>
+
+      <h3>Delete account</h3>
+      <form class="form" id="deleteForm" novalidate>
+        <p class="help">
+          This deletes your profile, stats and games against the computer for good. Your online
+          games stay in your opponents' histories as "Deleted player".
+        </p>
+        <input name="username" autocomplete="username" hidden />
+        <label class="field">
+          <span>Your password</span>
+          <input name="password" type="password" autocomplete="current-password" required />
+          <small class="err" data-err="password"></small>
+        </label>
+        <p class="form-msg" role="alert"></p>
+        <button type="submit" class="btn danger">Delete my account</button>
+      </form>
+    </dialog>
+
+    <dialog class="dialog" id="recoveryDialog" aria-labelledby="recoveryTitle">
+      <div class="dialog-head">
+        <h2 id="recoveryTitle">Save your recovery code</h2>
+      </div>
+      <p class="help" id="recoveryIntro">
+        If you ever forget your password, this code lets you set a new one. We can't show it again,
+        so write it down or keep it in a password manager.
+      </p>
+      <p class="recovery-code"><code id="recoveryCode"></code></p>
+      <p class="form-msg" id="recoveryNote" role="status"></p>
+      <div class="form-actions">
+        <button type="button" class="btn" id="copyRecovery">Copy</button>
+        <button type="button" class="btn primary" id="recoverySaved">I've saved it</button>
+      </div>
     </dialog>
 
     <dialog class="dialog stats" id="statsDialog" aria-labelledby="statsTitle">
@@ -423,6 +537,32 @@
         Everyone starts at 1200. Each online round moves your rating: beating a stronger player
         earns more. Games against the computer don't count.
       </p>
+    </dialog>
+
+    <dialog class="dialog replay" id="replayDialog" aria-labelledby="replayTitle">
+      <div class="dialog-head">
+        <h2 id="replayTitle">Replay</h2>
+        <button type="button" class="btn ghostbtn" data-close>Close</button>
+      </div>
+      <p class="replay-who" id="replayWho"></p>
+      <div class="board mini" id="replayBoard" aria-label="Replay board">
+        <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
+          <path d="M101 6 C98 80 103 190 99 294" />
+          <path d="M199 8 C202 100 197 210 201 292" />
+          <path d="M6 100 C90 97 200 103 294 99" />
+          <path d="M8 201 C110 203 190 197 292 200" />
+        </svg>
+      </div>
+      <p class="replay-step" id="replayStep" aria-live="polite"></p>
+      <div class="replay-controls">
+        <button id="replayFirst" type="button" class="btn ghostbtn" aria-label="First move">
+          ⏮
+        </button>
+        <button id="replayBack" type="button" class="btn ghostbtn" aria-label="Back">◀</button>
+        <button id="replayPlay" type="button" class="btn" aria-label="Play">▶ Play</button>
+        <button id="replayNext" type="button" class="btn ghostbtn" aria-label="Next">▶</button>
+        <button id="replayLast" type="button" class="btn ghostbtn" aria-label="Last move">⏭</button>
+      </div>
     </dialog>
 
     <script type="module" src="js/main.js"></script>
