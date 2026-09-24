@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-09-24
+
 ### Added
 
 - **3 marks rules.** A new rule set for every mode (vs Computer, Same
