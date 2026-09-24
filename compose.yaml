@@ -8,7 +8,15 @@
 
 name: tic-tac-toe
 
+# Logs rotate at 10 MB, five files kept, so they can't fill the disk
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '5'
+
 x-api: &api
+  logging: *logging
   build:
     context: .
     target: api
@@ -39,6 +47,7 @@ services:
       args:
         GIT_COMMIT: ${GIT_COMMIT:-unknown}
     image: tic-tac-toe-web:${GIT_COMMIT:-local}
+    logging: *logging
     ports:
       - '${WEB_PORT:-8080}:80'
     depends_on:
@@ -70,6 +79,7 @@ services:
 
   db:
     image: postgres:18-alpine
+    logging: *logging
     environment:
       POSTGRES_USER: tictactoe
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -85,6 +95,7 @@ services:
 
   redis:
     image: redis:8-alpine
+    logging: *logging
     # Append-only file so sessions survive a restart; never evict keys,
     # since sessions and live games must not silently disappear
     command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']

@@ -13,6 +13,7 @@ import { checkAchievements } from './achievements-ui.js';
 import { setSound, sound, soundOn } from './sound.js';
 import { onLangChange, t } from './i18n.js';
 import { initLanguage } from './language.js';
+import { initMonitor } from './monitor.js';
 import {
   celebrate,
   clearBoard,
@@ -55,7 +56,9 @@ import {
   variant,
 } from './online.js';
 
-// First, before anything writes to the page
+// First: report errors from here on, and pick the language before
+// anything writes to the page
+initMonitor();
 initLanguage();
 
 // Keypad layout: 7 8 9 on top, 1 2 3 on the bottom

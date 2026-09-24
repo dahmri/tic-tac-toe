@@ -6,6 +6,7 @@ import cookie from '@fastify/cookie';
 import websocket from '@fastify/websocket';
 import fastifyStatic from '@fastify/static';
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { createUsers } from './users.js';
 import { createSessions, COOKIE } from './sessions.js';
 import { createRateLimiter } from './rate-limit.js';
@@ -30,6 +31,9 @@ import friendsRoutes from './routes/friends.js';
 import puzzleRoutes from './routes/puzzles.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const { version: VERSION } = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+);
 
 export async function buildApp({ config, db, redis }) {
   const app = Fastify({
@@ -180,13 +184,39 @@ export async function buildApp({ config, db, redis }) {
     return reply.code(500).send({ error: 'Something went wrong on our side. Try again.' });
   });
 
+  // For uptime checks: 200 with the version when the database and Redis
+  // answer, 503 when they don't
   app.get('/api/health', async (req, reply) => {
     try {
       await Promise.all([db.query('SELECT 1'), redis.ping()]);
-      return { ok: true };
+      return { ok: true, version: VERSION };
     } catch {
-      return reply.code(503).send({ ok: false });
+      return reply.code(503).send({ ok: false, version: VERSION });
     }
+  });
+
+  // Errors from players' browsers (js/monitor.js), written to the log
+  const text = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
+  app.post('/api/client-errors', async (req, reply) => {
+    const r = await app.ctx.rateLimit(`client-errors:${req.ip}`, 30, 3600);
+    if (r.ok) {
+      const b = req.body || {};
+      req.log.error(
+        {
+          clientError: {
+            kind: text(b.kind, 20),
+            message: text(b.message, 300),
+            stack: text(b.stack, 1500),
+            page: text(b.page, 200),
+            lang: text(b.lang, 5),
+            userAgent: text(b.userAgent, 200),
+          },
+          userId: req.userId,
+        },
+        'Error in a browser',
+      );
+    }
+    return reply.code(204).send();
   });
 
   await app.register(accountRoutes);

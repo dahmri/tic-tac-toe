@@ -1,0 +1,41 @@
+name: Uptime
+
+# Checks the live site every 15 minutes. When it's down, this run fails,
+# and GitHub emails the repository's owner about the failed scheduled run
+# (Settings > Notifications > Actions). Does nothing until the production
+# environment has a SITE_URL variable (see docs/DEPLOYMENT.md).
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Site is up
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    env:
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - name: Check the site, the API, PostgreSQL and Redis
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "::notice title=Uptime check skipped::No SITE_URL variable on the production environment yet."
+            exit 0
+          fi
+          # Three tries a minute apart, so a restart during a deploy isn't an alert
+          for i in 1 2 3; do
+            if health=$(curl -fsS --max-time 10 "$SITE_URL/api/health") \
+               && echo "$health" | grep -q '"ok":true' \
+               && curl -fsS --max-time 10 -o /dev/null "$SITE_URL/"; then
+              echo "Up: $health"
+              exit 0
+            fi
+            [ "$i" -lt 3 ] && sleep 60
+          done
+          echo "::error title=Site down::$SITE_URL is not answering, or /api/health reports a problem."
+          exit 1
