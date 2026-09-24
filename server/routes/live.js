@@ -161,6 +161,7 @@ export default async function liveRoutes(app) {
 
     // Error messages in the page's language (/ws?lang=fr)
     const lang = pickLang(req.query.lang);
+    /** @param {Record<string, any>} message */
     const send = ({ template, vars, ...msg }) => {
       if (socket.readyState !== socket.OPEN) return;
       const out =
@@ -228,13 +229,8 @@ export default async function liveRoutes(app) {
         if (reply?.t) send(reply);
       } catch (err) {
         if (err instanceof InviteError || err instanceof MatchError) {
-          send({
-            t: 'error',
-            message: err.message,
-            template: err.template,
-            vars: err.vars,
-            re: msg.t,
-          });
+          const { template, vars } = /** @type {any} */ (err);
+          send({ t: 'error', message: err.message, template, vars, re: msg.t });
         } else {
           app.log.error(err);
           send({ t: 'error', message: 'Something went wrong on our side. Try again.', re: msg.t });

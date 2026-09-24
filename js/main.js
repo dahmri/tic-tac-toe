@@ -64,7 +64,8 @@ initLanguage();
 // Keypad layout: 7 8 9 on top, 1 2 3 on the bottom
 const KEYMAP = { 7: 0, 8: 1, 9: 2, 4: 3, 5: 4, 6: 5, 1: 6, 2: 7, 3: 8 };
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 const statusEl = $('status');
 
 let cpuTimer = null;
@@ -129,19 +130,25 @@ function render() {
   $('ruleNote').hidden = variant() !== 'vanish';
   document
     .querySelectorAll('[data-variant]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === settings.variant));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.variant === settings.variant)),
+    );
   $('hintBtn').hidden = online() || puzzle;
   $('hintBtn').disabled = !humanTurn || game.busy;
   document
     .querySelectorAll('[data-mode]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === settings.mode));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.mode === settings.mode)),
+    );
   document
     .querySelectorAll('[data-diff]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.diff === settings.diff));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.diff === settings.diff)),
+    );
 
   renderOnline();
   $('board').hidden = online() && !inMatch();
-  document.querySelector('.scores').hidden = (online() && !inMatch()) || puzzle;
+  $('scores').hidden = (online() && !inMatch()) || puzzle;
   $('next').disabled = (online() && !inMatch()) || (online() && !game.over);
   $('reset').hidden = online();
   $('next').closest('.actions').hidden = (online() && !inMatch()) || puzzle;
@@ -312,8 +319,10 @@ initPuzzle({ render });
 
 document
   .querySelectorAll('[data-mode]')
-  .forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
-document.querySelectorAll('[data-diff]').forEach((b) =>
+  .forEach((/** @type {HTMLElement} */ b) =>
+    b.addEventListener('click', () => setMode(b.dataset.mode)),
+  );
+document.querySelectorAll('[data-diff]').forEach((/** @type {HTMLElement} */ b) =>
   b.addEventListener('click', () => {
     if (settings.diff === b.dataset.diff) return;
     settings.diff = b.dataset.diff;
@@ -323,7 +332,9 @@ document.querySelectorAll('[data-diff]').forEach((b) =>
 );
 document
   .querySelectorAll('[data-variant]')
-  .forEach((b) => b.addEventListener('click', () => setVariant(b.dataset.variant)));
+  .forEach((/** @type {HTMLElement} */ b) =>
+    b.addEventListener('click', () => setVariant(b.dataset.variant)),
+  );
 $('next').addEventListener('click', newRound);
 $('hintBtn').addEventListener('click', showHint);
 function renderSound() {

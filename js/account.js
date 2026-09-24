@@ -11,7 +11,8 @@ import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
 import { uploadGuestGames } from './stats.js';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 
 // Guests play on this device only, without an account; remembered so a
 // reload doesn't send them back to the log-in form
@@ -19,6 +20,7 @@ const GUEST_KEY = 'pencil-ttt-guest';
 
 let user = null;
 let guest = false;
+/** @type {{ onSignIn: (user?: any) => void, onSignOut: () => void, onGuest: () => void, onEmailState: (user?: any) => void }} */
 let handlers = { onSignIn() {}, onSignOut() {}, onGuest() {}, onEmailState() {} };
 
 export const currentUser = () => user;
@@ -87,6 +89,7 @@ function fillAvatars(form) {
   );
 }
 
+/** @returns {Record<string, any>} */
 const formData = (form) => Object.fromEntries(new FormData(form));
 
 function showErrors(form, fields = {}, message = '') {
@@ -128,7 +131,9 @@ function show(view) {
 function setAuthTab(tab) {
   document
     .querySelectorAll('[data-auth]')
-    .forEach((b) => b.setAttribute('aria-selected', String(b.dataset.auth === tab)));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.setAttribute('aria-selected', String(b.dataset.auth === tab)),
+    );
   $('loginForm').hidden = tab !== 'login';
   $('signupForm').hidden = tab !== 'signup';
   for (const id of ['resetForm', 'resetMailForm', 'newPasswordForm']) $(id).hidden = true;
@@ -143,8 +148,12 @@ function renderMe() {
   $('meAvatar').title = t(guest ? GUEST_AVATAR.name : avatarName(avatar));
   $('meName').textContent = guest ? t('Guest') : user.username;
   $('meFlag').textContent = guest ? '' : countryFlag(user.country);
-  document.querySelectorAll('[data-member]').forEach((b) => (b.hidden = guest));
-  document.querySelectorAll('[data-guest]').forEach((b) => (b.hidden = !guest));
+  document
+    .querySelectorAll('[data-member]')
+    .forEach((/** @type {HTMLElement} */ b) => (b.hidden = guest));
+  document
+    .querySelectorAll('[data-guest]')
+    .forEach((/** @type {HTMLElement} */ b) => (b.hidden = !guest));
   renderEmailNotice();
 }
 
@@ -500,7 +509,9 @@ export async function initAccount(callbacks) {
 
   document
     .querySelectorAll('[data-auth]')
-    .forEach((b) => b.addEventListener('click', () => setAuthTab(b.dataset.auth)));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.addEventListener('click', () => setAuthTab(b.dataset.auth)),
+    );
 
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();

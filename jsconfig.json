@@ -1,0 +1,26 @@
+{
+  // Type-checks the JavaScript as it is (npm run typecheck): no build step,
+  // no TypeScript files. Types come from the code and a few JSDoc comments.
+  "compilerOptions": {
+    "checkJs": true,
+    // Not strict: the aim is catching real mistakes (a misspelt property,
+    // a wrong argument count, a call on the wrong type), not annotating
+    // every parameter
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "allowJs": true,
+    "noEmit": true,
+    "target": "es2024",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2024", "dom", "dom.iterable"],
+    "types": ["node"],
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    // Libraries' own JavaScript isn't ours to check
+    "maxNodeModuleJsDepth": 0
+  },
+  // sw.js runs in a service worker, not a page: it's left to ESLint
+  "include": ["js/**/*.js", "server/**/*.js", "scripts/**/*.mjs", "types/**/*.d.ts"]
+}

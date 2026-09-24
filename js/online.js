@@ -16,7 +16,8 @@ import { t } from './i18n.js';
 import { celebrate, drawWin, isWon, syncMarks } from './board.js';
 import { game, saveSettings, settings, zeroScores } from './game.js';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 
 let live = null;
 let liveStatus = 'offline'; // 'connecting' | 'online' | 'offline'

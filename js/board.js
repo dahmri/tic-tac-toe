@@ -9,7 +9,8 @@ const CENTER = (i) => [50 + (i % 3) * 100, 50 + Math.floor(i / 3) * 100];
 const STAR = 'M0 -12 L3 -3 L12 -3 L5 3 L8 12 L0 6 L-8 12 L-5 3 L-12 -3 L-3 -3 Z';
 const SPIRAL = 'M0 0 C4 -4 9 1 5 6 C0 11 -9 5 -6 -3 C-2 -12 12 -10 12 1';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 const boardEl = $('board');
 const winEl = $('winline');
 const confettiEl = $('confetti');
