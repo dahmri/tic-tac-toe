@@ -3,6 +3,7 @@
 // on "vs Computer" still hears from a friend.
 
 import { api } from './api.js';
+import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, countryName, sortedCountries } from './countries.js';
 import { sound } from './sound.js';
 
@@ -38,7 +39,9 @@ const el = (tag, cls, text) => {
 
 function who(p) {
   const span = el('span', 'who-line');
-  span.append(el('span', 'flag', countryFlag(p.country)), el('strong', 'name', p.username));
+  const avatar = el('span', 'avatar', avatarEmoji(p.avatar));
+  avatar.title = avatarName(p.avatar);
+  span.append(avatar, el('span', 'flag', countryFlag(p.country)), el('strong', 'name', p.username));
   span.querySelector('.flag').setAttribute('aria-hidden', 'true');
   if (p.rating) {
     const chip = el('span', 'rating-chip', String(p.rating));

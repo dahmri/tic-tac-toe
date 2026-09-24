@@ -1,7 +1,7 @@
 // Online players, for the lobby.
 //
 //   GET /api/players/online?country=FR&offset=0&limit=30
-//     -> { total, players: [{ id, username, country, playing }] }
+//     -> { total, players: [{ id, username, country, avatar, rating, playing }] }
 
 import { isCountryCode } from '../../js/countries.js';
 

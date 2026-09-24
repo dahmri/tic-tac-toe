@@ -9,9 +9,12 @@ accounts; a Node.js game server with PostgreSQL and Redis runs it all.
 
 ## Features
 
-- **Player accounts:** sign up with your name, username, date of birth, country and an
-  optional phone number; edit your profile or password at any time. Other players only
-  see your username and country, and personal details are stored encrypted.
+- **Play as a guest:** no account needed to play the computer or a friend on the same
+  screen. Guests get the 👻 avatar; online games, stats and the leaderboard need an account.
+- **Player accounts:** sign up with your name, username, a funny avatar (🦖 🦥 🥑 🦙 and
+  more), date of birth, country and an optional phone number; edit your profile, avatar or
+  password at any time. Other players only see your username, avatar and country, and
+  personal details are stored encrypted.
 - **Three modes:** vs Computer, Same screen (two players, one device), and Online.
 - **Online lobby:** see who is online, filter players by country, and invite one to play.
   They can accept or decline; invitations reach them whatever mode they're in.
@@ -123,6 +126,7 @@ js/live.js            Live connection to the game server (WebSocket)
 js/stats.js           Stats dialog, recording games against the computer
 js/sound.js           Sound effects (Web Audio API) and the mute setting
 js/validation.js      Account rules, shared by browser and server
+js/avatars.js         The avatars players pick from, and the guest's
 js/countries.js       Country codes, names and flags
 js/api.js             Calls to the game server
 js/main.js            UI: rendering, input, scoring, online matches

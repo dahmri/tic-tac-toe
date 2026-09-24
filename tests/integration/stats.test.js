@@ -47,6 +47,7 @@ test('online rounds are recorded for both players, with head-to-head totals', as
       id: bob.user.id,
       username: bob.user.username,
       country: 'MA',
+      avatar: 'octopus',
       played: 3,
       won: 1,
       lost: 1,

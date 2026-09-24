@@ -2,7 +2,7 @@
 //
 //   online            sorted set: user id -> last time seen (ms)
 //   online:<CC>       the same, per country, for the country filter
-//   player:<id>       hash: public profile (username, country, rating)
+//   player:<id>       hash: public profile (username, country, avatar, rating)
 //   conns:<id>        open connections across all instances
 //
 // A player is online while they have the game open in at least one tab.
@@ -41,6 +41,8 @@ export function createPresence(redis) {
           user.username,
           'country',
           user.country,
+          'avatar',
+          user.avatar,
           'rating',
           user.rating ?? START_RATING,
         )
@@ -77,7 +79,15 @@ export function createPresence(redis) {
     async updateProfile(user, previousCountry) {
       const m = redis
         .multi()
-        .hset(`player:${user.id}`, 'username', user.username, 'country', user.country);
+        .hset(
+          `player:${user.id}`,
+          'username',
+          user.username,
+          'country',
+          user.country,
+          'avatar',
+          user.avatar,
+        );
       if (previousCountry && previousCountry !== user.country) {
         const score = await redis.zscore(setKey(previousCountry), user.id);
         m.zrem(setKey(previousCountry), user.id);
@@ -112,15 +122,22 @@ export function createPresence(redis) {
         .slice(0, limit);
       const m = redis.multi();
       for (const id of pageIds)
-        m.hmget(`player:${id}`, 'username', 'country', 'rating').exists(`ingame:${id}`);
+        m.hmget(`player:${id}`, 'username', 'country', 'avatar', 'rating').exists(`ingame:${id}`);
       const res = pageIds.length ? await m.exec() : [];
 
       const players = pageIds
         .map((id, i) => {
-          const [username, cc, rating] = res[i * 2][1];
+          const [username, cc, avatar, rating] = res[i * 2][1];
           const playing = res[i * 2 + 1][1] === 1;
           return username
-            ? { id, username, country: cc, rating: Number(rating) || START_RATING, playing }
+            ? {
+                id,
+                username,
+                country: cc,
+                avatar,
+                rating: Number(rating) || START_RATING,
+                playing,
+              }
             : null;
         })
         .filter(Boolean);
@@ -134,14 +151,15 @@ export function createPresence(redis) {
     },
 
     async profile(userId) {
-      const [username, country, rating] = await redis.hmget(
+      const [username, country, avatar, rating] = await redis.hmget(
         `player:${userId}`,
         'username',
         'country',
+        'avatar',
         'rating',
       );
       return username
-        ? { id: userId, username, country, rating: Number(rating) || START_RATING }
+        ? { id: userId, username, country, avatar, rating: Number(rating) || START_RATING }
         : null;
     },
   };
