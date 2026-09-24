@@ -21,6 +21,7 @@ export function createUsers(db, dataKey) {
       id: row.id,
       username: row.username,
       country: row.country,
+      avatar: row.avatar,
       ...openPII(row.pii, dataKey),
       createdAt: row.created_at,
     };
@@ -30,12 +31,13 @@ export function createUsers(db, dataKey) {
     async create(fields, passwordHash) {
       try {
         const { rows } = await db.query(
-          `INSERT INTO users (username, country, pii, password_hash)
-           VALUES ($1, $2, $3, $4)
-           RETURNING id, username, country, pii, created_at`,
+          `INSERT INTO users (username, country, avatar, pii, password_hash)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING id, username, country, avatar, pii, created_at`,
           [
             fields.username,
             fields.country,
+            fields.avatar,
             sealPII(pick(fields, PII_FIELDS), dataKey),
             passwordHash,
           ],
@@ -57,7 +59,7 @@ export function createUsers(db, dataKey) {
 
     async profile(id) {
       const { rows } = await db.query(
-        'SELECT id, username, country, pii, created_at FROM users WHERE id = $1',
+        'SELECT id, username, country, avatar, pii, created_at FROM users WHERE id = $1',
         [id],
       );
       return rows[0] ? toProfile(rows[0]) : null;
@@ -66,7 +68,7 @@ export function createUsers(db, dataKey) {
     // What other players may see: never the personal fields
     async publicProfile(id) {
       const { rows } = await db.query(
-        `SELECT u.id, u.username, u.country, coalesce(s.rating, ${START_RATING}) AS rating
+        `SELECT u.id, u.username, u.country, u.avatar, coalesce(s.rating, ${START_RATING}) AS rating
          FROM users u LEFT JOIN player_stats s ON s.user_id = u.id WHERE u.id = $1`,
         [id],
       );
@@ -84,16 +86,22 @@ export function createUsers(db, dataKey) {
       try {
         return await db.tx(async (client) => {
           const { rows } = await client.query(
-            'SELECT id, username, country, pii, created_at FROM users WHERE id = $1 FOR UPDATE',
+            'SELECT id, username, country, avatar, pii, created_at FROM users WHERE id = $1 FOR UPDATE',
             [id],
           );
           if (!rows[0]) return null;
           const next = { ...toProfile(rows[0]), ...changes };
           const { rows: updated } = await client.query(
-            `UPDATE users SET username = $2, country = $3, pii = $4, updated_at = now()
+            `UPDATE users SET username = $2, country = $3, avatar = $4, pii = $5, updated_at = now()
              WHERE id = $1
-             RETURNING id, username, country, pii, created_at`,
-            [id, next.username, next.country, sealPII(pick(next, PII_FIELDS), dataKey)],
+             RETURNING id, username, country, avatar, pii, created_at`,
+            [
+              id,
+              next.username,
+              next.country,
+              next.avatar,
+              sealPII(pick(next, PII_FIELDS), dataKey),
+            ],
           );
           return toProfile(updated[0]);
         });

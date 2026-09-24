@@ -2,6 +2,7 @@
 // server (the check that counts). Every function returns cleaned values and
 // a map of field -> message for anything that isn't acceptable.
 
+import { isAvatar } from './avatars.js';
 import { isCountryCode } from './countries.js';
 
 export const MIN_AGE = 13;
@@ -66,6 +67,11 @@ function checkCountry(value) {
   return [v, isCountryCode(v) ? null : 'Choose your country.'];
 }
 
+function checkAvatar(value) {
+  const v = text(value);
+  return [v, isAvatar(v) ? null : 'Pick an avatar.'];
+}
+
 // Optional: empty means "no phone number"
 function checkPhone(value) {
   const v = text(value).replace(/[\s().-]/g, '');
@@ -92,6 +98,7 @@ const PROFILE_CHECKS = {
   firstName: (v) => checkName(v, 'first name'),
   lastName: (v) => checkName(v, 'last name'),
   username: checkUsername,
+  avatar: checkAvatar,
   birthDate: checkBirthDate,
   country: checkCountry,
   phone: checkPhone,

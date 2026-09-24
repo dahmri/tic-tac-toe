@@ -1,17 +1,42 @@
-// Accounts in the browser: log in, sign up, the profile dialog, log out.
+// Accounts in the browser: log in, sign up, play as a guest, the profile
+// dialog, log out.
 // Forms are checked with the same rules as the server for instant feedback;
 // the server still has the final say.
 
 import { api } from './api.js';
+import { AVATARS, GUEST_AVATAR, avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
 
 const $ = (id) => document.getElementById(id);
 
+// Guests play on this device only, without an account; remembered so a
+// reload doesn't send them back to the log-in form
+const GUEST_KEY = 'pencil-ttt-guest';
+
 let user = null;
-let handlers = { onSignIn() {}, onSignOut() {}, onProfile() {} };
+let guest = false;
+let handlers = { onSignIn() {}, onSignOut() {}, onGuest() {}, onProfile() {} };
 
 export const currentUser = () => user;
+export const isGuest = () => guest;
+
+function rememberGuest(on) {
+  try {
+    if (on) localStorage.setItem(GUEST_KEY, '1');
+    else localStorage.removeItem(GUEST_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function wasGuest() {
+  try {
+    return localStorage.getItem(GUEST_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 /* ---------- Form helpers ---------- */
 
@@ -31,18 +56,44 @@ function birthDateLimit() {
   return d.toISOString().slice(0, 10);
 }
 
+// One radio button per avatar: native keyboard and screen reader support
+function fillAvatars(form) {
+  const grid = form.querySelector('[data-avatars]');
+  grid.replaceChildren(
+    ...AVATARS.map(({ id, emoji, name }) => {
+      const label = document.createElement('label');
+      label.className = 'avatar-option';
+      label.title = name;
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'avatar';
+      input.value = id;
+      input.className = 'sr-only';
+      input.setAttribute('aria-label', name);
+      const face = document.createElement('span');
+      face.className = 'avatar-face';
+      face.setAttribute('aria-hidden', 'true');
+      face.textContent = emoji;
+      label.append(input, face);
+      return label;
+    }),
+  );
+}
+
 const formData = (form) => Object.fromEntries(new FormData(form));
 
 function showErrors(form, fields = {}, message = '') {
   form.querySelectorAll('[data-err]').forEach((el) => {
     const msg = fields[el.dataset.err] || '';
     el.textContent = msg;
+    // A group of radio buttons is marked on its fieldset
     const input = form.elements[el.dataset.err];
-    if (input) input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    const target = input instanceof Element ? input : el.closest('fieldset');
+    target?.setAttribute('aria-invalid', msg ? 'true' : 'false');
   });
   form.querySelector('.form-msg').textContent = message;
   const first = form.querySelector('[aria-invalid="true"]');
-  first?.focus();
+  (first?.matches('fieldset') ? first.querySelector('input') : first)?.focus();
 }
 
 // Disables the form while a request runs, and reports its errors in place
@@ -79,32 +130,61 @@ function setAuthTab(tab) {
 }
 
 function renderMe() {
-  $('meName').textContent = user.username;
-  $('meFlag').textContent = countryFlag(user.country);
+  const avatar = guest ? GUEST_AVATAR.id : user.avatar;
+  $('meAvatar').textContent = avatarEmoji(avatar);
+  $('meAvatar').title = guest ? GUEST_AVATAR.name : avatarName(avatar);
+  $('meName').textContent = guest ? 'Guest' : user.username;
+  $('meFlag').textContent = guest ? '' : countryFlag(user.country);
+  document.querySelectorAll('[data-member]').forEach((b) => (b.hidden = guest));
+  document.querySelectorAll('[data-guest]').forEach((b) => (b.hidden = !guest));
 }
 
 function signedIn(u) {
   user = u;
+  guest = false;
+  rememberGuest(false);
   renderMe();
   show('game');
   handlers.onSignIn(user);
 }
 
-function signedOut() {
+function playAsGuest() {
   user = null;
+  guest = true;
+  rememberGuest(true);
+  renderMe();
+  show('game');
+  handlers.onGuest();
+}
+
+function signedOut(tab = 'login') {
+  user = null;
+  guest = false;
+  rememberGuest(false);
   $('loginForm').reset();
   $('signupForm').reset();
   fillCountries($('signupForm').elements.country);
   show('auth');
-  setAuthTab('login');
+  setAuthTab(tab);
   handlers.onSignOut();
 }
+
+// From guest play to the forms, to make an account or log in
+export const leaveGuest = () => signedOut('signup');
 
 /* ---------- Profile dialog ---------- */
 
 function openProfile() {
   const form = $('profileForm');
-  for (const key of ['firstName', 'lastName', 'username', 'birthDate', 'country', 'phone']) {
+  for (const key of [
+    'firstName',
+    'lastName',
+    'username',
+    'avatar',
+    'birthDate',
+    'country',
+    'phone',
+  ]) {
     form.elements[key].value = user[key] ?? '';
   }
   $('passwordForm').reset();
@@ -150,6 +230,7 @@ export async function initAccount(callbacks) {
   handlers = { ...handlers, ...callbacks };
 
   for (const form of [$('signupForm'), $('profileForm')]) {
+    fillAvatars(form);
     fillCountries(form.elements.country);
     form.elements.birthDate.max = birthDateLimit();
     form.elements.birthDate.min = '1900-01-01';
@@ -177,6 +258,8 @@ export async function initAccount(callbacks) {
     if (res) signedIn(res.user);
   });
 
+  $('guestBtn').addEventListener('click', playAsGuest);
+  $('joinBtn').addEventListener('click', leaveGuest);
   $('profileBtn').addEventListener('click', openProfile);
   $('profileForm').addEventListener('submit', saveProfile);
   $('passwordForm').addEventListener('submit', changePassword);
@@ -192,8 +275,10 @@ export async function initAccount(callbacks) {
   try {
     signedIn((await api('GET', '/api/me')).user);
   } catch (err) {
-    if (err.status === 401) signedOut();
-    else {
+    if (err.status === 401) {
+      if (wasGuest()) playAsGuest();
+      else signedOut();
+    } else {
       show('auth');
       $('loginForm').querySelector('.form-msg').textContent = err.message;
     }

@@ -3,7 +3,8 @@
 
 import { winner, emptyBoard, other } from './rules.js';
 import { pickMove } from './ai.js';
-import { currentUser, initAccount } from './account.js';
+import { currentUser, initAccount, isGuest, leaveGuest } from './account.js';
+import { avatarEmoji } from './avatars.js';
 import { connectLive } from './live.js';
 import { countryFlag } from './countries.js';
 import {
@@ -57,6 +58,8 @@ const ratings = new Map();
 let lastRound = null;
 
 const online = () => state.mode === 'online';
+// Guests can pick Online, but only see what an account would unlock
+const guestLocked = () => online() && isGuest();
 const inMatch = () => !!match && !match.ended;
 const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X');
 const opponent = () => (match ? match.players[other(mySymbol())] : null);
@@ -127,6 +130,7 @@ function isHumanTurn() {
 function statusHTML() {
   const tag = (t) => `<span class="${t.toLowerCase()}">${t}</span>`;
 
+  if (guestLocked()) return '';
   if (online() && !inMatch()) {
     if (liveStatus !== 'online') return 'Connecting…';
     return 'Find an opponent, or invite a player.';
@@ -216,14 +220,16 @@ function render() {
     .querySelectorAll('[data-diff]')
     .forEach((b) => b.setAttribute('aria-pressed', b.dataset.diff === state.diff));
 
-  $('onlinePanel').hidden = !online();
+  $('guestLocked').hidden = !guestLocked();
+  $('onlinePanel').hidden = !online() || guestLocked();
   $('lobby').hidden = inMatch();
   $('roomInfo').hidden = !inMatch();
   $('board').hidden = online() && !inMatch();
   document.querySelector('.scores').hidden = online() && !inMatch();
   if (inMatch()) {
     const rival = opponent();
-    $('opponentName').textContent = `${countryFlag(rival.country)} ${rival.username}`;
+    $('opponentName').textContent =
+      `${avatarEmoji(rival.avatar)} ${countryFlag(rival.country)} ${rival.username}`;
     const chip = document.createElement('span');
     chip.className = 'rating-chip';
     chip.title = 'Rating';
@@ -237,7 +243,7 @@ function render() {
   $('reset').hidden = online();
   $('next').closest('.actions').hidden = online() && !inMatch();
 
-  setLobby({ visible: online() && !$('gameView').hidden, inMatch: inMatch() });
+  setLobby({ visible: online() && !guestLocked() && !$('gameView').hidden, inMatch: inMatch() });
   renderMe();
 
   tally($('tX'), state.scores.X);
@@ -285,7 +291,8 @@ function place(i, p) {
       sound.win();
       celebrate();
     }
-    if (state.mode === 'cpu' && state.diff === round.diff) {
+    // Guests' games aren't recorded: they have no stats
+    if (state.mode === 'cpu' && state.diff === round.diff && currentUser()) {
       recordCpuGame({
         difficulty: round.diff,
         starter: round.starter,
@@ -564,6 +571,7 @@ $('soundBtn').addEventListener('click', () => {
 });
 renderSound();
 $('reset').addEventListener('click', resetScores);
+$('guestJoin').addEventListener('click', leaveGuest);
 $('leave').addEventListener('click', () => {
   if (inMatch()) live.send({ t: 'leave', match: match.id });
 });
@@ -589,6 +597,13 @@ initAccount({
   onSignIn() {
     resetBoard();
     goOnline();
+    render();
+    maybeCpu();
+  },
+  onGuest() {
+    goOffline();
+    resetBoard();
+    setNetMessage('');
     render();
     maybeCpu();
   },

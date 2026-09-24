@@ -11,7 +11,7 @@ import { emptyBoard, other, winner } from '../js/rules.js';
 export function newMatch({ id, x, o, now = Date.now() }) {
   return {
     id,
-    players: { X: x, O: o }, // { id, username, country }
+    players: { X: x, O: o }, // { id, username, country, avatar, rating }
     board: emptyBoard(),
     turn: 'X',
     starter: 'X',
