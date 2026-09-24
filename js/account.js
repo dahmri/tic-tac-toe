@@ -6,6 +6,7 @@
 
 import { api } from './api.js';
 import { AVATARS, GUEST_AVATAR, avatarEmoji, avatarName } from './avatars.js';
+import { onLangChange, t } from './i18n.js';
 import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
 import { uploadGuestGames } from './stats.js';
@@ -46,11 +47,13 @@ function wasGuest() {
 
 function fillCountries(select) {
   const guess = /-([A-Z]{2})$/.exec(navigator.language || '')?.[1];
-  select.innerHTML = '<option value="">Choose…</option>';
+  const keep = select.value;
+  select.replaceChildren(new Option(t('Choose…'), ''));
   for (const { code, name } of sortedCountries()) {
     select.add(new Option(`${countryFlag(code)} ${name}`, code));
   }
-  if (guess && isCountryCode(guess)) select.value = guess;
+  if (keep) select.value = keep;
+  else if (guess && isCountryCode(guess)) select.value = guess;
 }
 
 // Latest birth date allowed: MIN_AGE years ago today
@@ -67,13 +70,13 @@ function fillAvatars(form) {
     ...AVATARS.map(({ id, emoji, name }) => {
       const label = document.createElement('label');
       label.className = 'avatar-option';
-      label.title = name;
+      label.title = t(name);
       const input = document.createElement('input');
       input.type = 'radio';
       input.name = 'avatar';
       input.value = id;
       input.className = 'sr-only';
-      input.setAttribute('aria-label', name);
+      input.setAttribute('aria-label', t(name));
       const face = document.createElement('span');
       face.className = 'avatar-face';
       face.setAttribute('aria-hidden', 'true');
@@ -88,14 +91,14 @@ const formData = (form) => Object.fromEntries(new FormData(form));
 
 function showErrors(form, fields = {}, message = '') {
   form.querySelectorAll('[data-err]').forEach((el) => {
-    const msg = fields[el.dataset.err] || '';
+    const msg = fields[el.dataset.err] ? t(fields[el.dataset.err]) : '';
     el.textContent = msg;
     // A group of radio buttons is marked on its fieldset
     const input = form.elements[el.dataset.err];
     const target = input instanceof Element ? input : el.closest('fieldset');
     target?.setAttribute('aria-invalid', msg ? 'true' : 'false');
   });
-  form.querySelector('.form-msg').textContent = message;
+  form.querySelector('.form-msg').textContent = message && t(message);
   const first = form.querySelector('[aria-invalid="true"]');
   (first?.matches('fieldset') ? first.querySelector('input') : first)?.focus();
 }
@@ -137,8 +140,8 @@ function setAuthTab(tab) {
 function renderMe() {
   const avatar = guest ? GUEST_AVATAR.id : user.avatar;
   $('meAvatar').textContent = avatarEmoji(avatar);
-  $('meAvatar').title = guest ? GUEST_AVATAR.name : avatarName(avatar);
-  $('meName').textContent = guest ? 'Guest' : user.username;
+  $('meAvatar').title = t(guest ? GUEST_AVATAR.name : avatarName(avatar));
+  $('meName').textContent = guest ? t('Guest') : user.username;
   $('meFlag').textContent = guest ? '' : countryFlag(user.country);
   document.querySelectorAll('[data-member]').forEach((b) => (b.hidden = guest));
   document.querySelectorAll('[data-guest]').forEach((b) => (b.hidden = !guest));
@@ -161,13 +164,15 @@ function renderEmailNotice() {
   }
   box.hidden = !flash && user.emailVerified;
   action.hidden = !!flash || user.emailVerified;
-  if (flash) text.textContent = flash;
+  if (flash) text.textContent = t(flash);
   else if (!user.email) {
-    text.textContent = 'Add your email address to play online.';
-    action.textContent = 'Add my email';
+    text.textContent = t('Add your email address to play online.');
+    action.textContent = t('Add my email');
   } else if (!user.emailVerified) {
-    text.textContent = `Confirm your email to play online: click the link we sent to ${user.email}.`;
-    action.textContent = 'Send it again';
+    text.textContent = t('Confirm your email to play online: click the link we sent to {email}.', {
+      email: user.email,
+    });
+    action.textContent = t('Send it again');
     action.disabled = false;
   }
 }
@@ -186,10 +191,12 @@ async function emailAction() {
   $('emailAction').disabled = true;
   try {
     await api('POST', '/api/me/email/resend');
-    $('emailNoticeText').textContent =
-      `Sent! Check your inbox for ${user.email} (and the spam folder).`;
+    $('emailNoticeText').textContent = t(
+      'Sent! Check your inbox for {email} (and the spam folder).',
+      { email: user.email },
+    );
   } catch (err) {
-    $('emailNoticeText').textContent = err.message;
+    $('emailNoticeText').textContent = t(err.message);
     $('emailAction').disabled = false;
   }
 }
@@ -268,7 +275,7 @@ export const leaveGuest = () => signedOut('signup');
 // Shows a new recovery code, which the server never shows again
 function showRecovery(code, note = '') {
   $('recoveryCode').textContent = code;
-  $('recoveryNote').textContent = note;
+  $('recoveryNote').textContent = note && t(note);
   $('recoveryDialog').showModal();
 }
 
@@ -320,12 +327,12 @@ async function deleteAccount(e) {
   const form = e.currentTarget;
   const { password } = formData(form);
   if (!password) return showErrors(form, { password: 'Enter your password.' });
-  if (!window.confirm('Delete your account for good? This cannot be undone.')) return;
+  if (!window.confirm(t('Delete your account for good? This cannot be undone.'))) return;
   const res = await submit(form, () => api('DELETE', '/api/me', { password }).then(() => true));
   if (!res) return;
   $('profileDialog').close();
   signedOut();
-  $('loginForm').querySelector('.form-msg').textContent = 'Your account has been deleted.';
+  $('loginForm').querySelector('.form-msg').textContent = t('Your account has been deleted.');
 }
 
 /* ---------- Profile dialog ---------- */
@@ -367,7 +374,9 @@ async function saveProfile(e) {
   showErrors(
     form,
     {},
-    res.emailSent ? `Saved. We sent a link to ${res.user.email}: click it to confirm.` : 'Saved.',
+    res.emailSent
+      ? t('Saved. We sent a link to {email}: click it to confirm.', { email: res.user.email })
+      : 'Saved.',
   );
 }
 
@@ -392,6 +401,19 @@ async function changePassword(e) {
 
 export async function initAccount(callbacks) {
   handlers = { ...handlers, ...callbacks };
+
+  // A new language: country names, avatar names and the banner
+  onLangChange(() => {
+    for (const form of [$('signupForm'), $('profileForm')]) {
+      fillCountries(form.elements.country);
+      form.querySelectorAll('.avatar-option').forEach((label) => {
+        const input = label.querySelector('input');
+        label.title = t(avatarName(input.value));
+        input.setAttribute('aria-label', label.title);
+      });
+    }
+    if (user || guest) renderMe();
+  });
 
   for (const form of [$('signupForm'), $('profileForm')]) {
     fillAvatars(form);
@@ -422,9 +444,11 @@ export async function initAccount(callbacks) {
     if (!res) return;
     signedIn(res.user);
     const added = await uploadGuestGames();
-    const note = added
-      ? `We added your ${added} game${added === 1 ? '' : 's'} as a guest to your stats.`
-      : '';
+    const note = !added
+      ? ''
+      : added === 1
+        ? t('We added your game as a guest to your stats.')
+        : t('We added your {n} games as a guest to your stats.', { n: added });
     showRecovery(res.recoveryCode, note);
   });
 
@@ -442,9 +466,9 @@ export async function initAccount(callbacks) {
   $('copyRecovery').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText($('recoveryCode').textContent);
-      $('recoveryNote').textContent = 'Copied.';
+      $('recoveryNote').textContent = t('Copied.');
     } catch {
-      $('recoveryNote').textContent = 'Copy it by hand: select the code above.';
+      $('recoveryNote').textContent = t('Copy it by hand: select the code above.');
     }
   });
   $('recoverySaved').addEventListener('click', () => $('recoveryDialog').close());
@@ -472,17 +496,18 @@ export async function initAccount(callbacks) {
       else signedOut();
     } else if (err.status === 0) {
       signedOut();
-      $('loginForm').querySelector('.form-msg').textContent =
-        "You're offline. You can still play as a guest.";
+      $('loginForm').querySelector('.form-msg').textContent = t(
+        "You're offline. You can still play as a guest.",
+      );
     } else {
       show('auth');
-      $('loginForm').querySelector('.form-msg').textContent = err.message;
+      $('loginForm').querySelector('.form-msg').textContent = t(err.message);
     }
     // Confirmed from a device where they aren't logged in
     if (confirmed && !user) {
-      $('loginForm').querySelector('.form-msg').textContent = confirmed.ok
-        ? 'Email confirmed. Log in to play online.'
-        : confirmed.message;
+      $('loginForm').querySelector('.form-msg').textContent = t(
+        confirmed.ok ? 'Email confirmed. Log in to play online.' : confirmed.message,
+      );
     }
   }
 }

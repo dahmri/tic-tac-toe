@@ -40,6 +40,7 @@ accounts; a Node.js game server with PostgreSQL and Redis runs it all.
   online play opens once it's confirmed.
 - **Recovery codes** for forgotten passwords, **download your data**, **delete your account**.
 - **Installable**, and playable offline as a guest.
+- **English, French and Spanish**, from the menu at the top right.
 - Light and dark themes, works on phones.
 
 ## Playing online

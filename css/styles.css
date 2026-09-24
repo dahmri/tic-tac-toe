@@ -89,8 +89,27 @@ body {
 }
 
 header {
+  position: relative;
   display: grid;
   gap: 2px;
+}
+/* The language menu, top right */
+.lang-pick {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.lang-pick select {
+  font: 700 0.8rem/1 var(--body);
+  color: var(--ink);
+  background: var(--chip);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  padding: 6px 8px;
+}
+.lang-pick select:focus-visible {
+  outline: none;
+  border-color: var(--ink);
 }
 h1 {
   font: 700 3.25rem/0.95 var(--display);

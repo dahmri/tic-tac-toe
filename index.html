@@ -28,7 +28,11 @@
   <body>
     <main class="sheet">
       <header>
-        <h1>Tic-<span class="x">Tac</span>-<span class="o">Toe</span></h1>
+        <label class="lang-pick">
+          <span class="sr-only">Language</span>
+          <select id="langSelect"></select>
+        </label>
+        <h1 data-no-i18n>Tic-<span class="x">Tac</span>-<span class="o">Toe</span></h1>
         <p class="sub">Three in a row wins. Nobody wins? That's a cat's game.</p>
       </header>
 
@@ -76,6 +80,7 @@
               required
               spellcheck="false"
               autocapitalize="characters"
+              data-no-i18n
               placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
             />
             <small class="err" data-err="recoveryCode"></small>
@@ -346,7 +351,7 @@
           <button id="hintBtn" type="button" class="ghostbtn">Hint</button>
           <button id="reset" type="button" class="ghostbtn">Wipe scores</button>
         </div>
-        <p class="hint">
+        <p class="hint" data-i18n-html>
           Tip: press <kbd>1</kbd>–<kbd>9</kbd> to play a square (keypad layout, <kbd>7</kbd> is
           top-left), <kbd>N</kbd> for a new round, <kbd>H</kbd> for a hint.
         </p>

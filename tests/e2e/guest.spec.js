@@ -92,7 +92,7 @@ test("a guest's games against the computer join their new account", async ({ pag
 
   const saveCode = page.getByRole('dialog', { name: 'Save your recovery code' });
   await expect(saveCode.locator('#recoveryNote')).toHaveText(
-    'We added your 1 game as a guest to your stats.',
+    'We added your game as a guest to your stats.',
   );
   await saveCode.getByRole('button', { name: "I've saved it" }).click();
   await page.getByRole('button', { name: 'Stats' }).click();

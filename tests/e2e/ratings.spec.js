@@ -5,7 +5,9 @@ import { test, expect, cell, status, closePlayers, startMatch } from './fixtures
 test.describe.configure({ timeout: 60_000 });
 
 test('a win moves both ratings and puts the players on the leaderboard', async ({ browser }) => {
-  const { ann, bob } = await startMatch(browser);
+  // Countries few other tests use: the leaderboard shows 20 players a page,
+  // and these two must be on the first page of their country's
+  const { ann, bob } = await startMatch(browser, { annFrom: 'IS', bobFrom: 'NZ' });
   await expect(ann.page.locator('#meRating')).toHaveText('1200');
   await expect(ann.page.locator('#opponentName .rating-chip')).toHaveText('1200');
 
@@ -26,18 +28,20 @@ test('a win moves both ratings and puts the players on the leaderboard', async (
   await expect(bob.page.locator('#meRating')).toHaveText('1184');
   await expect(bob.page.locator('#opponentName .rating-chip')).toHaveText('1216');
 
-  // Ann (France) looks at the leaderboard: the world, then Morocco
+  // Ann (Iceland) looks at the leaderboard: the world, then each country
   await ann.page.getByRole('button', { name: 'Leaderboard' }).click();
   const dialog = ann.page.getByRole('dialog', { name: 'Leaderboard' });
   const rowOf = (name) => dialog.locator('tbody tr', { hasText: name });
   await dialog.getByLabel('Leaderboard for').selectOption('');
-  await expect(rowOf(ann.player.username)).toContainText('1216');
-  await expect(rowOf(ann.player.username)).toHaveClass(/me/);
-  await expect(rowOf(bob.player.username)).toContainText('1184');
   await expect(dialog.locator('#lbMe')).toContainText('rated 1216');
 
-  await dialog.getByLabel('Leaderboard for').selectOption('MA');
-  await expect(rowOf(bob.player.username)).toBeVisible();
+  await dialog.getByLabel('Leaderboard for').selectOption('IS');
+  await expect(rowOf(ann.player.username)).toContainText('1216');
+  await expect(rowOf(ann.player.username)).toHaveClass(/me/);
+  await expect(dialog.locator('#lbMe')).toContainText('in Iceland, rated 1216');
+
+  await dialog.getByLabel('Leaderboard for').selectOption('NZ');
+  await expect(rowOf(bob.player.username)).toContainText('1184');
   await expect(rowOf(ann.player.username)).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Close' }).click();
 
