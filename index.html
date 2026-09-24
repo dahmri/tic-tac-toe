@@ -49,7 +49,42 @@
             <input name="password" type="password" autocomplete="current-password" required />
           </label>
           <p class="form-msg" role="alert"></p>
-          <button type="submit" class="btn primary">Log in</button>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Log in</button>
+            <button type="button" class="btn ghostbtn" id="forgotBtn">Forgot your password?</button>
+          </div>
+        </form>
+
+        <form class="form" id="resetForm" novalidate hidden>
+          <p class="help">
+            Use the recovery code you saved when you signed up. It lets you choose a new password.
+          </p>
+          <label class="field">
+            <span>Username</span>
+            <input name="username" autocomplete="username" required spellcheck="false" />
+          </label>
+          <label class="field">
+            <span>Recovery code</span>
+            <input
+              name="recoveryCode"
+              autocomplete="off"
+              required
+              spellcheck="false"
+              autocapitalize="characters"
+              placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+            />
+            <small class="err" data-err="recoveryCode"></small>
+          </label>
+          <label class="field">
+            <span>New password</span>
+            <input name="newPassword" type="password" autocomplete="new-password" required />
+            <small class="err" data-err="newPassword"></small>
+          </label>
+          <p class="form-msg" role="alert"></p>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Set new password</button>
+            <button type="button" class="btn ghostbtn" id="backToLogin">Back to log in</button>
+          </div>
         </form>
 
         <form class="form" id="signupForm" novalidate hidden>
@@ -124,8 +159,8 @@
         <div class="guest-cta">
           <button id="guestBtn" type="button" class="btn">Play as a guest 👻</button>
           <small class="help"
-            >No account needed: play the computer or a friend on this screen. Online games, stats
-            and the leaderboard need a free account.</small
+            >No account needed: play the computer or a friend on this screen. Online games and stats
+            need a free account; sign up later and your games come with you.</small
           >
         </div>
       </section>
@@ -148,9 +183,7 @@
           >
             🔊
           </button>
-          <button id="leaderboardBtn" type="button" class="btn ghostbtn" data-member>
-            Leaderboard
-          </button>
+          <button id="leaderboardBtn" type="button" class="btn ghostbtn">Leaderboard</button>
           <button id="statsBtn" type="button" class="btn ghostbtn" data-member>Stats</button>
           <button id="profileBtn" type="button" class="btn ghostbtn" data-member>Profile</button>
           <button id="logoutBtn" type="button" class="btn ghostbtn" data-member>Log out</button>
@@ -374,6 +407,60 @@
         <p class="form-msg" role="status"></p>
         <button type="submit" class="btn">Change password</button>
       </form>
+
+      <h3>Recovery code</h3>
+      <form class="form" id="recoveryForm" novalidate>
+        <p class="help">
+          If you forget your password, a recovery code lets you set a new one. Making a new code
+          replaces your old one.
+        </p>
+        <input name="username" autocomplete="username" hidden />
+        <label class="field">
+          <span>Your password</span>
+          <input name="password" type="password" autocomplete="current-password" required />
+          <small class="err" data-err="password"></small>
+        </label>
+        <p class="form-msg" role="status"></p>
+        <button type="submit" class="btn">Make a new recovery code</button>
+      </form>
+
+      <h3>Your data</h3>
+      <p class="help">
+        Download everything we keep about you: your profile, stats and every game, as a JSON file.
+      </p>
+      <a class="btn" id="exportLink" href="/api/me/export" download>Download my data</a>
+
+      <h3>Delete account</h3>
+      <form class="form" id="deleteForm" novalidate>
+        <p class="help">
+          This deletes your profile, stats and games against the computer for good. Your online
+          games stay in your opponents' histories as "Deleted player".
+        </p>
+        <input name="username" autocomplete="username" hidden />
+        <label class="field">
+          <span>Your password</span>
+          <input name="password" type="password" autocomplete="current-password" required />
+          <small class="err" data-err="password"></small>
+        </label>
+        <p class="form-msg" role="alert"></p>
+        <button type="submit" class="btn danger">Delete my account</button>
+      </form>
+    </dialog>
+
+    <dialog class="dialog" id="recoveryDialog" aria-labelledby="recoveryTitle">
+      <div class="dialog-head">
+        <h2 id="recoveryTitle">Save your recovery code</h2>
+      </div>
+      <p class="help" id="recoveryIntro">
+        If you ever forget your password, this code lets you set a new one. We can't show it again,
+        so write it down or keep it in a password manager.
+      </p>
+      <p class="recovery-code"><code id="recoveryCode"></code></p>
+      <p class="form-msg" id="recoveryNote" role="status"></p>
+      <div class="form-actions">
+        <button type="button" class="btn" id="copyRecovery">Copy</button>
+        <button type="button" class="btn primary" id="recoverySaved">I've saved it</button>
+      </div>
     </dialog>
 
     <dialog class="dialog stats" id="statsDialog" aria-labelledby="statsTitle">

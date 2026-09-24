@@ -1169,3 +1169,40 @@ kbd {
     animation: none;
   }
 }
+
+/* Recovery codes, and the account's danger zone */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.recovery-code {
+  margin: 0;
+  text-align: center;
+}
+.recovery-code code {
+  display: inline-block;
+  font:
+    700 1.1rem/1.4 ui-monospace,
+    'SF Mono',
+    Menlo,
+    monospace;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  border: 2px dashed var(--ink);
+  border-radius: 8px;
+  background: var(--chip);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+.btn.danger {
+  background: var(--o);
+  border-color: var(--o);
+  color: var(--paper);
+}
+a.btn {
+  display: inline-block;
+  justify-self: start;
+  text-decoration: none;
+}

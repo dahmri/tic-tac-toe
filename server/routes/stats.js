@@ -3,7 +3,7 @@
 //   GET  /api/me/stats   totals, streaks, top opponents
 //   GET  /api/me/games   history, newest first: ?cursor=...&limit=20
 //   POST /api/games/cpu  a finished game vs the computer:
-//                        { difficulty, starter, moves, seconds, variant? }
+//                        { difficulty, starter, moves, seconds, variant?, endedAt? }
 //   GET  /api/leaderboard  best ratings: ?country=FR&offset=0&limit=20
 //                        -> { total, players: [{ rank, id, username, country,
 //                             avatar, rating, played, won }], me: { rank, rating, ... } | null }
@@ -29,7 +29,8 @@ export default async function statsRoutes(app) {
     return stats.history(req.userId, { cursor: req.query.cursor, limit });
   });
 
-  app.get('/api/leaderboard', { preHandler: app.requireUser }, async (req, reply) => {
+  // Public: guests can look too
+  app.get('/api/leaderboard', async (req, reply) => {
     const country = String(req.query.country || '').toUpperCase() || null;
     if (country && !isCountryCode(country)) {
       return reply.code(400).send({ error: 'Unknown country.' });
@@ -48,7 +49,11 @@ export default async function statsRoutes(app) {
     if (checked.error) return reply.code(400).send({ error: checked.error });
 
     const seconds = Math.min(Math.max(Number(body.seconds) || 0, 0), 3600);
-    const endedAt = Date.now();
+    // Games played as a guest arrive after sign-up with the time they ended
+    // (up to 30 days back); anything else is taken as just now
+    const now = Date.now();
+    const at = Number(body.endedAt);
+    const endedAt = at >= now - 30 * 24 * 3600 * 1000 && at <= now ? at : now;
     await stats.record({
       mode: 'cpu',
       difficulty: body.difficulty,

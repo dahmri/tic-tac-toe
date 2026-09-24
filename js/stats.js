@@ -181,6 +181,41 @@ export function recordCpuGame(game) {
   api('POST', '/api/games/cpu', game).catch(() => {});
 }
 
+// Guests' games wait in this browser, and join their stats if they sign up
+const GUEST_GAMES_KEY = 'pencil-ttt-guest-games';
+const GUEST_GAMES_MAX = 100;
+
+export function recordGuestGame(game) {
+  try {
+    const games = JSON.parse(localStorage.getItem(GUEST_GAMES_KEY) || '[]');
+    games.push({ ...game, endedAt: Date.now() });
+    localStorage.setItem(GUEST_GAMES_KEY, JSON.stringify(games.slice(-GUEST_GAMES_MAX)));
+  } catch {
+    /* storage unavailable: nothing to carry over */
+  }
+}
+
+// Sends the guest games to the new account; returns how many counted
+export async function uploadGuestGames() {
+  let games;
+  try {
+    games = JSON.parse(localStorage.getItem(GUEST_GAMES_KEY) || '[]');
+    localStorage.removeItem(GUEST_GAMES_KEY);
+  } catch {
+    return 0;
+  }
+  let added = 0;
+  for (const game of Array.isArray(games) ? games : []) {
+    try {
+      await api('POST', '/api/games/cpu', game);
+      added++;
+    } catch {
+      /* a game the server doesn't accept is skipped */
+    }
+  }
+  return added;
+}
+
 export function initStats() {
   $('statsBtn').addEventListener('click', open);
   $('statsDialog')

@@ -96,6 +96,14 @@ export function createPresence(redis) {
       await m.exec();
     },
 
+    // A deleted account: off every list at once
+    async forget(userId) {
+      const country = await redis.hget(`player:${userId}`, 'country');
+      const m = redis.multi().zrem('online', userId).del(`player:${userId}`, `conns:${userId}`);
+      if (country) m.zrem(setKey(country), userId);
+      await m.exec();
+    },
+
     // After a rated round
     async setRating(userId, rating) {
       if (await redis.exists(`player:${userId}`))

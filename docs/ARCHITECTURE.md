@@ -68,6 +68,15 @@ code the browser downloads is the game's own.
   database. A leaked dump or backup exposes only usernames and countries.
   The username and country stay readable because the game looks players up
   by them.
+- **Recovery codes** replace email-based resets (accounts have no email):
+  a 20-character code shown once at sign-up, stored only as a SHA-256
+  hash (`users.recovery_hash`). Resetting uses it up, logs out every
+  device and issues a new one. Players can make a new code from their
+  profile.
+- **Your data:** `GET /api/me/export` downloads the profile, stats and
+  every game as JSON. Deleting an account (password required) removes the
+  player, their stats and their games against the computer; their online
+  games stay in opponents' histories as "Deleted player".
 - **Passwords** are hashed with Argon2id (19 MiB, 2 passes, the OWASP
   minimum), using Node's built-in implementation. Hashes are upgraded
   automatically at login if the settings are raised later.
@@ -193,21 +202,25 @@ result itself. They are counted apart from online games.
 
 ## API
 
-| Method   | Path                  | What it does                                         |
-| -------- | --------------------- | ---------------------------------------------------- |
-| `POST`   | `/api/account`        | Create an account and log in                         |
-| `POST`   | `/api/session`        | Log in                                               |
-| `DELETE` | `/api/session`        | Log out                                              |
-| `GET`    | `/api/me`             | Your profile                                         |
-| `PATCH`  | `/api/me`             | Change any profile fields                            |
-| `PUT`    | `/api/me/password`    | Change password (logs out your other devices)        |
-| `GET`    | `/api/players/online` | Online players: `?country=FR&offset=0&limit=30`      |
-| `GET`    | `/api/me/stats`       | Your totals, streaks and most played opponents       |
-| `GET`    | `/api/me/games`       | Your game history, newest first: `?cursor=&limit=20` |
-| `POST`   | `/api/games/cpu`      | Record a finished game against the computer          |
-| `GET`    | `/api/leaderboard`    | Best ratings: `?country=FR&offset=0&limit=20`        |
-| `GET`    | `/ws`                 | The live connection (WebSocket), see above           |
-| `GET`    | `/api/health`         | `{ ok: true }` when PostgreSQL and Redis answer      |
+| Method   | Path                    | What it does                                          |
+| -------- | ----------------------- | ----------------------------------------------------- |
+| `POST`   | `/api/account`          | Create an account and log in                          |
+| `POST`   | `/api/session`          | Log in                                                |
+| `DELETE` | `/api/session`          | Log out                                               |
+| `GET`    | `/api/me`               | Your profile                                          |
+| `PATCH`  | `/api/me`               | Change any profile fields                             |
+| `PUT`    | `/api/me/password`      | Change password (logs out your other devices)         |
+| `POST`   | `/api/me/recovery-code` | A new recovery code (needs the password)              |
+| `POST`   | `/api/password-reset`   | Forgotten password: username + recovery code          |
+| `GET`    | `/api/me/export`        | Everything stored about you, as a JSON download       |
+| `DELETE` | `/api/me`               | Delete your account (needs the password)              |
+| `GET`    | `/api/players/online`   | Online players: `?country=FR&offset=0&limit=30`       |
+| `GET`    | `/api/me/stats`         | Your totals, streaks and most played opponents        |
+| `GET`    | `/api/me/games`         | Your game history, newest first: `?cursor=&limit=20`  |
+| `POST`   | `/api/games/cpu`        | Record a finished game against the computer           |
+| `GET`    | `/api/leaderboard`      | Best ratings, public: `?country=FR&offset=0&limit=20` |
+| `GET`    | `/ws`                   | The live connection (WebSocket), see above            |
+| `GET`    | `/api/health`           | `{ ok: true }` when PostgreSQL and Redis answer       |
 
 Errors are JSON: `{ "error": "message", "fields": { "username": "message" } }`.
 
