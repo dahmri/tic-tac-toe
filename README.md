@@ -33,6 +33,11 @@ accounts; a Node.js game server with PostgreSQL and Redis runs it all.
   your choice is remembered.
 - **Win celebration:** your winning marks hop and pencil stars pop around the board
   (skipped when your device asks for reduced motion).
+- **3 marks rules:** each player keeps only their last three marks, so games rarely draw.
+- **Medium computer and hints**, **replays** of any game in your history.
+- **Online move clock** (30 s a move) and **emoji reactions**.
+- **Recovery codes** for forgotten passwords, **download your data**, **delete your account**.
+- **Installable**, and playable offline as a guest.
 - Light and dark themes, works on phones.
 
 ## Playing online

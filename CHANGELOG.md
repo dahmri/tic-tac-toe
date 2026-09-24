@@ -43,6 +43,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Public leaderboard.** Guests can open the leaderboard too.
 - **Guest games carry over.** Games a guest plays against the computer
   are added to their stats when they create an account.
+- **Install it, play offline.** The game can be installed as an app
+  (Add to Home Screen, or the install button in the address bar) and
+  keeps working without a connection after one visit: play the computer
+  or a friend as a guest. Updates still arrive as soon as you're online.
 
 ## [1.4.0] - 2026-09-24
 

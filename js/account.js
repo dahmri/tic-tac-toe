@@ -365,9 +365,14 @@ export async function initAccount(callbacks) {
   try {
     signedIn((await api('GET', '/api/me')).user);
   } catch (err) {
-    if (err.status === 401) {
+    // Offline: guests carry on, others can start playing as a guest
+    if (err.status === 401 || (err.status === 0 && wasGuest())) {
       if (wasGuest()) playAsGuest();
       else signedOut();
+    } else if (err.status === 0) {
+      signedOut();
+      $('loginForm').querySelector('.form-msg').textContent =
+        "You're offline. You can still play as a guest.";
     } else {
       show('auth');
       $('loginForm').querySelector('.form-msg').textContent = err.message;

@@ -718,6 +718,12 @@ document.addEventListener('keydown', (e) => {
 
 initStats();
 initReplay();
+
+// Installable, and playable offline (see sw.js). Browsers only allow it
+// over https or on localhost; elsewhere this quietly does nothing.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 initLeaderboard(currentUser);
 initLobby({
   send: (msg) => live?.send(msg),
