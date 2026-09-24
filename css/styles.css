@@ -21,6 +21,8 @@
   --chip: #eceee6;
   --chip-on: #2a2e35;
   --chip-on-ink: #f6f7f2;
+  --star: #9a6700;
+  --ok: #1f7a43;
   --display: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
   --body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
@@ -38,6 +40,8 @@
     --chip: #25302b;
     --chip-on: #e4e8e1;
     --chip-on-ink: #1c2420;
+    --star: #f2c14e;
+    --ok: #6fd08f;
   }
 }
 :root[data-theme='dark'] {
@@ -53,6 +57,8 @@
   --chip: #25302b;
   --chip-on: #e4e8e1;
   --chip-on-ink: #1c2420;
+  --star: #f2c14e;
+  --ok: #6fd08f;
 }
 
 html,
@@ -1245,4 +1251,46 @@ a.btn {
 }
 .email-notice .btn {
   padding: 8px 12px;
+}
+
+/* Friends */
+.friends {
+  display: grid;
+  gap: 8px;
+}
+.btn.star {
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 4px 6px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.btn.star[aria-pressed='true'] {
+  color: var(--star);
+}
+.friend.is-offline .who-line {
+  opacity: 0.55;
+}
+.friend.is-online .where::before {
+  content: '● ';
+  color: var(--ok);
+}
+.add-friend {
+  display: flex;
+  gap: 8px;
+}
+.add-friend input {
+  flex: 1;
+  min-width: 0;
+  font: 1rem/1.2 var(--body);
+  color: var(--ink);
+  background: var(--chip);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 40px;
+}
+.add-friend input:focus {
+  outline: none;
+  border-color: var(--ink);
 }

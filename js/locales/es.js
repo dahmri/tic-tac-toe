@@ -23,9 +23,12 @@ export default {
     'Una dirección nueva debe confirmarse antes de jugar en línea.',
   Accept: 'Aceptar',
   Account: 'Cuenta',
+  Add: 'Añadir',
+  'Add a friend by username': 'Añadir un amigo por su nombre de usuario',
   'Add my email': 'Añadir mi correo',
   'Add your email address first.': 'Primero añade tu dirección de correo.',
   'Add your email address to play online.': 'Añade tu dirección de correo para jugar en línea.',
+  'Add {name} to friends': 'Añadir a {name} a tus amigos',
   'Against Unbeatable: {drawn} draws in {n} games. Nobody beats it.':
     'Contra Imbatible: {drawn} empates en {n} partidas. Nadie le gana.',
   'Against the computer': 'Contra la computadora',
@@ -125,6 +128,7 @@ export default {
   'First move': 'Primera jugada',
   'First name': 'Nombre',
   'Forgot your password?': '¿Olvidaste tu contraseña?',
+  Friends: 'Amigos',
   'Grumpy Frog': 'Rana gruñona',
   Guest: 'Invitado',
   Hard: 'Difícil',
@@ -182,12 +186,15 @@ export default {
   'Night Owl': 'Búho nocturno',
   'No account needed: play the computer or a friend on this screen. Online games and stats need a free account; sign up later and your games come with you.':
     'No necesitas cuenta: juega contra la computadora o un amigo en esta pantalla. Las partidas en línea y las estadísticas necesitan una cuenta gratis; regístrate más tarde y tus partidas vienen contigo.',
+  'No friends yet. Add players you like with the ☆ next to their name, or by username.':
+    'Todavía no tienes amigos. Añade a los jugadores que te gusten con la ☆ junto a su nombre, o por su nombre de usuario.',
   'No games yet.': 'Todavía no hay partidas.',
   'No one else is online right now. Invite a friend to sign up!':
     'No hay nadie más en línea ahora mismo. ¡Invita a un amigo a registrarse!',
   'No one from {country} is online right now.': 'No hay nadie de {country} en línea ahora mismo.',
   'No online games yet. Invite someone from the lobby!':
     'Todavía no hay partidas en línea. ¡Invita a alguien desde la sala!',
+  'No player has that username.': 'Ningún jugador tiene ese nombre de usuario.',
   'Nobody from {country} has played online yet.': 'Nadie de {country} ha jugado en línea todavía.',
   'Nobody has played online yet. Be the first!':
     'Nadie ha jugado en línea todavía. ¡Sé el primero!',
@@ -196,6 +203,7 @@ export default {
   'Not a square.': 'No es una casilla.',
   'Not found.': 'No encontrado.',
   'Octo-Hugger': 'Pulpo abrazador',
+  Offline: 'Desconectado',
   'One of you is already in a game.': 'Uno de ustedes ya está en una partida.',
   Online: 'En línea',
   'Online game': 'Partida en línea',
@@ -234,6 +242,7 @@ export default {
   'Recent games': 'Partidas recientes',
   'Reconnecting…': 'Reconectando…',
   'Recovery code': 'Código de recuperación',
+  'Remove {name} from friends': 'Quitar a {name} de tus amigos',
   Replay: 'Repetición',
   'Replay board': 'Tablero de la repetición',
   'Replay: {title}': 'Repetición: {title}',
@@ -288,6 +297,7 @@ export default {
   'That username and recovery code don’t match.':
     'Ese nombre de usuario y ese código de recuperación no coinciden.',
   'That username is taken. Try another.': 'Ese nombre de usuario ya existe. Prueba con otro.',
+  "That's you!": '¡Eres tú!',
   'The GOAT': 'El GOAT',
   'The game is busy. Try again.': 'La partida está ocupada. Inténtalo de nuevo.',
   'The link works for 1 hour. If you didn’t ask for this, ignore this email: your password stays the same.':
@@ -366,6 +376,7 @@ export default {
   'You are O.': 'Juegas con O.',
   'You are X and open the first round.': 'Juegas con X y abres la primera ronda.',
   'You are not in this game.': 'No estás en esta partida.',
+  'You can have up to 200 friends.': 'Puedes tener hasta 200 amigos.',
   'You keep only your last 3 marks: the faded one vanishes when you play again.':
     'Solo conservas tus 3 últimas marcas: la más tenue desaparece cuando vuelves a jugar.',
   'You must be at least 13 to play.': 'Debes tener al menos 13 años para jugar.',

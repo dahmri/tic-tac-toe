@@ -128,6 +128,8 @@ test('an inviter can cancel', async ({ browser }) => {
   await expect(bob.page.locator('.invite')).toBeVisible();
   await ann.page.locator('.invite.outgoing').getByRole('button', { name: 'Cancel' }).click();
   await expect(bob.page.locator('.invite')).toHaveCount(0);
-  await expect(row(ann.page, bob.player.username).getByRole('button')).toHaveText('Invite');
+  await expect(
+    row(ann.page, bob.player.username).getByRole('button', { name: /^Invite/ }),
+  ).toHaveText('Invite');
   await close(ann, bob);
 });
