@@ -11,6 +11,7 @@ import { handleLobbyMessage, lobbyError, resetLobby, setLastOpponent, setLobby }
 import { signed } from './stats.js';
 import { sound } from './sound.js';
 import { REACTIONS } from './reactions.js';
+import { checkAchievements } from './achievements-ui.js';
 import { t } from './i18n.js';
 import { celebrate, drawWin, isWon, syncMarks } from './board.js';
 import { game, saveSettings, settings, zeroScores } from './game.js';
@@ -273,6 +274,7 @@ function onLiveMessage(msg) {
         change[id] = r.change;
       }
       lastRound = { match: msg.match, round: msg.round, change };
+      checkAchievements(); // a finished round may have earned one
       break;
     }
     case 'error':

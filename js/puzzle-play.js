@@ -12,6 +12,7 @@ import { t } from './i18n.js';
 import { sound } from './sound.js';
 import { celebrate, clearBoard, drawWin, highlight, syncMarks } from './board.js';
 import { game } from './game.js';
+import { checkAchievements } from './achievements-ui.js';
 
 const LOCAL_KEY = 'pencil-ttt-puzzles';
 const $ = (id) => document.getElementById(id);
@@ -63,6 +64,7 @@ async function saveResult(solved) {
   practice = true;
   if (currentUser()) {
     record = await api('POST', `/api/puzzle/${puzzle.day}`, { moves }).catch(() => record);
+    checkAchievements();
   } else {
     const results = localResults();
     results[puzzle.day] ??= solved;

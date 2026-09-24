@@ -20,6 +20,7 @@ import { createEmailVerification } from './email-verification.js';
 import { createPasswordReset } from './password-reset.js';
 import { createFriends } from './friends.js';
 import { createPuzzles } from './puzzles.js';
+import { createAchievements } from './achievements.js';
 import { pickLang, translate } from '../js/i18n.js';
 import accountRoutes from './routes/account.js';
 import playersRoutes from './routes/players.js';
@@ -67,6 +68,8 @@ export async function buildApp({ config, db, redis }) {
     turnMs: config.turnMs,
   });
   const users = createUsers(db, config.dataKey);
+  const friends = createFriends(db, redis);
+  const puzzles = createPuzzles(db);
   const mailer = createMailer({ config, redis, log: app.log });
   app.decorate('ctx', {
     config,
@@ -76,8 +79,9 @@ export async function buildApp({ config, db, redis }) {
     mailer,
     emailVerification: createEmailVerification({ redis, mailer, users }),
     passwordReset: createPasswordReset({ redis, mailer, users }),
-    friends: createFriends(db, redis),
-    puzzles: createPuzzles(db),
+    friends,
+    puzzles,
+    achievements: createAchievements({ db, stats, friends, puzzles }),
     sessions: createSessions(redis),
     rateLimit: createRateLimiter(redis, config.rateLimits),
     presence,
