@@ -224,3 +224,35 @@ test('a new player has empty stats; stats need a session', async () => {
   assert.equal((await client(t.app).get('/api/me/stats')).status, 401);
   assert.equal((await client(t.app).get('/api/me/games')).status, 401);
 });
+
+test('3-mark games vs the computer are checked, saved with their rules, and replayable', async () => {
+  const ann = await player(t.app);
+  // O opens: O 3, X 0, O 4, X 1, then O 8 ignores its win at 5
+  const res = await ann.post('/api/games/cpu', {
+    difficulty: 'medium',
+    variant: 'vanish',
+    starter: 'O',
+    moves: [3, 0, 4, 1, 8, 2],
+    seconds: 20,
+  });
+  assert.equal(res.status, 400, 'O had 3 4 _ and must take 5');
+  const ok = await ann.post('/api/games/cpu', {
+    difficulty: 'medium',
+    variant: 'vanish',
+    starter: 'X',
+    moves: [0, 3, 1, 4, 2],
+    seconds: 20,
+  });
+  assert.equal(ok.status, 201);
+  const { games } = (await ann.get('/api/me/games')).body;
+  assert.equal(games[0].variant, 'vanish');
+  assert.equal(games[0].starter, 'X');
+  assert.deepEqual(games[0].squares, [0, 3, 1, 4, 2]);
+  const bad = await ann.post('/api/games/cpu', {
+    difficulty: 'hard',
+    variant: 'chess',
+    starter: 'X',
+    moves: [0, 3, 1, 4, 2],
+  });
+  assert.equal(bad.status, 400);
+});

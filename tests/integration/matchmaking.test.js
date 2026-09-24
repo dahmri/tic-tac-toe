@@ -106,13 +106,13 @@ test('players are paired by rating, and the gap allowed grows as they wait', asy
   const me = (p) => ({ id: p.user.id, username: p.user.username, country: p.user.country });
   const now = Date.now();
 
-  assert.deepEqual(await mm.join(me(ann), now), { waiting: true });
-  assert.deepEqual(await mm.join(me(bob), now), { waiting: true }, '500 points apart');
+  assert.deepEqual(await mm.join(me(ann), 'classic', now), { waiting: true });
+  assert.deepEqual(await mm.join(me(bob), 'classic', now), { waiting: true }, '500 points apart');
   // 39 s later the gap allowed is 100 + 390 points: still too far
   assert.deepEqual(await mm.retry(me(bob), now + 39_000), { waiting: true });
 
   // Cat is close to Ann: they are paired, not Bob
-  const paired = await mm.join(me(cat), now + 39_000);
+  const paired = await mm.join(me(cat), 'classic', now + 39_000);
   assert.ok(paired.match);
   const ids = [paired.match.players.X.id, paired.match.players.O.id];
   assert.ok(ids.includes(ann.user.id) && ids.includes(cat.user.id));
@@ -122,7 +122,7 @@ test('players are paired by rating, and the gap allowed grows as they wait', asy
   const dan = await player(t.app);
   await rate(dan, 1690);
   sockets.push(await live(t.app, dan));
-  const found = await mm.join(me(dan), now + 41_000);
+  const found = await mm.join(me(dan), 'classic', now + 41_000);
   assert.ok(found.match, 'Bob and Dan are 10 points apart');
   assert.equal(await mm.isWaiting(bob.user.id), false);
   await Promise.all(sockets.map((s) => s.close()));
@@ -154,4 +154,23 @@ test('players who went offline or are in a game are skipped', async () => {
   // And nobody can look for a game while playing one
   await assert.rejects(mm.join(me(bob)), /Finish your game first/);
   await Promise.all([a.close(), b.close(), c.close()]);
+});
+
+test('quick match only pairs players who want the same rules', async () => {
+  const mm = t.app.ctx.matchmaking;
+  const [ann, bob, cat] = await Promise.all([player(t.app), player(t.app), player(t.app)]);
+  const sockets = await Promise.all([ann, bob, cat].map((p) => live(t.app, p)));
+  const me = (p) => ({ id: p.user.id, username: p.user.username, country: p.user.country });
+
+  assert.deepEqual(await mm.join(me(ann), 'vanish'), { waiting: true });
+  assert.deepEqual(await mm.join(me(bob), 'classic'), { waiting: true }, 'different rules');
+  const paired = await mm.join(me(cat), 'vanish');
+  assert.equal(paired.match.variant, 'vanish');
+  const ids = [paired.match.players.X.id, paired.match.players.O.id];
+  assert.ok(ids.includes(ann.user.id) && ids.includes(cat.user.id));
+  assert.equal(await mm.isWaiting(bob.user.id), true);
+  await assert.rejects(mm.join(me(bob), 'chess'), /Unknown rules/);
+  await mm.leave(bob.user.id);
+  assert.equal(await mm.isWaiting(bob.user.id), false);
+  await Promise.all(sockets.map((s) => s.close()));
 });

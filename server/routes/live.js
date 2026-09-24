@@ -1,10 +1,10 @@
 // The live connection (WebSocket at /ws). While a player has the game open
 // they show as online, receive invitations, and play matches through it.
 //
-// Browser -> server: { t: 'invite', to } | { t: 'invite-accept', id }
+// Browser -> server: { t: 'invite', to, variant? } | { t: 'invite-accept', id }
 //   | { t: 'invite-decline', id } | { t: 'invite-cancel', id }
 //   | { t: 'move', match, square } | { t: 'next-round', match }
-//   | { t: 'leave', match } | { t: 'queue-join' } | { t: 'queue-leave' } | { t: 'ping' }
+//   | { t: 'leave', match } | { t: 'queue-join', variant? } | { t: 'queue-leave' } | { t: 'ping' }
 // Server -> browser: { t: 'hello', me, match, invites, waiting } | { t: 'match', match }
 //   | { t: 'queue', waiting } | { t: 'ratings', match, round, ratings }
 //   | { t: 'invite', invite } | { t: 'invite-sent', invite }
@@ -86,7 +86,7 @@ export default async function liveRoutes(app) {
       case 'ping':
         return { t: 'pong' };
       case 'invite':
-        return invites.send(me, msg.to);
+        return invites.send(me, msg.to, msg.variant ?? 'classic');
       case 'invite-accept': {
         // A game started by invitation ends any search for a quick match
         const match = await invites.accept(me, msg.id);
@@ -104,7 +104,7 @@ export default async function liveRoutes(app) {
       case 'leave':
         return matches.leave(String(msg.match), me.id);
       case 'queue-join':
-        await matchmaking.join(me);
+        await matchmaking.join(me, msg.variant ?? 'classic');
         return null;
       case 'queue-leave':
         return matchmaking.leave(me.id);

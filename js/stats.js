@@ -113,14 +113,20 @@ function renderSummary({ stats, opponents }) {
 }
 
 const OUTCOME = { W: 'Won', L: 'Lost', D: 'Draw' };
+const LEVEL = { casual: 'Casual', medium: 'Medium', hard: 'Unbeatable' };
 
 function historyItem(g) {
   const li = el('li', 'history-item');
   const who = el('span', 'game-who');
   if (g.opponent) who.append('vs ', playerName(g.opponent));
-  else who.append(`vs Computer (${g.difficulty === 'hard' ? 'Unbeatable' : 'Casual'})`);
+  else {
+    // In the 3-mark game the top level is "Hard": it isn't unbeatable there
+    const level = g.variant === 'vanish' && g.difficulty === 'hard' ? 'Hard' : LEVEL[g.difficulty];
+    who.append(`vs Computer (${level ?? 'Casual'})`);
+  }
   const outcome = el('strong', `outcome o-${g.outcome}`, OUTCOME[g.outcome]);
   const detail = [`as ${g.symbol}`, `${g.moves} moves`];
+  if (g.variant === 'vanish') detail.unshift('3 marks');
   if (g.forfeit) detail.push(g.outcome === 'W' ? 'they left' : 'you left');
   const meta = el(
     'span',

@@ -6,6 +6,23 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **3 marks rules.** A new rule set for every mode (vs Computer, Same
+  screen and Online): each player keeps only their last three marks, and
+  a fourth makes the oldest one vanish. The mark about to go is drawn
+  faded. The board never fills up, so games rarely end in a draw. Pick
+  **Classic** or **3 marks** above the board; invitations and quick match
+  use your choice, and quick match only pairs players who picked the same
+  rules. Against the computer the top level is called **Hard** here: it
+  looks seven moves ahead, but it isn't unbeatable.
+- **Medium computer.** Between Casual and Unbeatable: it always takes a
+  win and blocks yours, and plays well most of the time, but slips now
+  and then.
+- **Hints.** The **Hint** button (or <kbd>H</kbd>) highlights a good square
+  to play, against the computer or on the same screen. Not available
+  online.
+
 ## [1.4.0] - 2026-09-24
 
 ### Added

@@ -4,13 +4,15 @@
 //
 // The inviter plays X and opens the first round; after that the players
 // take turns opening. The server is the referee: players only send the
-// square they want, and every move is checked here.
+// square they want, and every move is checked here. A match is played with
+// one set of rules throughout: 'classic' or 'vanish' (see rules.js).
 
-import { emptyBoard, other, winner } from '../js/rules.js';
+import { emptyBoard, gameResult, other, playOn, replay } from '../js/rules.js';
 
-export function newMatch({ id, x, o, now = Date.now() }) {
+export function newMatch({ id, x, o, variant = 'classic', now = Date.now() }) {
   return {
     id,
+    variant,
     players: { X: x, O: o }, // { id, username, country, avatar, rating }
     board: emptyBoard(),
     turn: 'X',
@@ -44,6 +46,8 @@ function roundRecord(match, now) {
     result: match.result,
     forfeit: match.forfeit,
     moves: match.moves.slice(),
+    variant: match.variant,
+    starter: match.starter,
     startedAt: match.roundStartedAt,
     endedAt: now,
   };
@@ -62,8 +66,9 @@ export function applyMove(match, userId, square, now = Date.now()) {
   if (!Number.isInteger(square) || square < 0 || square > 8) return fail('Not a square.');
   if (match.board[square]) return fail('That square is taken.');
 
-  const board = match.board.slice();
-  board[square] = p;
+  const variant = match.variant ?? 'classic';
+  const position = replay(match.moves, match.starter, variant);
+  const { board } = playOn(position, square, p, variant);
   const next = {
     ...match,
     board,
@@ -71,7 +76,7 @@ export function applyMove(match, userId, square, now = Date.now()) {
     turn: other(p),
     version: match.version + 1,
   };
-  const w = winner(board);
+  const w = gameResult(board, next.moves.length, variant);
   if (!w) return { match: next };
 
   next.over = true;
