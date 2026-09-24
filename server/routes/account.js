@@ -11,6 +11,12 @@
 //                                  newPassword } -> logs in, { user, recoveryCode }
 //   GET    /api/me/export    everything stored about you, as a JSON download
 //   DELETE /api/me           delete your account: { password }
+//   POST   /api/me/email/resend   send the confirmation email again
+//   POST   /api/email/verify      confirm an address: { token } from the emailed link
+//   GET    /api/test/outbox       browser tests only (MAIL_OUTBOX=on): ?to=address
+//
+// Players must confirm their email address to play online. A new address
+// (at sign-up, or changed in the profile) gets a confirmation email.
 //
 // A recovery code is shown once: at sign-up, after a reset (the old one is
 // used up), or when the player asks for a new one.
@@ -25,14 +31,43 @@ import {
   sameHash,
   verifyPassword,
 } from '../security.js';
-import { UsernameTakenError } from '../users.js';
+import { EmailTakenError, UsernameTakenError } from '../users.js';
 import { MatchError } from '../matches.js';
 import { COOKIE, SESSION_TTL } from '../sessions.js';
 
 const TAKEN = { username: 'That username is taken. Try another.' };
+const EMAIL_TAKEN = { email: 'That email is already used by another account.' };
+
+// Errors from a unique username or email, as a 409 with the field marked
+function taken(reply, err) {
+  if (err instanceof UsernameTakenError) {
+    return reply.code(409).send({ error: TAKEN.username, fields: TAKEN });
+  }
+  if (err instanceof EmailTakenError) {
+    return reply.code(409).send({ error: EMAIL_TAKEN.email, fields: EMAIL_TAKEN });
+  }
+  throw err;
+}
 
 export default async function accountRoutes(app) {
   const { users, sessions, rateLimit, presence, config, stats, matches, matchmaking } = app.ctx;
+  const { emailVerification, mailer } = app.ctx;
+
+  // Where links in emails point: SITE_URL (always set in production), or
+  // this server in development and tests
+  const siteUrl = (req) => config.siteUrl || `${req.protocol}://${req.host}`;
+
+  // A failed email doesn't undo the sign-up or profile change: the player
+  // can ask for it again
+  async function sendConfirmation(req, user) {
+    try {
+      await emailVerification.send(user, siteUrl(req));
+      return true;
+    } catch (err) {
+      req.log.error({ err }, 'Could not send the confirmation email');
+      return false;
+    }
+  }
 
   const cookieOptions = {
     path: '/',
@@ -69,12 +104,10 @@ export default async function accountRoutes(app) {
         hashRecoveryCode(recoveryCode),
       );
       await startSession(reply, user.id);
-      return reply.code(201).send({ user, recoveryCode });
+      const emailSent = await sendConfirmation(req, user);
+      return reply.code(201).send({ user, recoveryCode, emailSent });
     } catch (err) {
-      if (err instanceof UsernameTakenError) {
-        return reply.code(409).send({ error: TAKEN.username, fields: TAKEN });
-      }
-      throw err;
+      return taken(reply, err);
     }
   });
 
@@ -117,15 +150,14 @@ export default async function accountRoutes(app) {
       return reply.code(400).send({ error: 'Check the highlighted fields.', fields: errors });
     try {
       const before = await users.publicProfile(req.userId);
-      const user = await users.update(req.userId, value);
-      if (!user) return reply.code(401).send({ error: 'Please log in.' });
+      const updated = await users.update(req.userId, value);
+      if (!updated) return reply.code(401).send({ error: 'Please log in.' });
+      const { user, emailChanged } = updated;
       await presence.updateProfile(user, before?.country);
-      return { user };
+      const emailSent = emailChanged ? await sendConfirmation(req, user) : false;
+      return { user, emailSent };
     } catch (err) {
-      if (err instanceof UsernameTakenError) {
-        return reply.code(409).send({ error: TAKEN.username, fields: TAKEN });
-      }
-      throw err;
+      return taken(reply, err);
     }
   });
 
@@ -236,6 +268,37 @@ export default async function accountRoutes(app) {
       .type('application/json')
       .send(JSON.stringify(data, null, 2));
   });
+
+  app.post('/api/me/email/resend', { preHandler: app.requireUser }, async (req, reply) => {
+    if (!(await limit(reply, `verify-mail:${req.userId}`, 5, 3600))) return;
+    const user = await users.profile(req.userId);
+    if (!user) return reply.code(401).send({ error: 'Please log in.' });
+    if (!user.email) return reply.code(400).send({ error: 'Add your email address first.' });
+    if (user.emailVerified)
+      return reply.code(400).send({ error: 'Your email is already confirmed.' });
+    if (!(await sendConfirmation(req, user))) {
+      return reply.code(502).send({ error: "We couldn't send the email. Try again later." });
+    }
+    return reply.code(204).send();
+  });
+
+  // No session needed: the link may be opened on another device
+  app.post('/api/email/verify', async (req, reply) => {
+    if (!(await limit(reply, `verify-ip:${req.ip}`, 30, 900))) return;
+    const id = await emailVerification.confirm(req.body?.token);
+    if (!id) {
+      return reply
+        .code(400)
+        .send({ error: 'That confirmation link has expired or was already used.' });
+    }
+    return { confirmed: true, you: id === req.userId };
+  });
+
+  if (config.mailOutbox) {
+    app.get('/api/test/outbox', async (req) => ({
+      emails: await mailer.outbox(String(req.query.to || '')),
+    }));
+  }
 
   app.delete('/api/me', { preHandler: app.requireUser }, async (req, reply) => {
     if (!(await limit(reply, `password:${req.userId}`, 10, 900))) return;

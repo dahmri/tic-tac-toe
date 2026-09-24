@@ -19,6 +19,9 @@ const USERNAME_RE = /^[A-Za-z0-9_]+$/;
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 // E.164: a + then the country code and number, 8 to 15 digits in all
 const PHONE_RE = /^\+[1-9]\d{7,14}$/;
+// Deliberately loose: the confirmation email is the real test
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@.]{2,}$/;
+const EMAIL_MAX = 254;
 
 const text = (v) => (typeof v === 'string' ? v.normalize('NFC').trim().replace(/\s+/g, ' ') : '');
 
@@ -67,6 +70,16 @@ function checkCountry(value) {
   return [v, isCountryCode(v) ? null : 'Choose your country.'];
 }
 
+// Stored lowercased, so "Ann@Example.com" and "ann@example.com" are one address
+function checkEmail(value) {
+  const v = text(value).toLowerCase();
+  if (!v) return [v, 'Enter your email address.'];
+  if (v.length > EMAIL_MAX || !EMAIL_RE.test(v)) {
+    return [v, 'That doesn’t look like an email address.'];
+  }
+  return [v, null];
+}
+
 function checkAvatar(value) {
   const v = text(value);
   return [v, isAvatar(v) ? null : 'Pick an avatar.'];
@@ -98,6 +111,7 @@ const PROFILE_CHECKS = {
   firstName: (v) => checkName(v, 'first name'),
   lastName: (v) => checkName(v, 'last name'),
   username: checkUsername,
+  email: checkEmail,
   avatar: checkAvatar,
   birthDate: checkBirthDate,
   country: checkCountry,

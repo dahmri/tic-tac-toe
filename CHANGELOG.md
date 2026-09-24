@@ -6,6 +6,24 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-24
+
+### Added
+
+- **Email confirmation.** Creating an account now asks for your email
+  address, and we send you a link to confirm it. Until you click it you
+  can play the computer and on the same screen, but online games, your
+  rating and the leaderboard wait; a banner offers to send the email
+  again. Changing your email in your profile means confirming the new
+  one. Players who signed up before today are asked to add an email.
+  Other players never see your address, and it's stored encrypted with
+  your other personal details.
+
+### Changed
+
+- The server needs `SITE_URL` (the site's public address, for links in
+  emails) and SMTP settings for sending them. See `docs/DEPLOYMENT.md`.
+
 ## [1.5.0] - 2026-09-24
 
 ### Added

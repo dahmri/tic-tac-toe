@@ -3,7 +3,7 @@
 
 import { emptyBoard, gameResult, isVariant, nextToVanish, other, playOn, replay } from './rules.js';
 import { hintMove, pickMove, pickVanishMove } from './ai.js';
-import { currentUser, initAccount, isGuest, leaveGuest } from './account.js';
+import { canPlayOnline, currentUser, initAccount, isGuest, leaveGuest } from './account.js';
 import { avatarEmoji } from './avatars.js';
 import { markSVG } from './marks.js';
 import { connectLive } from './live.js';
@@ -63,8 +63,9 @@ let lastRound = null;
 let turnEndsAt = null;
 
 const online = () => state.mode === 'online';
-// Guests can pick Online, but only see what an account would unlock
-const guestLocked = () => online() && isGuest();
+// Guests, and players who haven't confirmed their email, can pick Online
+// but only see what they need to do first
+const onlineLocked = () => online() && !canPlayOnline();
 const inMatch = () => !!match && !match.ended;
 const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X');
 const opponent = () => (match ? match.players[other(mySymbol())] : null);
@@ -142,7 +143,7 @@ function isHumanTurn() {
 function statusHTML() {
   const tag = (t) => `<span class="${t.toLowerCase()}">${t}</span>`;
 
-  if (guestLocked()) return '';
+  if (onlineLocked()) return '';
   if (online() && !inMatch()) {
     if (liveStatus !== 'online') return 'Connecting…';
     return 'Find an opponent, or invite a player.';
@@ -236,7 +237,7 @@ function render() {
   $('diffGroup').hidden = state.mode !== 'cpu';
   $('diff-hard').textContent = state.variant === 'vanish' ? 'Hard' : 'Unbeatable';
   // An online match keeps the rules it started with
-  $('rulesRow').hidden = inMatch() || guestLocked();
+  $('rulesRow').hidden = inMatch() || onlineLocked();
   $('ruleNote').hidden = variant() !== 'vanish';
   document
     .querySelectorAll('[data-variant]')
@@ -250,8 +251,8 @@ function render() {
     .querySelectorAll('[data-diff]')
     .forEach((b) => b.setAttribute('aria-pressed', b.dataset.diff === state.diff));
 
-  $('guestLocked').hidden = !guestLocked();
-  $('onlinePanel').hidden = !online() || guestLocked();
+  renderLocked();
+  $('onlinePanel').hidden = !online() || onlineLocked();
   $('lobby').hidden = inMatch();
   $('roomInfo').hidden = !inMatch();
   $('board').hidden = online() && !inMatch();
@@ -274,7 +275,7 @@ function render() {
   $('reset').hidden = online();
   $('next').closest('.actions').hidden = online() && !inMatch();
 
-  setLobby({ visible: online() && !guestLocked() && !$('gameView').hidden, inMatch: inMatch() });
+  setLobby({ visible: online() && !onlineLocked() && !$('gameView').hidden, inMatch: inMatch() });
   renderMe();
 
   renderClock();
@@ -506,6 +507,33 @@ function setMode(mode) {
 
 /* ---------- Online play ---------- */
 
+// What stands between the player and online games
+function renderLocked() {
+  $('guestLocked').hidden = !onlineLocked();
+  if (!onlineLocked()) return;
+  const user = currentUser();
+  const [title, text, button] = !user
+    ? [
+        '🔒 Online games need a free account',
+        'With an account you can play people around the world, get a rating, climb the leaderboard, keep your stats, and pick a funny avatar.',
+        'Create a free account',
+      ]
+    : !user.email
+      ? [
+          '✉️ Add your email to play online',
+          'We ask every player for a confirmed email address before they play online.',
+          'Add my email',
+        ]
+      : [
+          '✉️ Confirm your email to play online',
+          `Click the link we sent to ${user.email}. Can't find it? Check the spam folder, or send it again.`,
+          'Send it again',
+        ];
+  $('lockedTitle').textContent = title;
+  $('lockedText').textContent = text;
+  $('guestJoin').textContent = button;
+}
+
 function setNetMessage(text) {
   $('netMsg').textContent = text || '';
 }
@@ -702,7 +730,10 @@ $('soundBtn').addEventListener('click', () => {
 });
 renderSound();
 $('reset').addEventListener('click', resetScores);
-$('guestJoin').addEventListener('click', leaveGuest);
+// The locked panel's button: sign up as a guest, or the same as the email banner's
+$('guestJoin').addEventListener('click', () =>
+  currentUser() ? $('emailAction').click() : leaveGuest(),
+);
 $('leave').addEventListener('click', () => {
   if (inMatch()) live.send({ t: 'leave', match: match.id });
 });
@@ -736,9 +767,18 @@ resetBoard();
 initAccount({
   onSignIn() {
     resetBoard();
-    goOnline();
+    if (canPlayOnline()) goOnline();
     render();
     maybeCpu();
+  },
+  // The email was confirmed (online opens) or changed (it closes until confirmed)
+  onEmailState() {
+    if (canPlayOnline()) goOnline();
+    else {
+      goOffline();
+      setNetMessage('');
+    }
+    render();
   },
   onGuest() {
     goOffline();

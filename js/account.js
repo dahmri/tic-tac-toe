@@ -18,10 +18,12 @@ const GUEST_KEY = 'pencil-ttt-guest';
 
 let user = null;
 let guest = false;
-let handlers = { onSignIn() {}, onSignOut() {}, onGuest() {}, onProfile() {} };
+let handlers = { onSignIn() {}, onSignOut() {}, onGuest() {}, onEmailState() {} };
 
 export const currentUser = () => user;
 export const isGuest = () => guest;
+// Online play needs a confirmed email
+export const canPlayOnline = () => !!user?.emailVerified;
 
 function rememberGuest(on) {
   try {
@@ -140,10 +142,96 @@ function renderMe() {
   $('meFlag').textContent = guest ? '' : countryFlag(user.country);
   document.querySelectorAll('[data-member]').forEach((b) => (b.hidden = guest));
   document.querySelectorAll('[data-guest]').forEach((b) => (b.hidden = !guest));
+  renderEmailNotice();
+}
+
+/* ---------- Email confirmation ---------- */
+
+// A message for the banner that outranks the usual one, e.g. "confirmed!"
+let flash = '';
+
+// The banner under the account bar, until the email is confirmed
+function renderEmailNotice() {
+  const box = $('emailNotice');
+  const text = $('emailNoticeText');
+  const action = $('emailAction');
+  if (guest || !user) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = !flash && user.emailVerified;
+  action.hidden = !!flash || user.emailVerified;
+  if (flash) text.textContent = flash;
+  else if (!user.email) {
+    text.textContent = 'Add your email address to play online.';
+    action.textContent = 'Add my email';
+  } else if (!user.emailVerified) {
+    text.textContent = `Confirm your email to play online: click the link we sent to ${user.email}.`;
+    action.textContent = 'Send it again';
+    action.disabled = false;
+  }
+}
+
+function setFlash(message) {
+  flash = message;
+  renderEmailNotice();
+}
+
+async function emailAction() {
+  if (!user.email) {
+    openProfile();
+    $('profileForm').elements.email.focus();
+    return;
+  }
+  $('emailAction').disabled = true;
+  try {
+    await api('POST', '/api/me/email/resend');
+    $('emailNoticeText').textContent =
+      `Sent! Check your inbox for ${user.email} (and the spam folder).`;
+  } catch (err) {
+    $('emailNoticeText').textContent = err.message;
+    $('emailAction').disabled = false;
+  }
+}
+
+// The account changed in a way that may open or close online play
+function setUser(u) {
+  const before = canPlayOnline();
+  user = u;
+  renderMe();
+  if (canPlayOnline() !== before) handlers.onEmailState(user);
+}
+
+// The link from the email opens the site with ?verify=<token>
+async function confirmFromLink() {
+  const token = new URLSearchParams(location.search).get('verify');
+  if (!token) return null;
+  history.replaceState(null, '', location.pathname);
+  try {
+    await api('POST', '/api/email/verify', { token });
+    return { ok: true, message: 'Email confirmed. You can play online now!' };
+  } catch (err) {
+    return { ok: false, message: err.message };
+  }
+}
+
+// Confirmed in another tab or on the phone? Check when the player comes back.
+async function refreshIfPending() {
+  if (!user || user.emailVerified || !user.email) return;
+  try {
+    const { user: fresh } = await api('GET', '/api/me');
+    if (fresh.emailVerified) {
+      flash = 'Email confirmed. You can play online now!';
+      setUser(fresh);
+    }
+  } catch {
+    /* offline or logged out: the next action will tell */
+  }
 }
 
 function signedIn(u) {
   user = u;
+  flash = '';
   guest = false;
   rememberGuest(false);
   renderMe();
@@ -248,6 +336,7 @@ function openProfile() {
     'firstName',
     'lastName',
     'username',
+    'email',
     'avatar',
     'birthDate',
     'country',
@@ -267,14 +356,19 @@ function openProfile() {
 async function saveProfile(e) {
   e.preventDefault();
   const form = e.currentTarget;
-  const { ok, value, errors } = validateProfile(formData(form));
+  const data = formData(form);
+  if (!data.email && !user.email) delete data.email; // accounts from before emails
+  const { ok, value, errors } = validateProfile(data);
   if (!ok) return showErrors(form, errors);
   const res = await submit(form, () => api('PATCH', '/api/me', value));
   if (!res) return;
-  user = res.user;
-  renderMe();
-  handlers.onProfile(user);
-  showErrors(form, {}, 'Saved.');
+  flash = '';
+  setUser(res.user);
+  showErrors(
+    form,
+    {},
+    res.emailSent ? `Saved. We sent a link to ${res.user.email}: click it to confirm.` : 'Saved.',
+  );
 }
 
 async function changePassword(e) {
@@ -335,6 +429,11 @@ export async function initAccount(callbacks) {
   });
 
   $('guestBtn').addEventListener('click', playAsGuest);
+  $('emailAction').addEventListener('click', emailAction);
+  window.addEventListener('focus', refreshIfPending);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshIfPending();
+  });
   $('forgotBtn').addEventListener('click', showReset);
   $('backToLogin').addEventListener('click', () => setAuthTab('login'));
   $('resetForm').addEventListener('submit', resetPassword);
@@ -362,8 +461,10 @@ export async function initAccount(callbacks) {
     signedOut();
   });
 
+  const confirmed = await confirmFromLink();
   try {
     signedIn((await api('GET', '/api/me')).user);
+    if (confirmed) setFlash(confirmed.message);
   } catch (err) {
     // Offline: guests carry on, others can start playing as a guest
     if (err.status === 401 || (err.status === 0 && wasGuest())) {
@@ -376,6 +477,12 @@ export async function initAccount(callbacks) {
     } else {
       show('auth');
       $('loginForm').querySelector('.form-msg').textContent = err.message;
+    }
+    // Confirmed from a device where they aren't logged in
+    if (confirmed && !user) {
+      $('loginForm').querySelector('.form-msg').textContent = confirmed.ok
+        ? 'Email confirmed. Log in to play online.'
+        : confirmed.message;
     }
   }
 }

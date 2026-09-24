@@ -1,6 +1,6 @@
 {
   "name": "pencil-tic-tac-toe",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "A hand-drawn tic-tac-toe game for the browser: play the computer or a friend.",
   "type": "module",
   "private": true,
@@ -35,6 +35,7 @@
     "@fastify/websocket": "11.3.1",
     "fastify": "5.12.5",
     "ioredis": "6.0.0",
+    "nodemailer": "10.0.10",
     "pg": "8.23.0"
   }
 }
