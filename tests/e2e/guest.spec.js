@@ -1,3 +1,4 @@
+import { AVATARS } from '../../js/avatars.js';
 import { test, expect, cell, chooseMode, newPlayer, status } from './fixtures.js';
 
 test.use({ signedIn: false });
@@ -48,7 +49,7 @@ test('online play asks guests to make an account', async ({ page }) => {
     'aria-selected',
     'true',
   );
-  await expect(page.locator('#signupForm').getByRole('radio')).toHaveCount(18);
+  await expect(page.locator('#signupForm').getByRole('radio')).toHaveCount(AVATARS.length);
 
   // Leaving guest play is remembered too
   await page.reload();

@@ -6,6 +6,14 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **20 more avatars**, 38 in all: Taco Tuesday 🌮, Donut Worry 🍩, Hug Me
+  Cactus 🌵, Hot Diggity Dog 🌭, Piggy Bank 🐷, Baby Shark 🦈, Night Owl 🦉,
+  Spiky Hugger 🦔, Fancy Flamingo 🦩, The GOAT 🐐, Sleepy Zombie 🧟, Sneaky
+  Ninja 🥷, Pocket Wizard 🧙, Pirate Parrot 🦜, Stone Face 🗿, Big Cheese 🧀,
+  Turbo Snail 🐌, Crabby Pants 🦀, Tiny Dragon 🐉 and Cheeky Monkey 🙈.
+
 ## [1.6.0] - 2026-09-24
 
 ### Added
