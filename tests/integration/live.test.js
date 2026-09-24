@@ -28,12 +28,14 @@ test('connected players are listed as online, filtered by country, without yours
   const v = await live(t.app, viewer);
   assert.equal(a.hello.me.username, fr.user.username);
   assert.equal(a.hello.me.firstName, undefined, 'no personal data over the wire');
+  assert.equal(a.hello.me.avatar, 'octopus');
 
   const all = await onlineList(viewer);
   const names = all.players.map((p) => p.username);
   assert.ok(names.includes(fr.user.username) && names.includes(ma.user.username));
   assert.ok(!names.includes(viewer.user.username));
   assert.deepEqual(Object.keys(all.players[0]).sort(), [
+    'avatar',
     'country',
     'id',
     'playing',
@@ -94,6 +96,16 @@ test('changing country moves you between country lists', async () => {
   const fr = await onlineList(viewer, '?country=FR');
   assert.ok(jp.players.some((p) => p.id === ann.user.id && p.country === 'JP'));
   assert.ok(!fr.players.some((p) => p.id === ann.user.id));
+  await a.close();
+});
+
+test('a new avatar shows in the online list straight away', async () => {
+  const ann = await player(t.app);
+  const viewer = await player(t.app);
+  const a = await live(t.app, ann);
+  await ann.patch('/api/me', { avatar: 'unicorn' });
+  const list = await onlineList(viewer);
+  assert.equal(list.players.find((p) => p.id === ann.user.id).avatar, 'unicorn');
   await a.close();
 });
 

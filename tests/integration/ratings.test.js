@@ -81,6 +81,7 @@ test('the leaderboard ranks players, for the world or one country', async () => 
   );
   assert.equal(iceland.total, 2, 'players who never played online are not ranked');
   assert.deepEqual(Object.keys(iceland.players[0]).sort(), [
+    'avatar',
     'country',
     'id',
     'played',

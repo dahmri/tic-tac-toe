@@ -6,6 +6,21 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-24
+
+### Added
+
+- **Play as a guest.** No account needed: click **Play as a guest** to play
+  the computer or a friend on the same screen straight away. Guests get the
+  👻 Mystery Guest avatar. Online games, stats, the leaderboard and the
+  profile need a free account; picking **Online** as a guest explains this,
+  with a button to sign up. Guest games aren't recorded anywhere.
+- **Avatars.** Pick a funny avatar when you create an account: Tiny T-Rex,
+  Speedy Sloth, Avocado Toast, Drama Llama, Couch Potato, Trash Panda, Beep
+  Boop and 11 more. It shows next to your name, in the lobby, in
+  invitations, in your match, on the leaderboard and in stats. Change it any
+  time in your profile. Players who signed up earlier get the Tiny T-Rex.
+
 ## [1.3.0] - 2026-09-24
 
 ### Added

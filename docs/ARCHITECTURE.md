@@ -50,12 +50,18 @@ code the browser downloads is the game's own.
 
 ## Accounts and personal data
 
-- **Registration** asks for first name, last name, username, date of birth,
-  country, optional phone number and password. The rules live in
+- **Guests** play without an account: vs Computer and Same screen only,
+  entirely in the browser. The server never hears from them, so nothing is
+  stored and their games don't count in any statistics. A flag in
+  `localStorage` keeps them in guest play across reloads.
+- **Registration** asks for first name, last name, username, an avatar,
+  date of birth, country, optional phone number and password. The rules live in
   [`js/validation.js`](../js/validation.js) and run in both the browser
   (instant feedback) and the server (the check that counts). Players must be
   at least 13.
-- **What others see:** only the username and country.
+- **What others see:** only the username, avatar and country. Avatars are
+  ids from a fixed list in [`js/avatars.js`](../js/avatars.js) (`users.avatar`),
+  shown as emoji, so there are no images to upload, store or moderate.
 - **Encryption at rest:** first name, last name, date of birth and phone
   number are sealed together with AES-256-GCM before they reach the database
   (`users.pii`), with a key from `DATA_ENCRYPTION_KEY` that never touches the

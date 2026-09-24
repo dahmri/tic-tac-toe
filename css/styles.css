@@ -738,6 +738,98 @@ kbd {
 .account-bar .btn {
   padding: 8px 6px;
 }
+
+/* Avatars: the picker on the sign-up and profile forms, and the face next
+   to every player's name */
+.avatar {
+  font-size: 1.15em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.account-bar .avatar {
+  font-size: 1.6rem;
+}
+.avatar-field {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.avatar-field > legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font: 700 0.72rem/1.2 var(--body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+}
+.avatar-field[aria-invalid='true'] .avatar-grid {
+  border-color: var(--o);
+}
+.avatar-option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 46px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--chip);
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+.avatar-face {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.avatar-option:hover {
+  transform: rotate(-6deg) scale(1.08);
+}
+.avatar-option:has(input:checked) {
+  border-color: var(--ink);
+  background: var(--hi);
+}
+.avatar-option:has(input:focus-visible) {
+  outline: 2px solid var(--x);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .avatar-option {
+    transition: none;
+  }
+  .avatar-option:hover {
+    transform: none;
+  }
+}
+
+/* Guests: the way in without an account, and what Online looks like to them */
+.guest-cta {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding-top: 16px;
+  border-top: 2px dashed var(--grid);
+}
+.guest-locked {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding: 16px;
+  border: 2px dashed var(--muted);
+  border-radius: 12px;
+}
+.guest-locked p {
+  margin: 0;
+}
+.guest-locked-title {
+  font: 700 1.5rem/1.1 var(--display);
+}
 .account-bar .btn.icon {
   font-size: 1.1rem;
   line-height: 1;

@@ -6,7 +6,7 @@
 //                        { difficulty, starter, moves, seconds }
 //   GET  /api/leaderboard  best ratings: ?country=FR&offset=0&limit=20
 //                        -> { total, players: [{ rank, id, username, country,
-//                             rating, played, won }], me: { rank, rating, ... } | null }
+//                             avatar, rating, played, won }], me: { rank, rating, ... } | null }
 
 import { checkCpuGame } from '../cpu-game.js';
 import { isCountryCode } from '../../js/countries.js';

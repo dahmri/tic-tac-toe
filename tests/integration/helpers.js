@@ -43,6 +43,7 @@ export function newPlayer(overrides = {}) {
     firstName: 'Test',
     lastName: 'Player',
     username: `player_${process.pid % 10000}_${counter}`,
+    avatar: 'octopus',
     birthDate: '1990-05-17',
     country: 'FR',
     phone: '+33612345678',

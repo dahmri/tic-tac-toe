@@ -15,6 +15,7 @@ test('signing up creates the account and logs in', async () => {
   assert.equal(res.status, 201);
   assert.equal(res.body.user.username, player.username);
   assert.equal(res.body.user.firstName, 'Test');
+  assert.equal(res.body.user.avatar, 'octopus');
   assert.equal(res.body.user.password, undefined);
   assert.ok(c.cookie);
 
@@ -45,6 +46,20 @@ test('invalid sign-ups are refused with a message per field', async () => {
   assert.equal(res.status, 400);
   assert.ok(res.body.fields.username);
   assert.ok(res.body.fields.birthDate);
+});
+
+test('an avatar must be chosen from the list, and can be changed', async () => {
+  const missing = await client(t.app).post('/api/account', newPlayer({ avatar: undefined }));
+  assert.equal(missing.status, 400);
+  assert.equal(missing.body.fields.avatar, 'Pick an avatar.');
+  const guest = await client(t.app).post('/api/account', newPlayer({ avatar: 'guest' }));
+  assert.equal(guest.status, 400);
+
+  const c = client(t.app);
+  await c.post('/api/account', newPlayer());
+  const res = await c.patch('/api/me', { avatar: 'banana' });
+  assert.equal(res.status, 200);
+  assert.equal((await c.get('/api/me')).body.user.avatar, 'banana');
 });
 
 test('usernames are unique regardless of case', async () => {
