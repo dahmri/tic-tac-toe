@@ -14,13 +14,15 @@
   --grid: #dde5e9;
   --margin: #e9afa6;
   --ink: #2a2e35;
-  --muted: #666d75;
+  --muted: #5f666e; /* 4.97:1 on --chip, 5.4:1 on --paper */
   --x: #2447a8;
   --o: #c0392b;
   --hi: #fff1a0;
   --chip: #eceee6;
   --chip-on: #2a2e35;
   --chip-on-ink: #f6f7f2;
+  --star: #9a6700;
+  --ok: #1f7a43;
   --display: 'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
   --body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
@@ -38,6 +40,8 @@
     --chip: #25302b;
     --chip-on: #e4e8e1;
     --chip-on-ink: #1c2420;
+    --star: #f2c14e;
+    --ok: #6fd08f;
   }
 }
 :root[data-theme='dark'] {
@@ -53,6 +57,8 @@
   --chip: #25302b;
   --chip-on: #e4e8e1;
   --chip-on-ink: #1c2420;
+  --star: #f2c14e;
+  --ok: #6fd08f;
 }
 
 html,
@@ -1245,4 +1251,146 @@ a.btn {
 }
 .email-notice .btn {
   padding: 8px 12px;
+}
+
+/* Friends */
+.friends {
+  display: grid;
+  gap: 8px;
+}
+.btn.star {
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 4px 6px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.btn.star[aria-pressed='true'] {
+  color: var(--star);
+}
+.friend.is-offline .who-line {
+  opacity: 0.55;
+}
+.friend.is-online .where::before {
+  content: '● ';
+  color: var(--ok);
+}
+.add-friend {
+  display: flex;
+  gap: 8px;
+}
+.add-friend input {
+  flex: 1;
+  min-width: 0;
+  font: 1rem/1.2 var(--body);
+  color: var(--ink);
+  background: var(--chip);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 40px;
+}
+.add-friend input:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+
+/* Daily puzzle */
+.puzzle-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-top: -8px;
+}
+.puzzle-note {
+  margin: 0;
+  flex: 1 1 200px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Seasons, on the leaderboard */
+.lb-season {
+  margin: 0;
+  font-weight: 700;
+}
+.lb-podium {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.podium-title {
+  color: var(--muted);
+}
+
+/* Achievements */
+.badges {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+.badge {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--chip);
+}
+.badge-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.badge-text {
+  display: grid;
+  gap: 2px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.badge-text strong {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+.badge.locked .badge-emoji {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.badge-progress {
+  font-weight: 700;
+}
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  padding: 12px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--hi);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.2);
+  z-index: 10;
+}
+.toast.show {
+  animation: toast-in 0.35s ease-out;
+}
+@keyframes toast-in {
+  from {
+    transform: translate(-50%, 20px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast.show {
+    animation: none;
+  }
 }

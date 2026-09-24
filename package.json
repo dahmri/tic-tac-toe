@@ -1,6 +1,6 @@
 {
   "name": "pencil-tic-tac-toe",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "A hand-drawn tic-tac-toe game for the browser: play the computer or a friend.",
   "type": "module",
   "private": true,
@@ -22,6 +22,7 @@
     "check": "npm run lint && npm run format:check && npm test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
     "eslint": "10.11.0",

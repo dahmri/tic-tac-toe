@@ -5,10 +5,11 @@
 //   as a whole), and aria-label / title / placeholder attributes;
 // - scripts: the English passed to t(), tr() or sentence();
 // - server and validation messages: sentences in quotes ending in . ! ?;
-// - the Stats labels, and the avatars' names.
+// - the Stats labels, the avatars' names, and the achievements.
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { AVATARS, GUEST_AVATAR } from '../../js/avatars.js';
+import { ACHIEVEMENTS } from '../../js/achievements.js';
 
 const root = new URL('../../', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
@@ -91,6 +92,7 @@ export function translationKeys() {
     ...codeKeys(),
     ...AVATARS.map((a) => a.name),
     GUEST_AVATAR.name,
+    ...ACHIEVEMENTS.flatMap((a) => [a.name, a.about]),
   ]);
   for (const k of UNTRANSLATED) keys.delete(k);
   return [...keys].sort();

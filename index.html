@@ -64,6 +64,44 @@
           </div>
         </form>
 
+        <form class="form" id="resetMailForm" novalidate hidden>
+          <p class="help">
+            Enter your username or email. If your email is confirmed, we'll send you a link to
+            choose a new password.
+          </p>
+          <label class="field">
+            <span>Username or email</span>
+            <input
+              name="login"
+              autocomplete="username"
+              required
+              spellcheck="false"
+              autocapitalize="none"
+            />
+          </label>
+          <p class="form-msg" role="status"></p>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Email me a link</button>
+            <button type="button" class="btn ghostbtn" id="useRecoveryCode">
+              Use a recovery code instead
+            </button>
+            <button type="button" class="btn ghostbtn" data-back-login>Back to log in</button>
+          </div>
+        </form>
+
+        <form class="form" id="newPasswordForm" novalidate hidden>
+          <p class="help">Choose a new password for your account.</p>
+          <input name="username" autocomplete="username" hidden />
+          <label class="field">
+            <span>New password</span>
+            <input name="newPassword" type="password" autocomplete="new-password" required />
+            <small class="help">At least 10 characters. A few random words work well.</small>
+            <small class="err" data-err="newPassword"></small>
+          </label>
+          <p class="form-msg" role="alert"></p>
+          <button type="submit" class="btn primary">Save my new password</button>
+        </form>
+
         <form class="form" id="resetForm" novalidate hidden>
           <p class="help">
             Use the recovery code you saved when you signed up. It lets you choose a new password.
@@ -93,7 +131,7 @@
           <p class="form-msg" role="alert"></p>
           <div class="form-actions">
             <button type="submit" class="btn primary">Set new password</button>
-            <button type="button" class="btn ghostbtn" id="backToLogin">Back to log in</button>
+            <button type="button" class="btn ghostbtn" data-back-login>Back to log in</button>
           </div>
         </form>
 
@@ -236,6 +274,9 @@
             <button id="mode-online" type="button" data-mode="online" aria-pressed="false">
               Online
             </button>
+            <button id="mode-puzzle" type="button" data-mode="puzzle" aria-pressed="false">
+              🧩 Puzzle
+            </button>
           </div>
           <div class="seg" role="group" aria-label="Difficulty" id="diffGroup">
             <button id="diff-casual" type="button" data-diff="casual" aria-pressed="true">
@@ -290,6 +331,27 @@
               >
               <button id="cancelSearch" type="button" class="btn ghostbtn">Cancel</button>
             </div>
+            <div class="friends" id="friendsBox">
+              <h2 class="panel-title">Friends <span class="count" id="friendsCount"></span></h2>
+              <ul class="players" id="friendList" aria-label="Friends"></ul>
+              <p class="empty" id="friendsEmpty">
+                No friends yet. Add players you like with the ☆ next to their name, or by username.
+              </p>
+              <form class="add-friend" id="addFriendForm" novalidate>
+                <label class="sr-only" for="friendName">Add a friend by username</label>
+                <input
+                  id="friendName"
+                  name="username"
+                  placeholder="Add a friend by username"
+                  autocomplete="off"
+                  spellcheck="false"
+                  autocapitalize="none"
+                  maxlength="20"
+                />
+                <button type="submit" class="btn">Add</button>
+              </form>
+              <p class="form-msg" id="friendMsg" role="alert"></p>
+            </div>
             <div class="lobby-head">
               <h2 class="panel-title">
                 Players online <span class="count" id="onlineCount"></span>
@@ -318,6 +380,10 @@
 
         <p class="status" id="status" aria-live="polite"></p>
         <p class="turn-clock" id="turnClock" hidden></p>
+        <div class="puzzle-info" id="puzzleInfo" hidden>
+          <p class="puzzle-note" id="puzzleNote" role="status"></p>
+          <button id="puzzleAgain" type="button" class="btn ghostbtn" hidden>Practice again</button>
+        </div>
 
         <div class="board" id="board">
           <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
@@ -516,6 +582,9 @@
       </div>
       <p class="form-msg" id="statsMsg" role="alert"></p>
       <div id="statsBody" hidden>
+        <h3>Achievements <span class="count" id="badgeCount"></span></h3>
+        <ul class="badges" id="badgeList"></ul>
+
         <h3>Rating</h3>
         <div class="tiles" id="ratingTiles"></div>
 
@@ -554,6 +623,8 @@
         <h2 id="leaderboardTitle">Leaderboard</h2>
         <button type="button" class="btn ghostbtn" data-close>Close</button>
       </div>
+      <p class="lb-season" id="lbSeason"></p>
+      <p class="lb-podium" id="lbPodium" hidden></p>
       <label class="sr-only" for="lbCountry">Leaderboard for</label>
       <select id="lbCountry" class="filter">
         <option value="">🌍 Whole world</option>
@@ -575,8 +646,9 @@
       <p class="empty" id="lbEmpty" hidden></p>
       <button type="button" class="btn ghostbtn" id="lbMore" hidden>Show more</button>
       <p class="note">
-        Everyone starts at 1200. Each online round moves your rating: beating a stronger player
-        earns more. Games against the computer don't count.
+        A new season starts on the 1st of every month, and everyone starts again at 1200. Each
+        online round moves your rating: beating a stronger player earns more. Games against the
+        computer don't count.
       </p>
     </dialog>
 
@@ -605,6 +677,8 @@
         <button id="replayLast" type="button" class="btn ghostbtn" aria-label="Last move">⏭</button>
       </div>
     </dialog>
+
+    <div class="toast" id="toast" role="status" hidden></div>
 
     <script type="module" src="js/main.js"></script>
   </body>

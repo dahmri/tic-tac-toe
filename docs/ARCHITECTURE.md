@@ -79,7 +79,12 @@ code the browser downloads is the game's own.
   confirming the new one. The address is sealed with the other personal
   data; `users.email_hash` (an HMAC) keeps addresses unique. Players from
   before emails existed are asked to add one.
-- **Recovery codes** replace email-based resets (accounts have no email):
+- **Password reset by email:** a link to the confirmed address
+  (`server/password-reset.js`), single use, for an hour. Redis keeps the
+  token's hash with a fingerprint of the password hash, so the link dies
+  as soon as the password changes. The request always gets the same
+  answer, so it can't reveal who has an account.
+- **Recovery codes** are the other way back in (accounts have no email):
   a 20-character code shown once at sign-up, stored only as a SHA-256
   hash (`users.recovery_hash`). Resetting uses it up, logs out every
   device and issues a new one. Players can make a new code from their
@@ -211,6 +216,17 @@ could make. "Unbeatable" must play perfectly (so a win against it is
 refused), "Casual" always takes a winning move. The server works out the
 result itself. They are counted apart from online games.
 
+## Seasons
+
+Ratings run by calendar month (UTC, [`js/seasons.js`](../js/seasons.js)).
+`player_stats.rating` is the rating in `player_stats.season`. When a
+player's first rated game of a new month is saved, their old season is
+copied to `season_results` and the rating starts again from 1200, in the
+same transaction (no job at midnight, nothing lost if they don't play for
+months). A finished season's podium combines `season_results` with the
+players who haven't played since. `peak_rating` and the lifetime totals
+never reset.
+
 ## Languages
 
 The site is in English, French and Spanish. English text is the key:
@@ -236,27 +252,35 @@ sentence to its translation, and anything missing falls back to English.
 
 ## API
 
-| Method   | Path                    | What it does                                          |
-| -------- | ----------------------- | ----------------------------------------------------- |
-| `POST`   | `/api/account`          | Create an account and log in                          |
-| `POST`   | `/api/session`          | Log in                                                |
-| `DELETE` | `/api/session`          | Log out                                               |
-| `GET`    | `/api/me`               | Your profile                                          |
-| `PATCH`  | `/api/me`               | Change any profile fields                             |
-| `PUT`    | `/api/me/password`      | Change password (logs out your other devices)         |
-| `POST`   | `/api/me/recovery-code` | A new recovery code (needs the password)              |
-| `POST`   | `/api/password-reset`   | Forgotten password: username + recovery code          |
-| `GET`    | `/api/me/export`        | Everything stored about you, as a JSON download       |
-| `DELETE` | `/api/me`               | Delete your account (needs the password)              |
-| `POST`   | `/api/me/email/resend`  | Send the confirmation email again                     |
-| `POST`   | `/api/email/verify`     | Confirm an address: `{ token }` from the email link   |
-| `GET`    | `/api/players/online`   | Online players: `?country=FR&offset=0&limit=30`       |
-| `GET`    | `/api/me/stats`         | Your totals, streaks and most played opponents        |
-| `GET`    | `/api/me/games`         | Your game history, newest first: `?cursor=&limit=20`  |
-| `POST`   | `/api/games/cpu`        | Record a finished game against the computer           |
-| `GET`    | `/api/leaderboard`      | Best ratings, public: `?country=FR&offset=0&limit=20` |
-| `GET`    | `/ws`                   | The live connection (WebSocket), see above            |
-| `GET`    | `/api/health`           | `{ ok: true }` when PostgreSQL and Redis answer       |
+| Method   | Path                        | What it does                                              |
+| -------- | --------------------------- | --------------------------------------------------------- |
+| `POST`   | `/api/account`              | Create an account and log in                              |
+| `POST`   | `/api/session`              | Log in                                                    |
+| `DELETE` | `/api/session`              | Log out                                                   |
+| `GET`    | `/api/me`                   | Your profile                                              |
+| `PATCH`  | `/api/me`                   | Change any profile fields                                 |
+| `PUT`    | `/api/me/password`          | Change password (logs out your other devices)             |
+| `POST`   | `/api/me/recovery-code`     | A new recovery code (needs the password)                  |
+| `POST`   | `/api/password-reset`       | Forgotten password: username + recovery code              |
+| `POST`   | `/api/password-reset/email` | Email a reset link: `{ login }` (same answer either way)  |
+| `POST`   | `/api/password-reset/token` | New password from that link: `{ token, newPassword }`     |
+| `GET`    | `/api/me/export`            | Everything stored about you, as a JSON download           |
+| `DELETE` | `/api/me`                   | Delete your account (needs the password)                  |
+| `POST`   | `/api/me/email/resend`      | Send the confirmation email again                         |
+| `POST`   | `/api/email/verify`         | Confirm an address: `{ token }` from the email link       |
+| `GET`    | `/api/players/online`       | Online players: `?country=FR&offset=0&limit=30`           |
+| `GET`    | `/api/friends`              | Your friends, with whether they're online or playing      |
+| `POST`   | `/api/friends`              | Add a friend: `{ id }` or `{ username }`                  |
+| `DELETE` | `/api/friends/:id`          | Remove a friend                                           |
+| `GET`    | `/api/me/stats`             | Your totals, streaks and most played opponents            |
+| `GET`    | `/api/me/games`             | Your game history, newest first: `?cursor=&limit=20`      |
+| `GET`    | `/api/me/achievements`      | Your achievements, with progress towards goals            |
+| `POST`   | `/api/games/cpu`            | Record a finished game against the computer               |
+| `GET`    | `/api/puzzle?day=`          | Your daily puzzle result and streaks                      |
+| `POST`   | `/api/puzzle/:day`          | A try at the day's puzzle: `{ moves }` (the first counts) |
+| `GET`    | `/api/leaderboard`          | Best ratings, public: `?country=FR&offset=0&limit=20`     |
+| `GET`    | `/ws`                       | The live connection (WebSocket), see above                |
+| `GET`    | `/api/health`               | `{ ok: true }` when PostgreSQL and Redis answer           |
 
 Errors are JSON: `{ "error": "message", "fields": { "username": "message" } }`.
 

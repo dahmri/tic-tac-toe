@@ -2,6 +2,7 @@
 //
 //   GET  /api/me/stats   totals, streaks, top opponents
 //   GET  /api/me/games   history, newest first: ?cursor=...&limit=20
+//   GET  /api/me/achievements  [{ id, earned, count? }] (see js/achievements.js)
 //   POST /api/games/cpu  a finished game vs the computer:
 //                        { difficulty, starter, moves, seconds, variant?, endedAt? }
 //   GET  /api/leaderboard  best ratings: ?country=FR&offset=0&limit=20
@@ -23,6 +24,10 @@ export default async function statsRoutes(app) {
     ]);
     return { stats: summary, opponents };
   });
+
+  app.get('/api/me/achievements', { preHandler: app.requireUser }, async (req) => ({
+    achievements: await app.ctx.achievements.of(req.userId),
+  }));
 
   app.get('/api/me/games', { preHandler: app.requireUser }, async (req) => {
     const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 20, 1), 50);

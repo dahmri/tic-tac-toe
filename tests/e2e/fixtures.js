@@ -35,14 +35,17 @@ export function newPlayer(overrides = {}) {
 
 // The confirmation link's token from the latest email to `email`. The
 // test server keeps emails in an outbox instead of sending them.
-export async function emailToken(page, email) {
-  let mail;
+// `param` is the link's token name: 'verify' (confirm the address) or
+// 'reset' (a new password).
+export async function emailToken(page, email, param = 'verify') {
+  let link;
   await expect(async () => {
     const res = await page.request.get(`/api/test/outbox?to=${encodeURIComponent(email)}`);
-    [mail] = (await res.json()).emails;
-    expect(mail, `an email to ${email}`).toBeTruthy();
+    const links = (await res.json()).emails.map((m) => new URL(/https?:\/\/\S+/.exec(m.text)[0]));
+    link = links.find((u) => u.searchParams.has(param));
+    expect(link, `a '${param}' email to ${email}`).toBeTruthy();
   }).toPass({ timeout: 5000 });
-  return new URL(/https?:\/\/\S+/.exec(mail.text)[0]).searchParams.get('verify');
+  return link.searchParams.get(param);
 }
 
 // Creates an account through the API; the session cookie lands in the

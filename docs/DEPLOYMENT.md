@@ -139,6 +139,25 @@ curl http://localhost:8080/api/health
 docker compose logs -f api  # follow the game server's log
 ```
 
+## Monitoring
+
+- **Is it up?** The Uptime workflow (`.github/workflows/uptime.yml`)
+  checks `SITE_URL` every 15 minutes: the page, and `/api/health`, which
+  answers `{ ok: true, version }` only when PostgreSQL and Redis do. After
+  three failed tries a minute apart the run fails, and GitHub emails you
+  (keep "Actions" notifications on in your GitHub settings). It stays
+  quiet until the production environment has a `SITE_URL` variable.
+- **Errors in players' browsers** are sent to `POST /api/client-errors`
+  (at most five per page, rate limited) and logged by the game server as
+  `Error in a browser`, next to its own errors:
+
+  ```sh
+  docker compose logs api | grep -i error
+  ```
+
+- **Logs** rotate at 10 MB, five files per service, so they can't fill
+  the disk.
+
 ## Backups
 
 Player data lives in PostgreSQL. Back it up daily, for example with a cron

@@ -4,7 +4,10 @@
 import { api } from './api.js';
 import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, countryName, sortedCountries } from './countries.js';
-import { onLangChange, t } from './i18n.js';
+import { lang, onLangChange, t } from './i18n.js';
+import { seasonName } from './seasons.js';
+
+const MEDALS = ['🥇', '🥈', '🥉'];
 
 const PAGE = 20;
 const FILTER_KEY = 'pencil-ttt-leaderboard-country';
@@ -55,6 +58,7 @@ async function load(more) {
       ? t('Nobody from {country} has played online yet.', { country: countryName(country) })
       : t('Nobody has played online yet. Be the first!');
     $('lbMore').hidden = shown >= res.total;
+    renderSeason(res);
     const where = country ? countryName(country) : t('the world');
     $('lbMe').textContent = res.me
       ? t('You are #{rank} in {where}, rated {rating}.', {
@@ -70,6 +74,35 @@ async function load(more) {
   } catch (err) {
     $('lbMsg').textContent = t(err.message);
   }
+}
+
+// The season on show, how long it has left, and the last one's podium
+function renderSeason({ season, lastSeason }) {
+  if (!season) return;
+  const days = Math.ceil((new Date(season.endsAt) - Date.now()) / 86_400_000);
+  const name = seasonName(season.id, lang());
+  $('lbSeason').textContent =
+    days <= 1
+      ? t('Season {name}: last day!', { name })
+      : t('Season {name}: {days} days left', { name, days });
+  const box = $('lbPodium');
+  box.hidden = !lastSeason?.podium.length;
+  if (box.hidden) return;
+  box.replaceChildren(
+    el('span', 'podium-title', t('{name} podium:', { name: seasonName(lastSeason.id, lang()) })),
+    ...lastSeason.podium.flatMap((p) => {
+      const who = el('span', 'who-line');
+      const avatar = el('span', 'avatar', avatarEmoji(p.avatar));
+      avatar.title = t(avatarName(p.avatar));
+      who.append(
+        el('span', 'medal', MEDALS[p.rank - 1]),
+        avatar,
+        el('span', 'name', p.username),
+        el('span', 'rating-chip', String(p.rating)),
+      );
+      return [' ', who];
+    }),
+  );
 }
 
 function open() {
