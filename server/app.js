@@ -15,6 +15,8 @@ import { createMatches } from './matches.js';
 import { createInvites } from './invites.js';
 import { createStats } from './stats.js';
 import { createMatchmaking } from './matchmaking.js';
+import { createMailer } from './mailer.js';
+import { createEmailVerification } from './email-verification.js';
 import accountRoutes from './routes/account.js';
 import playersRoutes from './routes/players.js';
 import liveRoutes from './routes/live.js';
@@ -58,11 +60,15 @@ export async function buildApp({ config, db, redis }) {
     onRoundFinished: roundFinished,
     turnMs: config.turnMs,
   });
+  const users = createUsers(db, config.dataKey);
+  const mailer = createMailer({ config, redis, log: app.log });
   app.decorate('ctx', {
     config,
     db,
     redis,
-    users: createUsers(db, config.dataKey),
+    users,
+    mailer,
+    emailVerification: createEmailVerification({ redis, mailer, users }),
     sessions: createSessions(redis),
     rateLimit: createRateLimiter(redis, config.rateLimits),
     presence,

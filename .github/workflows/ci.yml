@@ -78,6 +78,9 @@ jobs:
             # The stack is served over plain http, and every test signs up
             echo "COOKIE_SECURE=false"
             echo "RATE_LIMITS=off"
+            # No real email: the tests read confirmation links from the outbox
+            echo "SITE_URL=http://127.0.0.1:8080"
+            echo "MAIL_OUTBOX=on"
           } > .env
           docker compose up -d --build
           for i in $(seq 1 60); do curl -fsS http://127.0.0.1:8080/api/health && break; sleep 2; done

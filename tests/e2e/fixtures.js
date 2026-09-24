@@ -18,10 +18,12 @@ let players = 0;
 export function newPlayer(overrides = {}) {
   players++;
   const id = `${Date.now().toString(36)}${players}${Math.floor(Math.random() * 1e4)}`;
+  const username = `e2e_${id}`.slice(0, 20);
   return {
     firstName: 'Pat',
     lastName: 'Tester',
-    username: `e2e_${id}`.slice(0, 20),
+    username,
+    email: `${username}@example.com`,
     avatar: 'sloth',
     birthDate: '1994-03-21',
     country: 'FR',
@@ -31,12 +33,30 @@ export function newPlayer(overrides = {}) {
   };
 }
 
+// The confirmation link's token from the latest email to `email`. The
+// test server keeps emails in an outbox instead of sending them.
+export async function emailToken(page, email) {
+  let mail;
+  await expect(async () => {
+    const res = await page.request.get(`/api/test/outbox?to=${encodeURIComponent(email)}`);
+    [mail] = (await res.json()).emails;
+    expect(mail, `an email to ${email}`).toBeTruthy();
+  }).toPass({ timeout: 5000 });
+  return new URL(/https?:\/\/\S+/.exec(mail.text)[0]).searchParams.get('verify');
+}
+
 // Creates an account through the API; the session cookie lands in the
-// page's browser context, so the next page load is logged in
-export async function signUp(page, overrides = {}) {
+// page's browser context, so the next page load is logged in. The email is
+// confirmed too, unless `confirmed: false`.
+export async function signUp(page, { confirmed = true, ...overrides } = {}) {
   const player = newPlayer(overrides);
   const res = await page.request.post('/api/account', { data: player });
   expect(res.status(), await res.text()).toBe(201);
+  if (confirmed) {
+    const token = await emailToken(page, player.email);
+    const ok = await page.request.post('/api/email/verify', { data: { token } });
+    expect(ok.status()).toBe(200);
+  }
   return player;
 }
 

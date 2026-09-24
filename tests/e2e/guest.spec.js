@@ -82,6 +82,7 @@ test("a guest's games against the computer join their new account", async ({ pag
   await form.getByLabel('First name').fill(p.firstName);
   await form.getByLabel('Last name').fill(p.lastName);
   await form.getByLabel('Username').fill(p.username);
+  await form.getByLabel('Email').fill(p.email);
   await form.getByTitle('Big Brain').click();
   await form.getByLabel('Date of birth').fill(p.birthDate);
   await form.getByLabel('Country').selectOption('FR');

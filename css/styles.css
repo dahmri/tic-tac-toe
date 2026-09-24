@@ -1206,3 +1206,24 @@ a.btn {
   justify-self: start;
   text-decoration: none;
 }
+
+/* Email confirmation banner */
+.email-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 2px dashed var(--ink);
+  border-radius: 10px;
+  background: var(--hi);
+}
+.email-notice-text {
+  margin: 0;
+  flex: 1 1 220px;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.email-notice .btn {
+  padding: 8px 12px;
+}
