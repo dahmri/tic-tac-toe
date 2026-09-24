@@ -6,6 +6,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Grey text (on buttons, badges and help text) is a little darker in the
+  light theme, so it's readable by everyone (it was just under the WCAG
+  contrast minimum).
+
 ### Added
 
 - **Achievements.** 12 badges to earn: First win 🏆, Online winner 🌐,

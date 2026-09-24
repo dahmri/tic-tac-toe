@@ -14,7 +14,7 @@
   --grid: #dde5e9;
   --margin: #e9afa6;
   --ink: #2a2e35;
-  --muted: #666d75;
+  --muted: #5f666e; /* 4.97:1 on --chip, 5.4:1 on --paper */
   --x: #2447a8;
   --o: #c0392b;
   --hi: #fff1a0;
