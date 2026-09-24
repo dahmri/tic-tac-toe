@@ -1071,3 +1071,39 @@ kbd {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* Replays */
+.board.mini {
+  width: min(260px, 100%);
+  margin: 4px auto;
+}
+.board.mini .cell {
+  cursor: default;
+}
+.still .draw {
+  animation: none;
+  stroke-dashoffset: 0;
+}
+.replay-who {
+  margin: 0;
+  font-weight: 700;
+}
+.replay-step {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.replay-controls {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.replay-btn {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 4px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+}

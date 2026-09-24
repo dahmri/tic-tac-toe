@@ -5,6 +5,7 @@ import { emptyBoard, gameResult, isVariant, nextToVanish, other, playOn, replay 
 import { hintMove, pickMove, pickVanishMove } from './ai.js';
 import { currentUser, initAccount, isGuest, leaveGuest } from './account.js';
 import { avatarEmoji } from './avatars.js';
+import { markSVG } from './marks.js';
 import { connectLive } from './live.js';
 import { countryFlag } from './countries.js';
 import {
@@ -17,14 +18,13 @@ import {
 } from './lobby.js';
 import { initStats, recordCpuGame, signed } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
+import { initReplay } from './replay.js';
 import { setSound, sound, soundOn } from './sound.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
 const DIFFICULTIES = ['casual', 'medium', 'hard'];
 const CENTER = (i) => [50 + (i % 3) * 100, 50 + Math.floor(i / 3) * 100];
-const X_PATHS = ['M22 22 C40 40 58 60 79 79', 'M78 21 C60 40 42 58 22 80'];
-const O_PATH = 'M52 17 C73 16 85 33 83 51 C81 72 65 84 47 83 C28 81 16 65 18 46 C20 29 34 18 56 21';
 // Keypad layout: 7 8 9 on top, 1 2 3 on the bottom
 const KEYMAP = { 7: 0, 8: 1, 9: 2, 4: 3, 5: 4, 6: 5, 1: 6, 2: 7, 3: 8 };
 
@@ -116,15 +116,6 @@ for (let i = 0; i < 9; i++) {
   b.addEventListener('click', () => humanMove(i));
   boardEl.appendChild(b);
   cells.push(b);
-}
-
-function markSVG(p, cls) {
-  if (p === 'X') {
-    return `<svg class="mx ${cls}" viewBox="0 0 100 100" aria-hidden="true">
-      <path class="draw" pathLength="1" d="${X_PATHS[0]}"/><path class="draw d2" pathLength="1" d="${X_PATHS[1]}"/></svg>`;
-  }
-  return `<svg class="mo ${cls}" viewBox="0 0 100 100" aria-hidden="true">
-    <path class="draw" pathLength="1" d="${O_PATH}"/></svg>`;
 }
 
 function drawMark(i, p) {
@@ -667,6 +658,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 initStats();
+initReplay();
 initLeaderboard(currentUser);
 initLobby({
   send: (msg) => live?.send(msg),
