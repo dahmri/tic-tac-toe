@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-24
+
 ### Added
 
 - **Email confirmation.** Creating an account now asks for your email
