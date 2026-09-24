@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-24
+
 ### Added
 
 - **Player accounts.** Sign up with first name, last name, username, date of
