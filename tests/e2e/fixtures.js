@@ -22,6 +22,7 @@ export function newPlayer(overrides = {}) {
     firstName: 'Pat',
     lastName: 'Tester',
     username: `e2e_${id}`.slice(0, 20),
+    avatar: 'sloth',
     birthDate: '1994-03-21',
     country: 'FR',
     phone: '',

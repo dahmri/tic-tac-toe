@@ -79,6 +79,11 @@
             <small class="help">What other players see. Letters, numbers and _.</small>
             <small class="err" data-err="username"></small>
           </label>
+          <fieldset class="field avatar-field">
+            <legend>Pick your avatar</legend>
+            <div class="avatar-grid" data-avatars></div>
+            <small class="err" data-err="avatar"></small>
+          </fieldset>
           <div class="pair">
             <label class="field">
               <span>Date of birth</span>
@@ -109,17 +114,26 @@
             <small class="err" data-err="password"></small>
           </label>
           <p class="privacy">
-            Other players only see your username and country. Your name, date of birth and phone
-            number stay private and are stored encrypted.
+            Other players only see your username, avatar and country. Your name, date of birth and
+            phone number stay private and are stored encrypted.
           </p>
           <p class="form-msg" role="alert"></p>
           <button type="submit" class="btn primary">Create account</button>
         </form>
+
+        <div class="guest-cta">
+          <button id="guestBtn" type="button" class="btn">Play as a guest 👻</button>
+          <small class="help"
+            >No account needed: play the computer or a friend on this screen. Online games, stats
+            and the leaderboard need a free account.</small
+          >
+        </div>
       </section>
 
       <div class="game" id="gameView" hidden>
         <div class="account-bar">
           <span class="me">
+            <span class="avatar" id="meAvatar"></span>
             <span id="meFlag" aria-hidden="true"></span>
             <strong id="meName"></strong>
             <span class="rating-chip" id="meRating" title="Your rating" hidden></span>
@@ -134,10 +148,15 @@
           >
             🔊
           </button>
-          <button id="leaderboardBtn" type="button" class="btn ghostbtn">Leaderboard</button>
-          <button id="statsBtn" type="button" class="btn ghostbtn">Stats</button>
-          <button id="profileBtn" type="button" class="btn ghostbtn">Profile</button>
-          <button id="logoutBtn" type="button" class="btn ghostbtn">Log out</button>
+          <button id="leaderboardBtn" type="button" class="btn ghostbtn" data-member>
+            Leaderboard
+          </button>
+          <button id="statsBtn" type="button" class="btn ghostbtn" data-member>Stats</button>
+          <button id="profileBtn" type="button" class="btn ghostbtn" data-member>Profile</button>
+          <button id="logoutBtn" type="button" class="btn ghostbtn" data-member>Log out</button>
+          <button id="joinBtn" type="button" class="btn ghostbtn" data-guest hidden>
+            Log in or sign up
+          </button>
         </div>
 
         <div class="invites" id="invites" aria-live="polite"></div>
@@ -163,6 +182,15 @@
             </button>
           </div>
         </div>
+
+        <section class="guest-locked" id="guestLocked" aria-label="Online game" hidden>
+          <p class="guest-locked-title">🔒 Online games need a free account</p>
+          <p class="help">
+            With an account you can play people around the world, get a rating, climb the
+            leaderboard, keep your stats, and pick a funny avatar.
+          </p>
+          <button id="guestJoin" type="button" class="btn primary">Create a free account</button>
+        </section>
 
         <section class="online" id="onlinePanel" aria-label="Online game" hidden>
           <div class="lobby" id="lobby">
@@ -275,6 +303,11 @@
           />
           <small class="err" data-err="username"></small>
         </label>
+        <fieldset class="field avatar-field">
+          <legend>Avatar</legend>
+          <div class="avatar-grid" data-avatars></div>
+          <small class="err" data-err="avatar"></small>
+        </fieldset>
         <div class="pair">
           <label class="field">
             <span>Date of birth</span>

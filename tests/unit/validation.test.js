@@ -12,6 +12,7 @@ const valid = {
   firstName: '  Anne-Marie ',
   lastName: "O'Brien",
   username: 'anne_m',
+  avatar: 'llama',
   birthDate: '1995-02-28',
   country: 'fr',
   phone: '+33 6 12-34.56 78',
@@ -25,6 +26,7 @@ test('a complete registration is accepted and cleaned up', () => {
     firstName: 'Anne-Marie',
     lastName: "O'Brien",
     username: 'anne_m',
+    avatar: 'llama',
     birthDate: '1995-02-28',
     country: 'FR',
     phone: '+33612345678',
@@ -108,4 +110,17 @@ test('profile updates check only the fields that are sent', () => {
   assert.deepEqual(r.value, { country: 'DE' });
   assert.equal(validateProfile({ username: 'a' }, TODAY).ok, false);
   assert.deepEqual(validateProfile({ phone: '' }, TODAY).value, { phone: null });
+});
+
+test('an avatar from the list is required', () => {
+  assert.equal(
+    validateRegistration({ ...valid, avatar: undefined }, TODAY).errors.avatar,
+    'Pick an avatar.',
+  );
+  assert.ok(
+    validateRegistration({ ...valid, avatar: 'guest' }, TODAY).errors.avatar,
+    'guests only',
+  );
+  assert.ok(validateRegistration({ ...valid, avatar: '<img>' }, TODAY).errors.avatar);
+  assert.deepEqual(validateProfile({ avatar: 'robot' }, TODAY).value, { avatar: 'robot' });
 });

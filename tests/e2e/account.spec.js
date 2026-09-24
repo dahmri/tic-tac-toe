@@ -18,6 +18,7 @@ test.describe('signed out', () => {
     await form.getByLabel('First name').fill(p.firstName);
     await form.getByLabel('Last name').fill(p.lastName);
     await form.getByLabel('Username').fill(p.username);
+    await form.getByTitle('Drama Llama').click();
     await form.getByLabel('Date of birth').fill(p.birthDate);
     await form.getByLabel('Country').selectOption('GB');
     await form.getByLabel('Phone number').fill(p.phone);
@@ -26,6 +27,7 @@ test.describe('signed out', () => {
 
     await expect(page.locator('#meName')).toHaveText(p.username);
     await expect(page.locator('#meFlag')).toHaveText('🇬🇧');
+    await expect(page.locator('#meAvatar')).toHaveText('🦙');
     await expect(page.locator('#board')).toBeVisible();
 
     // Still logged in after a reload: the session lives in a cookie
@@ -57,6 +59,7 @@ test.describe('signed out', () => {
     await expect(form.locator('[data-err="firstName"]')).toHaveText('Enter your first name.');
     await expect(form.locator('[data-err="username"]')).toContainText('3 to 20');
     await expect(form.locator('[data-err="password"]')).toContainText('at least 10');
+    await expect(form.locator('[data-err="avatar"]')).toHaveText('Pick an avatar.');
     await expect(form.getByLabel('First name')).toBeFocused();
   });
 
@@ -70,6 +73,7 @@ test.describe('signed out', () => {
     await form.getByLabel('First name').fill(p.firstName);
     await form.getByLabel('Last name').fill(p.lastName);
     await form.getByLabel('Username').fill(taken.username);
+    await form.getByTitle('Top Banana').click();
     await form.getByLabel('Date of birth').fill(p.birthDate);
     await form.getByLabel('Country').selectOption('FR');
     await form.getByLabel('Password').fill(p.password);
@@ -89,11 +93,14 @@ test('edit your profile and change your password', async ({ page, player }) => {
   await expect(profile.getByLabel('Date of birth')).toHaveValue(player.birthDate);
 
   await profile.getByLabel('Last name').fill('Renamed');
+  await expect(profile.getByRole('radio', { name: 'Speedy Sloth' })).toBeChecked();
+  await profile.getByTitle('Lost Alien').click();
   await profile.getByLabel('Country').selectOption('MA');
   await profile.getByLabel('Phone number').fill('+212 6 12 34 56 78');
   await profile.getByRole('button', { name: 'Save changes' }).click();
   await expect(profile.getByRole('status')).toHaveText('Saved.');
   await expect(page.locator('#meFlag')).toHaveText('🇲🇦');
+  await expect(page.locator('#meAvatar')).toHaveText('👽');
 
   const pw = dialog.locator('#passwordForm');
   await pw.getByLabel('Current password').fill(player.password);

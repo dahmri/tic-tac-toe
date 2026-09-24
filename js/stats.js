@@ -3,6 +3,7 @@
 // computer (the server checks them before they count).
 
 import { api } from './api.js';
+import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag } from './countries.js';
 
 const $ = (id) => document.getElementById(id);
@@ -44,6 +45,11 @@ function facts(box, items) {
 
 function playerName(p) {
   const span = el('span', 'who-line');
+  if (p.avatar) {
+    const avatar = el('span', 'avatar', avatarEmoji(p.avatar));
+    avatar.title = avatarName(p.avatar);
+    span.append(avatar);
+  }
   if (p.country) {
     const flag = el('span', 'flag', countryFlag(p.country));
     flag.setAttribute('aria-hidden', 'true');

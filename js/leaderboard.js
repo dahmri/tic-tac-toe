@@ -2,6 +2,7 @@
 // and where you stand.
 
 import { api } from './api.js';
+import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, countryName, sortedCountries } from './countries.js';
 
 const PAGE = 20;
@@ -26,7 +27,9 @@ function row(p) {
   const who = el('span', 'who-line');
   const flag = el('span', 'flag', countryFlag(p.country));
   flag.setAttribute('aria-hidden', 'true');
-  who.append(flag, el('span', 'name', p.username));
+  const avatar = el('span', 'avatar', avatarEmoji(p.avatar));
+  avatar.title = avatarName(p.avatar);
+  who.append(avatar, flag, el('span', 'name', p.username));
   name.append(who);
   tr.append(name);
   for (const n of [p.rating, p.won, p.played]) tr.append(el('td', 'num', String(n)));

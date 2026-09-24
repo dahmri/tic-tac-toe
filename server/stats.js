@@ -303,7 +303,7 @@ export function createStats(db, redis, log = console) {
   async function opponents(userId, limit = 10) {
     const [{ rows }, count] = await Promise.all([
       db.query(
-        `SELECT h.opponent_id, u.username, u.country, h.played, h.won, h.lost, h.drawn,
+        `SELECT h.opponent_id, u.username, u.country, u.avatar, h.played, h.won, h.lost, h.drawn,
                 h.last_played_at
          FROM head_to_head h JOIN users u ON u.id = h.opponent_id
          WHERE h.user_id = $1
@@ -319,6 +319,7 @@ export function createStats(db, redis, log = console) {
         id: r.opponent_id,
         username: r.username,
         country: r.country,
+        avatar: r.avatar,
         played: r.played,
         won: r.won,
         lost: r.lost,
@@ -339,7 +340,7 @@ export function createStats(db, redis, log = console) {
     const { rows } = await db.query(
       `SELECT pg.game_id, pg.ended_at, pg.mode, pg.symbol, pg.outcome, pg.rating_change,
               g.difficulty, g.forfeit, cardinality(g.moves) AS move_count, g.started_at,
-              u.id AS opponent_id, u.username, u.country
+              u.id AS opponent_id, u.username, u.country, u.avatar
        FROM player_games pg
        JOIN games g ON g.id = pg.game_id
        LEFT JOIN users u ON u.id = pg.opponent_id
@@ -364,7 +365,7 @@ export function createStats(db, redis, log = console) {
         opponent:
           r.mode === 'online'
             ? r.opponent_id
-              ? { id: r.opponent_id, username: r.username, country: r.country }
+              ? { id: r.opponent_id, username: r.username, country: r.country, avatar: r.avatar }
               : { id: null, username: 'Deleted player', country: null }
             : null,
       })),
@@ -380,7 +381,7 @@ export function createStats(db, redis, log = console) {
     const n = params.length;
     const [page, count, mine] = await Promise.all([
       db.query(
-        `SELECT s.user_id, u.username, u.country, s.rating, s.played, s.won
+        `SELECT s.user_id, u.username, u.country, u.avatar, s.rating, s.played, s.won
          FROM player_stats s JOIN users u ON u.id = s.user_id
          WHERE s.played > 0 ${filter}
          ORDER BY s.rating DESC, s.user_id
@@ -407,6 +408,7 @@ export function createStats(db, redis, log = console) {
         id: r.user_id,
         username: r.username,
         country: r.country,
+        avatar: r.avatar,
         rating: r.rating,
         played: r.played,
         won: r.won,
