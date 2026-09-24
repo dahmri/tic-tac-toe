@@ -256,6 +256,28 @@ h1 .o {
   animation: none;
 }
 
+/* 3-mark rules: the mark that vanishes on its owner's next move */
+.cell.fading svg:not(.ghost) {
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+/* A hint: the square to try */
+.cell.hinted {
+  background: var(--hi);
+  border-radius: 12px;
+  animation: hint-pulse 1s ease-in-out 2;
+}
+@keyframes hint-pulse {
+  50% {
+    transform: scale(0.94);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cell.hinted {
+    animation: none;
+  }
+}
+
 .board.won .cell:not(.hit) svg:not(.ghost) {
   opacity: 0.35;
   transition: opacity 0.4s 0.3s;
@@ -1034,4 +1056,153 @@ kbd {
   .board.won .cell:not(.hit) svg:not(.ghost) {
     transition: none;
   }
+}
+
+/* Rules: classic or 3 marks */
+.rules-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.rule-note {
+  margin: 0;
+  flex: 1 1 200px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Replays */
+.board.mini {
+  width: min(260px, 100%);
+  margin: 4px auto;
+}
+.board.mini .cell {
+  cursor: default;
+}
+.still .draw {
+  animation: none;
+  stroke-dashoffset: 0;
+}
+.replay-who {
+  margin: 0;
+  font-weight: 700;
+}
+.replay-step {
+  margin: 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.replay-controls {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.replay-btn {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 4px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+}
+
+/* Online: the move clock, and reactions */
+.turn-clock {
+  margin: -8px 0 0;
+  font: 700 0.9rem/1 var(--body);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.turn-clock.low {
+  color: var(--o);
+}
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.btn.react {
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 6px;
+  text-decoration: none;
+}
+.reaction-feed {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.bubble {
+  position: absolute;
+  bottom: 10%;
+  font-size: 2.6rem;
+  animation: float-up 2.4s ease-out forwards;
+}
+.bubble.mine {
+  left: 8%;
+}
+.bubble.theirs {
+  right: 8%;
+}
+@keyframes float-up {
+  0% {
+    transform: translateY(20px) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0) scale(1.1);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120px) scale(1);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    animation: none;
+  }
+}
+
+/* Recovery codes, and the account's danger zone */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.recovery-code {
+  margin: 0;
+  text-align: center;
+}
+.recovery-code code {
+  display: inline-block;
+  font:
+    700 1.1rem/1.4 ui-monospace,
+    'SF Mono',
+    Menlo,
+    monospace;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  border: 2px dashed var(--ink);
+  border-radius: 8px;
+  background: var(--chip);
+  user-select: all;
+  overflow-wrap: anywhere;
+}
+.btn.danger {
+  background: var(--o);
+  border-color: var(--o);
+  color: var(--paper);
+}
+a.btn {
+  display: inline-block;
+  justify-self: start;
+  text-decoration: none;
 }

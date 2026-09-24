@@ -9,7 +9,7 @@ const RETRY_KEY = 'stats:retry';
 const outcomeFor = (symbol, result) => (result === 'D' ? 'D' : result === symbol ? 'W' : 'L');
 
 // What one game adds to a player's totals
-function deltas({ online, symbol, outcome, forfeit, moveCount, difficulty }) {
+function deltas({ online, symbol, outcome, forfeit, moveCount, difficulty, variant }) {
   const on = (cond) => (online && cond ? 1 : 0);
   const cpu = (cond) => (!online && cond ? 1 : 0);
   const W = outcome === 'W';
@@ -33,8 +33,9 @@ function deltas({ online, symbol, outcome, forfeit, moveCount, difficulty }) {
     cpu(W),
     cpu(L),
     cpu(D),
-    cpu(difficulty === 'hard'),
-    cpu(difficulty === 'hard' && D),
+    // "Nobody beats Unbeatable" is about the classic game only
+    cpu(difficulty === 'hard' && variant !== 'vanish'),
+    cpu(difficulty === 'hard' && variant !== 'vanish' && D),
   ];
 }
 
@@ -100,7 +101,8 @@ const rate = (won, played) => (played ? Math.round((won / played) * 100) : null)
 
 export function createStats(db, redis, log = console) {
   // Saves one finished game. `game` = { mode, matchId?, round?, difficulty?,
-  // xId, oId (null = computer), result, forfeit, moves, startedAt, endedAt }.
+  // variant, starter, xId, oId (null = computer), result, forfeit, moves,
+  // startedAt, endedAt }.
   // Returns null if it was already saved, otherwise
   // { gameId, players: { [userId]: { rating, change } } }.
   async function record(game) {
@@ -110,8 +112,8 @@ export function createStats(db, redis, log = console) {
     return db.tx(async (client) => {
       const { rows } = await client.query(
         `INSERT INTO games (mode, match_id, round, difficulty, x_id, o_id, result, forfeit,
-           moves, started_at, ended_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           moves, started_at, ended_at, variant, starter)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
          ON CONFLICT (match_id, round) WHERE match_id IS NOT NULL DO NOTHING
          RETURNING id`,
         [
@@ -126,6 +128,8 @@ export function createStats(db, redis, log = console) {
           game.moves,
           startedAt,
           endedAt,
+          game.variant ?? 'classic',
+          game.starter ?? 'X',
         ],
       );
       if (!rows[0]) return null; // already recorded
@@ -182,6 +186,7 @@ export function createStats(db, redis, log = console) {
           forfeit: game.forfeit,
           moveCount: game.moves.length,
           difficulty: game.difficulty,
+          variant: game.variant,
         });
         const { rows: saved } = await client.query(UPSERT_STATS, [
           p.id,
@@ -217,6 +222,8 @@ export function createStats(db, redis, log = console) {
       result: finished.result,
       forfeit: finished.forfeit,
       moves: finished.moves,
+      variant: finished.variant,
+      starter: finished.starter,
       startedAt: finished.startedAt,
       endedAt: finished.endedAt,
     };
@@ -340,6 +347,7 @@ export function createStats(db, redis, log = console) {
     const { rows } = await db.query(
       `SELECT pg.game_id, pg.ended_at, pg.mode, pg.symbol, pg.outcome, pg.rating_change,
               g.difficulty, g.forfeit, cardinality(g.moves) AS move_count, g.started_at,
+              g.moves AS squares, g.variant, g.starter,
               u.id AS opponent_id, u.username, u.country, u.avatar
        FROM player_games pg
        JOIN games g ON g.id = pg.game_id
@@ -361,6 +369,9 @@ export function createStats(db, redis, log = console) {
         ratingChange: r.rating_change,
         forfeit: r.forfeit,
         moves: r.move_count,
+        squares: r.squares,
+        variant: r.variant,
+        starter: r.starter,
         difficulty: r.difficulty,
         opponent:
           r.mode === 'online'

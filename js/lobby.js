@@ -17,7 +17,8 @@ const $ = (id) => document.getElementById(id);
 const incoming = new Map();
 const outgoing = new Map();
 
-let actions = { send() {}, message() {} };
+let actions = { send() {}, message() {}, variant: () => 'classic' };
+const rulesText = (variant) => (variant === 'vanish' ? ' (3 marks)' : '');
 let active = false; // lobby on screen: keep the list fresh
 let busy = false; // in a match: invitations wait
 let players = [];
@@ -100,7 +101,7 @@ function renderPlayers() {
         b.addEventListener('click', () => {
           b.disabled = true;
           actions.message('');
-          actions.send({ t: 'invite', to: p.id });
+          actions.send({ t: 'invite', to: p.id, variant: actions.variant() });
         });
         li.append(b);
       }
@@ -126,7 +127,7 @@ function renderInvites() {
       const row = el('div', 'invite');
       row.dataset.id = inv.id;
       const text = el('span', 'invite-text');
-      text.append(who(inv.from), ' invites you to play');
+      text.append(who(inv.from), ` invites you to play${rulesText(inv.variant)}`);
       const accept = el('button', 'btn primary', 'Accept');
       const decline = el('button', 'btn', 'Decline');
       accept.type = decline.type = 'button';
@@ -147,7 +148,7 @@ function renderInvites() {
     const row = el('div', 'invite outgoing');
     row.dataset.id = inv.id;
     const text = el('span', 'invite-text');
-    text.append('Waiting for ', who(inv.to), '…');
+    text.append('Waiting for ', who(inv.to), `${rulesText(inv.variant)}…`);
     const cancel = el('button', 'btn ghostbtn', 'Cancel');
     cancel.type = 'button';
     cancel.addEventListener('click', () => {
@@ -338,7 +339,7 @@ export function initLobby(callbacks) {
   $('findMatch').addEventListener('click', () => {
     $('findMatch').disabled = true;
     actions.message('');
-    actions.send({ t: 'queue-join' });
+    actions.send({ t: 'queue-join', variant: actions.variant() });
   });
   $('cancelSearch').addEventListener('click', () => {
     setSearching(false);
@@ -347,7 +348,7 @@ export function initLobby(callbacks) {
   $('inviteAgain').addEventListener('click', () => {
     $('inviteAgain').disabled = true;
     actions.message('');
-    actions.send({ t: 'invite', to: lastOpponent.id });
+    actions.send({ t: 'invite', to: lastOpponent.id, variant: actions.variant() });
   });
   renderInvites();
   renderQuick();

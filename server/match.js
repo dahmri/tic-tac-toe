@@ -4,13 +4,23 @@
 //
 // The inviter plays X and opens the first round; after that the players
 // take turns opening. The server is the referee: players only send the
-// square they want, and every move is checked here.
+// square they want, and every move is checked here. A match is played with
+// one set of rules throughout: 'classic' or 'vanish' (see rules.js).
+//
+// Every move is on the clock: the player to move has `turnMs` (30 s by
+// default). `deadline` is when their time runs out; timeUp() gives the
+// round to their opponent after that. There's no clock between rounds.
 
-import { emptyBoard, other, winner } from '../js/rules.js';
+import { emptyBoard, gameResult, other, playOn, replay } from '../js/rules.js';
 
-export function newMatch({ id, x, o, now = Date.now() }) {
+export const TURN_MS = 30_000;
+
+export function newMatch({ id, x, o, variant = 'classic', turnMs = TURN_MS, now = Date.now() }) {
   return {
     id,
+    variant,
+    turnMs,
+    deadline: now + turnMs,
     players: { X: x, O: o }, // { id, username, country, avatar, rating }
     board: emptyBoard(),
     turn: 'X',
@@ -22,6 +32,7 @@ export function newMatch({ id, x, o, now = Date.now() }) {
     result: null, // 'X' | 'O' | 'D' once the round is over
     line: null,
     forfeit: false,
+    timeout: false, // the round was lost on time
     score: { X: 0, O: 0, D: 0 },
     ended: false, // true once a player has left
     version: 1,
@@ -44,6 +55,8 @@ function roundRecord(match, now) {
     result: match.result,
     forfeit: match.forfeit,
     moves: match.moves.slice(),
+    variant: match.variant,
+    starter: match.starter,
     startedAt: match.roundStartedAt,
     endedAt: now,
   };
@@ -62,19 +75,22 @@ export function applyMove(match, userId, square, now = Date.now()) {
   if (!Number.isInteger(square) || square < 0 || square > 8) return fail('Not a square.');
   if (match.board[square]) return fail('That square is taken.');
 
-  const board = match.board.slice();
-  board[square] = p;
+  const variant = match.variant ?? 'classic';
+  const position = replay(match.moves, match.starter, variant);
+  const { board } = playOn(position, square, p, variant);
   const next = {
     ...match,
     board,
     moves: [...match.moves, square],
     turn: other(p),
+    deadline: now + (match.turnMs ?? TURN_MS),
     version: match.version + 1,
   };
-  const w = winner(board);
+  const w = gameResult(board, next.moves.length, variant);
   if (!w) return { match: next };
 
   next.over = true;
+  next.deadline = null;
   next.result = w.p;
   next.line = w.line || null;
   next.score = { ...match.score, [w.p]: match.score[w.p] + 1 };
@@ -100,9 +116,29 @@ export function nextRound(match, userId, now = Date.now()) {
       result: null,
       line: null,
       forfeit: false,
+      timeout: false,
+      deadline: now + (match.turnMs ?? TURN_MS),
       version: match.version + 1,
     },
   };
+}
+
+// The player to move ran out of time: the round goes to their opponent.
+// Returns the match unchanged if nothing is due.
+export function timeUp(match, now = Date.now()) {
+  if (match.ended || match.over || !match.deadline || now < match.deadline) return { match };
+  const w = other(match.turn);
+  const next = {
+    ...match,
+    over: true,
+    result: w,
+    forfeit: true,
+    timeout: true,
+    deadline: null,
+    score: { ...match.score, [w]: match.score[w] + 1 },
+    version: match.version + 1,
+  };
+  return { match: next, finished: roundRecord(next, now) };
 }
 
 // A player leaves (or stays disconnected). A round in progress with at
@@ -112,7 +148,7 @@ export function leave(match, userId, now = Date.now()) {
   const p = symbolOf(match, userId);
   if (!p) return fail('You are not in this game.');
   if (match.ended) return { match };
-  const next = { ...match, ended: true, leftBy: p, version: match.version + 1 };
+  const next = { ...match, ended: true, leftBy: p, deadline: null, version: match.version + 1 };
   if (match.over || match.moves.length === 0) return { match: next };
 
   const w = other(p);

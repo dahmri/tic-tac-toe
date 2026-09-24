@@ -1,6 +1,6 @@
 // Invitations to play. An invitation lives for 60 seconds in Redis:
 //
-//   invite:<id>         hash: from, to (user ids)
+//   invite:<id>         hash: from, to (user ids), variant (the rules)
 //   invpair:<from>:<to> stops the same invitation being sent twice at once
 //   invites-in:<uid>    set of invitations waiting for a player, so they
 //                       reappear after a page reload
@@ -11,6 +11,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { MatchError } from './matches.js';
+import { isVariant } from '../js/rules.js';
 
 export const INVITE_TTL = 60; // seconds
 
@@ -26,7 +27,12 @@ export function createInvites(redis, { bus, presence, matches }) {
       .del(`invite:${id}`)
       .exec();
     if (!deleted || !data.from) return null;
-    const invite = { id, from: Number(data.from), to: Number(data.to) };
+    const invite = {
+      id,
+      from: Number(data.from),
+      to: Number(data.to),
+      variant: data.variant || 'classic',
+    };
     await redis
       .multi()
       .del(`invpair:${invite.from}:${invite.to}`)
@@ -40,7 +46,8 @@ export function createInvites(redis, { bus, presence, matches }) {
   const fresh = async (user) => (await presence.profile(user.id)) || user;
 
   return {
-    async send(me, toId) {
+    async send(me, toId, variant = 'classic') {
+      if (!isVariant(variant)) throw new InviteError('Unknown rules.');
       const from = await fresh(me);
       if (!Number.isInteger(toId) || toId === from.id) {
         throw new InviteError('Choose another player to invite.');
@@ -59,7 +66,7 @@ export function createInvites(redis, { bus, presence, matches }) {
       const id = randomUUID();
       await redis
         .multi()
-        .hset(`invite:${id}`, 'from', from.id, 'to', toId)
+        .hset(`invite:${id}`, 'from', from.id, 'to', toId, 'variant', variant)
         .expire(`invite:${id}`, INVITE_TTL)
         .sadd(`invites-in:${toId}`, id)
         .expire(`invites-in:${toId}`, INVITE_TTL)
@@ -67,8 +74,8 @@ export function createInvites(redis, { bus, presence, matches }) {
 
       // expiresIn (ms) rather than a time: players' clocks may be wrong
       const expiresIn = INVITE_TTL * 1000;
-      await bus.send(toId, { t: 'invite', invite: { id, from, expiresIn } });
-      await bus.send(from.id, { t: 'invite-sent', invite: { id, to, expiresIn } });
+      await bus.send(toId, { t: 'invite', invite: { id, from, variant, expiresIn } });
+      await bus.send(from.id, { t: 'invite-sent', invite: { id, to, variant, expiresIn } });
     },
 
     // Invitations still waiting for this player, e.g. after a reload
@@ -86,7 +93,7 @@ export function createInvites(redis, { bus, presence, matches }) {
           continue;
         }
         const from = await presence.profile(Number(data.from));
-        if (from) invites.push({ id, from, expiresIn });
+        if (from) invites.push({ id, from, variant: data.variant || 'classic', expiresIn });
       }
       return invites;
     },
@@ -99,7 +106,7 @@ export function createInvites(redis, { bus, presence, matches }) {
         throw new InviteError('That player is no longer online.');
       }
       try {
-        const match = await matches.start(from, await fresh(user));
+        const match = await matches.start(from, await fresh(user), invite.variant);
         await bus.send(user.id, { t: 'invite-gone', id }); // for the player's other tabs
         return match;
       } catch (err) {

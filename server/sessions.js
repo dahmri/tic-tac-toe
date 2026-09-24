@@ -37,6 +37,7 @@ export function createSessions(redis) {
     },
 
     // Logs the user out everywhere, except the session doing the asking
+    // (pass no token to log them out everywhere)
     async destroyOthers(userId, keepToken) {
       const keep = keepToken ? hashToken(keepToken) : null;
       const hashes = (await redis.smembers(userKey(userId))).filter((h) => h !== keep);

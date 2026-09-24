@@ -25,6 +25,20 @@ test('a finished game against the computer shows in your stats', async ({ page }
   await expect(dialog.locator('#historyList')).toContainText('vs Computer (Unbeatable)');
   await expect(tile(dialog, '#onlineTiles', 'Played')).toHaveText('0');
   await expect(dialog.locator('#opponentsEmpty')).toBeVisible();
+
+  // The game can be watched again, move by move
+  const moves = await page.locator('#board .cell[data-mark]').count();
+  await dialog.getByRole('button', { name: /^Replay/ }).click();
+  const replay = page.getByRole('dialog', { name: 'Replay' });
+  await replay.getByRole('button', { name: 'Pause' }).click();
+  await replay.getByRole('button', { name: 'Last move' }).click();
+  await expect(replay.locator('#replayStep')).toHaveText(`Move ${moves} of ${moves}`);
+  await expect(replay.locator('.cell svg')).toHaveCount(moves);
+  await replay.getByRole('button', { name: 'First move' }).click();
+  await expect(replay.locator('.cell svg')).toHaveCount(0);
+  await replay.getByRole('button', { name: 'Next' }).click();
+  await expect(replay.locator('.cell svg')).toHaveCount(1);
+  await replay.getByRole('button', { name: 'Close' }).click();
 });
 
 test('online results show for both players, with the opponent', async ({ browser }) => {
