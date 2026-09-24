@@ -25,6 +25,8 @@ export default {
     'Un tres en raya dibujado a mano: juega contra la computadora, un amigo o jugadores en línea.',
   'A new address has to be confirmed again before you play online.':
     'Una dirección nueva debe confirmarse antes de jugar en línea.',
+  "A new season starts on the 1st of every month, and everyone starts again at 1200. Each online round moves your rating: beating a stronger player earns more. Games against the computer don't count.":
+    'Una nueva temporada empieza el día 1 de cada mes, y todos vuelven a empezar con 1200. Cada ronda en línea mueve tu puntuación: ganar a un jugador más fuerte da más puntos. Las partidas contra la computadora no cuentan.',
   Accept: 'Aceptar',
   Account: 'Cuenta',
   Add: 'Añadir',
@@ -45,7 +47,7 @@ export default {
   Back: 'Atrás',
   'Back to log in': 'Volver a iniciar sesión',
   'Beep Boop': 'Bip Bup',
-  Best: 'Mejor',
+  'Best ever': 'Mejor de siempre',
   'Big Brain': 'Cerebrito',
   'Big Cheese': 'Queso gordo',
   "Can't reach the server. Check your connection.":
@@ -123,8 +125,6 @@ export default {
   'Enter your username or email address.': 'Escribe tu nombre de usuario o tu dirección de correo.',
   "Enter your username or email. If your email is confirmed, we'll send you a link to choose a new password.":
     'Escribe tu nombre de usuario o tu correo. Si tu correo está confirmado, te enviaremos un enlace para elegir una contraseña nueva.',
-  "Everyone starts at 1200. Each online round moves your rating: beating a stronger player earns more. Games against the computer don't count.":
-    'Todos empiezan con 1200. Cada ronda en línea mueve tu puntuación: ganar a un jugador más fuerte da más puntos. Las partidas contra la computadora no cuentan.',
   'Fancy Flamingo': 'Flamenco elegante',
   'Fastest win': 'Victoria más rápida',
   'Find an opponent, or invite a player.': 'Busca un rival o invita a un jugador.',
@@ -268,6 +268,8 @@ export default {
   'Saved. We sent a link to {email}: click it to confirm.':
     'Guardado. Enviamos un enlace a {email}: haz clic en él para confirmar.',
   Score: 'Marcador',
+  'Season {name}: last day!': 'Temporada {name}: ¡último día!',
+  'Season {name}: {days} days left': 'Temporada {name}: quedan {days} días',
   'Send a reaction': 'Enviar una reacción',
   'Send it again': 'Enviarlo de nuevo',
   'Sent! Check your inbox for {email} (and the spam folder).':
@@ -318,6 +320,7 @@ export default {
     'Esto elimina para siempre tu perfil, tus estadísticas y tus partidas contra la computadora. Tus partidas en línea quedan en el historial de tus rivales como «Jugador eliminado».',
   'This game has ended.': 'Esta partida ha terminado.',
   'This round is over.': 'Esta ronda ha terminado.',
+  'This season': 'Esta temporada',
   "Three in a row wins. Nobody wins? That's a cat's game.":
     'Tres en línea gana. ¿Nadie gana? Es un empate.',
   'Tiny Dragon': 'Dragoncito',
@@ -425,6 +428,7 @@ export default {
   '{name} is thinking…': '{name} está pensando…',
   '{name} left the game.': '{name} salió de la partida.',
   '{name} left the game. You win the round.': '{name} salió de la partida. Ganas la ronda.',
+  '{name} podium:': 'Podio de {name}:',
   '{now} now · best {best}': '{now} ahora · mejor {best}',
   '{n} moves': '{n} jugadas',
   '{rate} of {n}': '{rate} de {n}',

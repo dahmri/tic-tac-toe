@@ -77,7 +77,9 @@ export function createUsers(db, dataKey) {
     // (email confirmed) is for the server's own checks.
     async publicProfile(id) {
       const { rows } = await db.query(
-        `SELECT u.id, u.username, u.country, u.avatar, coalesce(s.rating, ${START_RATING}) AS rating,
+        `SELECT u.id, u.username, u.country, u.avatar,
+                CASE WHEN s.season = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM')
+                  THEN s.rating ELSE ${START_RATING} END AS rating,
                 u.email_verified_at IS NOT NULL AS verified
          FROM users u LEFT JOIN player_stats s ON s.user_id = u.id WHERE u.id = $1`,
         [id],

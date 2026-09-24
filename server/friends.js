@@ -13,7 +13,9 @@ export function createFriends(db, redis) {
     // Friends, online first, then by name
     async list(userId, now = Date.now()) {
       const { rows } = await db.query(
-        `SELECT u.id, u.username, u.country, u.avatar, coalesce(s.rating, ${START_RATING}) AS rating
+        `SELECT u.id, u.username, u.country, u.avatar,
+                CASE WHEN s.season = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM')
+                  THEN s.rating ELSE ${START_RATING} END AS rating
          FROM friends f
          JOIN users u ON u.id = f.friend_id
          LEFT JOIN player_stats s ON s.user_id = u.id

@@ -1309,3 +1309,20 @@ a.btn {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* Seasons, on the leaderboard */
+.lb-season {
+  margin: 0;
+  font-weight: 700;
+}
+.lb-podium {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.podium-title {
+  color: var(--muted);
+}
