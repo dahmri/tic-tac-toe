@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-24
+
 ### Added
 
 - **Play as a guest.** No account needed: click **Play as a guest** to play
