@@ -112,10 +112,11 @@ export async function findInLobby(page, username) {
   await expect(lobbyRow(page, username)).toBeVisible({ timeout: 15_000 });
 }
 
-// Ann (FR) invites Bob (MA), Bob accepts; Ann plays X
-export async function startMatch(browser) {
-  const ann = await openPlayer(browser, { country: 'FR' });
-  const bob = await openPlayer(browser, { country: 'MA' });
+// Ann (FR) invites Bob (MA), Bob accepts; Ann plays X. A test can give
+// them other countries, to find them in lists by country.
+export async function startMatch(browser, { annFrom = 'FR', bobFrom = 'MA' } = {}) {
+  const ann = await openPlayer(browser, { country: annFrom });
+  const bob = await openPlayer(browser, { country: bobFrom });
   await findInLobby(ann.page, bob.player.username);
   await lobbyRow(ann.page, bob.player.username)
     .getByRole('button', { name: /^Invite/ })
