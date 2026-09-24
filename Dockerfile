@@ -17,6 +17,8 @@ COPY scripts/build.mjs scripts/
 COPY index.html ./
 COPY css/ css/
 COPY js/ js/
+COPY icons/ icons/
+COPY manifest.webmanifest sw.js ./
 RUN node scripts/build.mjs
 
 # ---- server dependencies, without dev tools ----
