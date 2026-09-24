@@ -444,6 +444,51 @@ h1 .o {
   font-size: 0.9rem;
 }
 
+/* Quick match, and "invite again" after a match */
+.quick,
+.rematch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.quick-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.quick.searching .quick-note {
+  color: var(--ink);
+  font-weight: 700;
+}
+.quick .timer {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.rematch {
+  padding: 10px 12px;
+  border: 2px dashed var(--grid);
+  border-radius: 10px;
+}
+.rematch-text {
+  margin-right: auto;
+  min-width: 0;
+}
+/* A pencil going round in circles while we search */
+.scribble {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--ink);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Invitations: notes stuck above the board, in every mode */
 .invites {
   display: grid;
@@ -776,7 +821,63 @@ kbd {
   margin-top: 8px;
 }
 
+/* Ratings: a small chip next to a name, and the points a round moved */
+.rating-chip {
+  font: 700 0.75rem/1 var(--body);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--chip);
+  border-radius: 999px;
+  padding: 3px 7px;
+  flex-shrink: 0;
+}
+.delta {
+  font: 700 0.85em/1 var(--body);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.delta.up {
+  color: #2e7d32;
+}
+.delta.down {
+  color: var(--o);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .delta.up {
+    color: #7fd18a;
+  }
+}
+:root[data-theme='dark'] .delta.up {
+  color: #7fd18a;
+}
+
+/* Leaderboard dialog */
+#leaderboardDialog .filter {
+  width: 100%;
+}
+.lb-me {
+  margin: 12px 0;
+  font-weight: 700;
+}
+.lb-me:empty {
+  display: none;
+}
+.table .rank {
+  text-align: left;
+  width: 2.5em;
+  color: var(--muted);
+}
+.table tr.me {
+  background: var(--hi);
+}
+#lbMore {
+  margin-top: 8px;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .scribble {
+    animation-duration: 3s;
+  }
   .draw {
     animation: none;
     stroke-dashoffset: 0;

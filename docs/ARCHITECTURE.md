@@ -101,6 +101,16 @@ on other sites.
   seconds in Redis. Accepting, declining and cancelling each start by
   deleting the invitation, and only the request that actually deleted it
   goes on, so an invitation can't be both accepted and cancelled.
+- **Quick match** ([`server/matchmaking.js`](../server/matchmaking.js)):
+  waiting players sit in a Redis sorted set by rating. A newcomer is paired
+  with the closest waiting rating within 100 points, plus 10 points for
+  every second either player has waited; the instance holding a waiting
+  player's connection searches again every 3 seconds. Pairing is one Lua
+  script that looks only at the 25 nearest ratings on each side, so it
+  stays fast however long the queue gets, and two instances can never take
+  the same player. Players who started a game some other way, or whose
+  server stopped reporting them, are dropped; a player reloading the page
+  keeps their place but isn't paired until they're back.
 - **Matches** ([`server/match.js`](../server/match.js) for the rules,
   [`server/matches.js`](../server/matches.js) for storage) are played on
   the server: browsers only send the square they want. The match is stored
@@ -117,8 +127,11 @@ on other sites.
 | browser → server | `invite {to}`, `invite-accept {id}`, `invite-decline {id}`        |
 |                  | `invite-cancel {id}`, `move {match, square}`                      |
 |                  | `next-round {match}`, `leave {match}`, `ping`                     |
-| server → browser | `hello {me, match, invites}` on connect                           |
+|                  | `queue-join`, `queue-leave`                                       |
+| server → browser | `hello {me, match, invites, waiting}` on connect                  |
+|                  | `queue {waiting}` when a quick-match search starts or stops       |
 |                  | `match {match}` after every change, to both players               |
+|                  | `ratings {match, round, ratings}` after each recorded round       |
 |                  | `invite {invite}`, `invite-sent {invite}`                         |
 |                  | `invite-declined {id, by}`, `invite-gone {id}`, `error {message}` |
 
@@ -132,12 +145,12 @@ Every finished round is saved in PostgreSQL
 ([`server/stats.js`](../server/stats.js),
 [`migrations/002_games.sql`](../server/migrations/002_games.sql)):
 
-| Table          | Holds                                                              |
-| -------------- | ------------------------------------------------------------------ |
-| `games`        | One row per round: players, result, moves, start and end           |
-| `player_games` | One row per player per round, keyed `(user_id, ended_at, game_id)` |
-| `player_stats` | Running totals per player: record, streaks, X/O split, fastest win |
-| `head_to_head` | Running totals per pair of players                                 |
+| Table          | Holds                                                                      |
+| -------------- | -------------------------------------------------------------------------- |
+| `games`        | One row per round: players, result, moves, start and end                   |
+| `player_games` | One row per player per round, keyed `(user_id, ended_at, game_id)`         |
+| `player_stats` | Running totals per player: record, streaks, X/O split, fastest win, rating |
+| `head_to_head` | Running totals per pair of players                                         |
 
 The game and every total it changes are written in one transaction, so the
 numbers always add up, and reading a player's stats is a single-row lookup
@@ -149,6 +162,21 @@ Players' rows are always locked in id order, so two games can't deadlock.
 results can be trusted. Each round is recorded once (a unique index on
 `match_id, round`); if the database is briefly unreachable, the round waits
 in Redis and is retried every 30 seconds.
+
+**Ratings** ([`server/rating.js`](../server/rating.js),
+[`migrations/003_ratings.sql`](../server/migrations/003_ratings.sql)) are
+Elo: everyone starts at 1200, and each online round moves both players by
+the same number of points (at most 32) in opposite directions, depending on
+how likely the result was. Recording a round locks both players' rows,
+reads their ratings, and writes the new ones in the same transaction, so two
+rounds finishing at once can't both start from the same rating. Leaving
+mid-round counts as a loss. Games against the computer don't count.
+
+The leaderboard walks a partial index on `(rating DESC, user_id)` that
+only holds players who have played online; a player's rank is the number
+of players ahead of them in that order, plus one, so the Stats rank and the
+leaderboard always agree. After each round the new ratings go to both
+players and into the online list (`player:<id>` in Redis).
 
 **Games against the computer** run in the browser, so the server replays
 the moves before counting them ([`server/cpu-game.js`](../server/cpu-game.js)):
@@ -171,6 +199,7 @@ result itself. They are counted apart from online games.
 | `GET`    | `/api/me/stats`       | Your totals, streaks and most played opponents       |
 | `GET`    | `/api/me/games`       | Your game history, newest first: `?cursor=&limit=20` |
 | `POST`   | `/api/games/cpu`      | Record a finished game against the computer          |
+| `GET`    | `/api/leaderboard`    | Best ratings: `?country=FR&offset=0&limit=20`        |
 | `GET`    | `/ws`                 | The live connection (WebSocket), see above           |
 | `GET`    | `/api/health`         | `{ ok: true }` when PostgreSQL and Redis answer      |
 

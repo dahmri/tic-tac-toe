@@ -122,7 +122,9 @@
           <span class="me">
             <span id="meFlag" aria-hidden="true"></span>
             <strong id="meName"></strong>
+            <span class="rating-chip" id="meRating" title="Your rating" hidden></span>
           </span>
+          <button id="leaderboardBtn" type="button" class="btn ghostbtn">Leaderboard</button>
           <button id="statsBtn" type="button" class="btn ghostbtn">Stats</button>
           <button id="profileBtn" type="button" class="btn ghostbtn">Profile</button>
           <button id="logoutBtn" type="button" class="btn ghostbtn">Log out</button>
@@ -154,6 +156,21 @@
 
         <section class="online" id="onlinePanel" aria-label="Online game" hidden>
           <div class="lobby" id="lobby">
+            <div class="rematch" id="rematch" hidden>
+              <span class="rematch-text" id="rematchText"></span>
+              <button id="inviteAgain" type="button" class="btn">Invite again</button>
+            </div>
+            <div class="quick" id="quickIdle">
+              <button id="findMatch" type="button" class="btn primary">Find me an opponent</button>
+              <span class="quick-note">We'll pair you with a player near your rating.</span>
+            </div>
+            <div class="quick searching" id="quickSearching" role="status" hidden>
+              <span class="scribble" aria-hidden="true"></span>
+              <span class="quick-note"
+                >Looking for an opponent… <span class="timer" id="searchTime">0:00</span></span
+              >
+              <button id="cancelSearch" type="button" class="btn ghostbtn">Cancel</button>
+            </div>
             <div class="lobby-head">
               <h2 class="panel-title">
                 Players online <span class="count" id="onlineCount"></span>
@@ -300,6 +317,9 @@
       </div>
       <p class="form-msg" id="statsMsg" role="alert"></p>
       <div id="statsBody" hidden>
+        <h3>Rating</h3>
+        <div class="tiles" id="ratingTiles"></div>
+
         <h3>Online</h3>
         <div class="tiles" id="onlineTiles"></div>
         <dl class="facts" id="onlineFacts"></dl>
@@ -328,6 +348,37 @@
         <ol class="history" id="historyList"></ol>
         <button type="button" class="btn ghostbtn" id="moreHistory" hidden>Show more</button>
       </div>
+    </dialog>
+
+    <dialog class="dialog stats" id="leaderboardDialog" aria-labelledby="leaderboardTitle">
+      <div class="dialog-head">
+        <h2 id="leaderboardTitle">Leaderboard</h2>
+        <button type="button" class="btn ghostbtn" data-close>Close</button>
+      </div>
+      <label class="sr-only" for="lbCountry">Leaderboard for</label>
+      <select id="lbCountry" class="filter">
+        <option value="">🌍 Whole world</option>
+      </select>
+      <p class="lb-me" id="lbMe"></p>
+      <p class="form-msg" id="lbMsg" role="alert"></p>
+      <table class="table" id="lbTable" hidden>
+        <thead>
+          <tr>
+            <th scope="col" class="num">#</th>
+            <th scope="col">Player</th>
+            <th scope="col" class="num">Rating</th>
+            <th scope="col" class="num">Won</th>
+            <th scope="col" class="num">Played</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="empty" id="lbEmpty" hidden></p>
+      <button type="button" class="btn ghostbtn" id="lbMore" hidden>Show more</button>
+      <p class="note">
+        Everyone starts at 1200. Each online round moves your rating: beating a stronger player
+        earns more. Games against the computer don't count.
+      </p>
     </dialog>
 
     <script type="module" src="js/main.js"></script>

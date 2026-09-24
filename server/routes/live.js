@@ -4,8 +4,9 @@
 // Browser -> server: { t: 'invite', to } | { t: 'invite-accept', id }
 //   | { t: 'invite-decline', id } | { t: 'invite-cancel', id }
 //   | { t: 'move', match, square } | { t: 'next-round', match }
-//   | { t: 'leave', match } | { t: 'ping' }
-// Server -> browser: { t: 'hello', me, match, invites } | { t: 'match', match }
+//   | { t: 'leave', match } | { t: 'queue-join' } | { t: 'queue-leave' } | { t: 'ping' }
+// Server -> browser: { t: 'hello', me, match, invites, waiting } | { t: 'match', match }
+//   | { t: 'queue', waiting } | { t: 'ratings', match, round, ratings }
 //   | { t: 'invite', invite } | { t: 'invite-sent', invite }
 //   | { t: 'invite-declined', id, by } | { t: 'invite-gone', id }
 //   | { t: 'error', message } | { t: 'pong' }
@@ -14,13 +15,13 @@ import { InviteError } from '../invites.js';
 import { MatchError } from '../matches.js';
 
 const HEARTBEAT_MS = 30_000;
-const LEAVE_GRACE_MS = 20_000; // time to come back after a reload or a network blip
 const MAX_MESSAGES_PER_10S = 60;
+const QUEUE_RETRY_MS = 3_000; // waiting players look again this often
 
 export default async function liveRoutes(app) {
-  const { presence, bus, invites, matches, users, config } = app.ctx;
+  const { presence, bus, invites, matches, matchmaking, users, config } = app.ctx;
 
-  // Players connected to this instance: id -> { user, sockets }
+  // Players connected to this instance: id -> { user, sockets, waiting }
   const local = new Map();
   const leaveTimers = new Map();
 
@@ -39,26 +40,43 @@ export default async function liveRoutes(app) {
   }, HEARTBEAT_MS);
   heartbeat.unref();
 
+  // Players waiting for a quick match look again, with a wider rating gap
+  const queueRetry = setInterval(() => {
+    for (const entry of local.values()) {
+      if (!entry.waiting) continue;
+      matchmaking.retry(entry.user).then(
+        (r) => {
+          if (!r.waiting) entry.waiting = false;
+        },
+        (err) => app.log.error(err),
+      );
+    }
+  }, QUEUE_RETRY_MS);
+  queueRetry.unref();
+
   app.addHook('onClose', async () => {
     clearInterval(heartbeat);
+    clearInterval(queueRetry);
     for (const t of leaveTimers.values()) clearTimeout(t);
     for (const { sockets } of local.values()) for (const s of sockets) s.terminate();
   });
 
   // After a player's last connection closes, give them a moment to come
-  // back; if they don't, they leave their match (see match.js leave()).
+  // back (a reload); if they don't, they stop looking for a quick match and
+  // leave their match (see match.js leave()).
   function scheduleLeave(userId) {
     clearTimeout(leaveTimers.get(userId));
     const timer = setTimeout(async () => {
       leaveTimers.delete(userId);
       try {
         if (await presence.isConnected(userId)) return;
+        await matchmaking.leave(userId);
         const match = await matches.current(userId);
         if (match && !match.ended) await matches.leave(match.id, userId);
       } catch (err) {
         if (!(err instanceof MatchError)) app.log.error(err);
       }
-    }, LEAVE_GRACE_MS);
+    }, config.leaveGraceMs);
     timer.unref();
     leaveTimers.set(userId, timer);
   }
@@ -69,8 +87,12 @@ export default async function liveRoutes(app) {
         return { t: 'pong' };
       case 'invite':
         return invites.send(me, msg.to);
-      case 'invite-accept':
-        return invites.accept(me, msg.id);
+      case 'invite-accept': {
+        // A game started by invitation ends any search for a quick match
+        const match = await invites.accept(me, msg.id);
+        await Promise.all(Object.values(match.players).map((p) => matchmaking.leave(p.id)));
+        return null;
+      }
       case 'invite-decline':
         return invites.decline(me, msg.id);
       case 'invite-cancel':
@@ -81,6 +103,11 @@ export default async function liveRoutes(app) {
         return matches.nextRound(String(msg.match), me.id);
       case 'leave':
         return matches.leave(String(msg.match), me.id);
+      case 'queue-join':
+        await matchmaking.join(me);
+        return null;
+      case 'queue-leave':
+        return matchmaking.leave(me.id);
       default:
         return { t: 'error', message: 'Unknown request.' };
     }
@@ -99,8 +126,8 @@ export default async function liveRoutes(app) {
   }
 
   app.get('/ws', { websocket: true, preHandler: admit }, async (socket, req) => {
-    const { id, username, country } = req.profile;
-    const me = { id, username, country };
+    const { id, username, country, rating } = req.profile;
+    const me = { id, username, country, rating };
 
     const send = (msg) => {
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(msg));
@@ -117,7 +144,13 @@ export default async function liveRoutes(app) {
     clearTimeout(leaveTimers.get(me.id));
     leaveTimers.delete(me.id);
 
-    const stopListening = bus.listen(me.id, send);
+    // Every tab of the player hears whether they are waiting for a match;
+    // this instance keeps searching for them while they are
+    const stopListening = bus.listen(me.id, (msg) => {
+      if (msg.t === 'queue') entry.waiting = msg.waiting;
+      else if (msg.t === 'match' && !msg.match.ended) entry.waiting = false;
+      send(msg);
+    });
     const connected = presence.connect(me);
 
     let closed = false;
@@ -169,8 +202,13 @@ export default async function liveRoutes(app) {
     try {
       await Promise.all([stopListening, connected]);
       if (closed) return;
-      const [match, waiting] = await Promise.all([matches.current(me.id), invites.incoming(me.id)]);
-      send({ t: 'hello', me, match, invites: waiting });
+      const [match, pending, waiting] = await Promise.all([
+        matches.current(me.id),
+        invites.incoming(me.id),
+        matchmaking.isWaiting(me.id),
+      ]);
+      entry.waiting = waiting;
+      send({ t: 'hello', me, match, invites: pending, waiting });
     } catch (err) {
       app.log.error(err);
       socket.close(1011, 'Server error');

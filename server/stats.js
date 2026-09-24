@@ -2,6 +2,8 @@
 // Recording a game writes the game, one history row per player, and the
 // running totals, all in one transaction, so the numbers always add up.
 
+import { START_RATING, ratingChange } from './rating.js';
+
 const RETRY_KEY = 'stats:retry';
 
 const outcomeFor = (symbol, result) => (result === 'D' ? 'D' : result === symbol ? 'W' : 'L');
@@ -40,9 +42,9 @@ const UPSERT_STATS = `
   INSERT INTO player_stats (user_id, played, won, lost, drawn, won_as_x, played_as_x,
     won_as_o, played_as_o, wins_by_forfeit, losses_by_forfeit, current_streak, best_streak,
     fastest_win, cpu_played, cpu_won, cpu_lost, cpu_drawn, hard_played, hard_drawn,
-    first_played_at, last_played_at)
+    first_played_at, last_played_at, rating, peak_rating)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
-    $19, $20, $21, $21)
+    $19, $20, $21, $21, ${START_RATING} + $22, GREATEST(${START_RATING}, ${START_RATING} + $22))
   ON CONFLICT (user_id) DO UPDATE SET
     played = player_stats.played + EXCLUDED.played,
     won = player_stats.won + EXCLUDED.won,
@@ -69,7 +71,10 @@ const UPSERT_STATS = `
     hard_played = player_stats.hard_played + EXCLUDED.hard_played,
     hard_drawn = player_stats.hard_drawn + EXCLUDED.hard_drawn,
     first_played_at = LEAST(player_stats.first_played_at, EXCLUDED.first_played_at),
-    last_played_at = GREATEST(player_stats.last_played_at, EXCLUDED.last_played_at)`;
+    last_played_at = GREATEST(player_stats.last_played_at, EXCLUDED.last_played_at),
+    rating = player_stats.rating + $22,
+    peak_rating = GREATEST(player_stats.peak_rating, player_stats.rating + $22)
+  RETURNING rating`;
 
 const UPSERT_H2H = `
   INSERT INTO head_to_head (user_id, opponent_id, played, won, lost, drawn, last_played_at)
@@ -95,7 +100,9 @@ const rate = (won, played) => (played ? Math.round((won / played) * 100) : null)
 
 export function createStats(db, redis, log = console) {
   // Saves one finished game. `game` = { mode, matchId?, round?, difficulty?,
-  // xId, oId (null = computer), result, forfeit, moves, startedAt, endedAt }
+  // xId, oId (null = computer), result, forfeit, moves, startedAt, endedAt }.
+  // Returns null if it was already saved, otherwise
+  // { gameId, players: { [userId]: { rating, change } } }.
   async function record(game) {
     const online = game.mode === 'online';
     const startedAt = new Date(game.startedAt);
@@ -129,12 +136,44 @@ export function createStats(db, redis, log = console) {
       // Always lock players' rows in the same order, so two games can't deadlock
       players.sort((a, b) => a.id - b.id);
 
+      // Online rounds move both ratings: read them first, locked, so two
+      // rounds finishing at once can't both start from the same rating
+      const change = new Map(players.map((p) => [p.id, 0]));
+      if (online) {
+        const ids = players.map((p) => p.id);
+        await client.query(
+          `INSERT INTO player_stats (user_id) SELECT unnest($1::bigint[]) ORDER BY 1
+           ON CONFLICT DO NOTHING`,
+          [ids],
+        );
+        const { rows: current } = await client.query(
+          'SELECT user_id, rating FROM player_stats WHERE user_id = ANY($1) ORDER BY user_id FOR UPDATE',
+          [ids],
+        );
+        const rating = new Map(current.map((r) => [r.user_id, r.rating]));
+        const score = game.result === 'D' ? 0.5 : game.result === 'X' ? 1 : 0;
+        const xGain = ratingChange(rating.get(game.xId), rating.get(game.oId), score);
+        change.set(game.xId, xGain);
+        change.set(game.oId, -xGain);
+      }
+
+      const result = { gameId, players: {} };
       for (const p of players) {
         const outcome = outcomeFor(p.symbol, game.result);
         await client.query(
-          `INSERT INTO player_games (user_id, ended_at, game_id, mode, symbol, outcome, opponent_id)
-           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-          [p.id, endedAt, gameId, game.mode, p.symbol, outcome, p.opponent],
+          `INSERT INTO player_games (user_id, ended_at, game_id, mode, symbol, outcome, opponent_id,
+             rating_change)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            p.id,
+            endedAt,
+            gameId,
+            game.mode,
+            p.symbol,
+            outcome,
+            p.opponent,
+            online ? change.get(p.id) : null,
+          ],
         );
         const d = deltas({
           online,
@@ -144,7 +183,13 @@ export function createStats(db, redis, log = console) {
           moveCount: game.moves.length,
           difficulty: game.difficulty,
         });
-        await client.query(UPSERT_STATS, [p.id, ...d, endedAt]);
+        const { rows: saved } = await client.query(UPSERT_STATS, [
+          p.id,
+          ...d,
+          endedAt,
+          change.get(p.id),
+        ]);
+        result.players[p.id] = { rating: saved[0].rating, change: change.get(p.id) };
         if (online) {
           await client.query(UPSERT_H2H, [
             p.id,
@@ -156,7 +201,7 @@ export function createStats(db, redis, log = console) {
           ]);
         }
       }
-      return gameId;
+      return result;
     });
   }
 
@@ -176,10 +221,11 @@ export function createStats(db, redis, log = console) {
       endedAt: finished.endedAt,
     };
     try {
-      await record(game);
+      return await record(game);
     } catch (err) {
       log.error({ err }, 'Could not record a game; will retry');
       await redis.rpush(RETRY_KEY, JSON.stringify(game)).catch(() => {});
+      return null;
     }
   }
 
@@ -198,11 +244,28 @@ export function createStats(db, redis, log = console) {
     }
   }
 
+  // Position on the leaderboard (1 = top), ties broken the way the
+  // leaderboard orders them. Null for players who haven't played online.
+  async function rankOf(userId, rating, country = null) {
+    const { rows } = await db.query(
+      `SELECT count(*)::int + 1 AS rank
+       FROM player_stats s ${country ? 'JOIN users u ON u.id = s.user_id' : ''}
+       WHERE s.played > 0 AND (s.rating > $1 OR (s.rating = $1 AND s.user_id < $2))
+       ${country ? 'AND u.country = $3' : ''}`,
+      country ? [rating, userId, country] : [rating, userId],
+    );
+    return rows[0].rank;
+  }
+
   async function summary(userId) {
     const { rows } = await db.query('SELECT * FROM player_stats WHERE user_id = $1', [userId]);
     const s = rows[0];
     const z = (k) => s?.[k] ?? 0;
+    const rated = z('played') > 0;
     return {
+      rating: s?.rating ?? START_RATING,
+      peakRating: s?.peak_rating ?? START_RATING,
+      rank: rated ? await rankOf(userId, s.rating) : null,
       online: {
         played: z('played'),
         won: z('won'),
@@ -274,8 +337,8 @@ export function createStats(db, redis, log = console) {
       : 'pg.user_id = $1';
     const params = after ? [userId, limit + 1, after[0], after[1]] : [userId, limit + 1];
     const { rows } = await db.query(
-      `SELECT pg.game_id, pg.ended_at, pg.mode, pg.symbol, pg.outcome, g.difficulty,
-              g.forfeit, cardinality(g.moves) AS move_count, g.started_at,
+      `SELECT pg.game_id, pg.ended_at, pg.mode, pg.symbol, pg.outcome, pg.rating_change,
+              g.difficulty, g.forfeit, cardinality(g.moves) AS move_count, g.started_at,
               u.id AS opponent_id, u.username, u.country
        FROM player_games pg
        JOIN games g ON g.id = pg.game_id
@@ -294,6 +357,7 @@ export function createStats(db, redis, log = console) {
         seconds: Math.max(0, Math.round((r.ended_at - r.started_at) / 1000)),
         symbol: r.symbol,
         outcome: r.outcome,
+        ratingChange: r.rating_change,
         forfeit: r.forfeit,
         moves: r.move_count,
         difficulty: r.difficulty,
@@ -308,5 +372,70 @@ export function createStats(db, redis, log = console) {
     };
   }
 
-  return { record, recordRound, retryPending, summary, opponents, history };
+  // One page of the leaderboard, best first, for the world or one country,
+  // and where `userId` stands on it
+  async function leaderboard({ userId, country = null, offset = 0, limit = 20 }) {
+    const filter = country ? 'AND u.country = $1' : '';
+    const params = country ? [country] : [];
+    const n = params.length;
+    const [page, count, mine] = await Promise.all([
+      db.query(
+        `SELECT s.user_id, u.username, u.country, s.rating, s.played, s.won
+         FROM player_stats s JOIN users u ON u.id = s.user_id
+         WHERE s.played > 0 ${filter}
+         ORDER BY s.rating DESC, s.user_id
+         LIMIT $${n + 1} OFFSET $${n + 2}`,
+        [...params, limit, offset],
+      ),
+      db.query(
+        `SELECT count(*)::int AS n FROM player_stats s JOIN users u ON u.id = s.user_id
+         WHERE s.played > 0 ${filter}`,
+        params,
+      ),
+      db.query(
+        `SELECT s.rating, s.played, s.won, u.country FROM player_stats s
+         JOIN users u ON u.id = s.user_id WHERE s.user_id = $1`,
+        [userId],
+      ),
+    ]);
+    const self = mine.rows[0];
+    const ranked = self && self.played > 0 && (!country || self.country === country);
+    return {
+      total: count.rows[0].n,
+      players: page.rows.map((r, i) => ({
+        rank: offset + i + 1,
+        id: r.user_id,
+        username: r.username,
+        country: r.country,
+        rating: r.rating,
+        played: r.played,
+        won: r.won,
+      })),
+      me: ranked
+        ? {
+            rank: await rankOf(userId, self.rating, country),
+            rating: self.rating,
+            played: self.played,
+            won: self.won,
+          }
+        : null,
+    };
+  }
+
+  // A player's current rating (1200 until they play online)
+  async function rating(userId) {
+    const { rows } = await db.query('SELECT rating FROM player_stats WHERE user_id = $1', [userId]);
+    return rows[0]?.rating ?? START_RATING;
+  }
+
+  return {
+    record,
+    recordRound,
+    retryPending,
+    summary,
+    opponents,
+    history,
+    leaderboard,
+    rating,
+  };
 }

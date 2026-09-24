@@ -3,11 +3,19 @@
 
 import { winner, emptyBoard, other } from './rules.js';
 import { pickMove } from './ai.js';
-import { initAccount } from './account.js';
+import { currentUser, initAccount } from './account.js';
 import { connectLive } from './live.js';
 import { countryFlag } from './countries.js';
-import { handleLobbyMessage, initLobby, lobbyError, resetLobby, setLobby } from './lobby.js';
-import { initStats, recordCpuGame } from './stats.js';
+import {
+  handleLobbyMessage,
+  initLobby,
+  lobbyError,
+  resetLobby,
+  setLastOpponent,
+  setLobby,
+} from './lobby.js';
+import { initStats, recordCpuGame, signed } from './stats.js';
+import { initLeaderboard } from './leaderboard.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
@@ -39,11 +47,16 @@ let live = null;
 let liveStatus = 'offline'; // 'connecting' | 'online' | 'offline'
 let me = null;
 let match = null;
+// Latest known ratings, by player id, and the points each player won or
+// lost in the round that just ended ({ match, round, change: { id: n } })
+const ratings = new Map();
+let lastRound = null;
 
 const online = () => state.mode === 'online';
 const inMatch = () => !!match && !match.ended;
 const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X');
 const opponent = () => (match ? match.players[other(mySymbol())] : null);
+const ratingOf = (p) => ratings.get(p.id) ?? p.rating;
 
 function load() {
   const base = { mode: 'cpu', diff: 'casual', scores: zeroScores(), starter: 'X' };
@@ -112,15 +125,25 @@ function statusHTML() {
 
   if (online() && !inMatch()) {
     if (liveStatus !== 'online') return 'Connecting…';
-    return 'Invite a player, or wait for an invitation.';
+    return 'Find an opponent, or invite a player.';
   }
 
   const w = winner(board);
   const rival = opponent()?.username;
-  if (online() && match.forfeit && over) {
-    return match.result === mySymbol()
-      ? `<mark>You win!</mark> ${rival} left.`
-      : `<mark>${rival} wins.</mark>`;
+  if (online() && over) {
+    const change = roundChange();
+    const points = change === null ? '' : ` ${deltaHTML(change)}`;
+    if (match.forfeit) {
+      return match.result === mySymbol()
+        ? `<mark>You win!</mark> ${rival} left.${points}`
+        : `<mark>${rival} wins.</mark>${points}`;
+    }
+    if (w && w.p === 'D') return `<mark>Cat's game.</mark> Nobody wins.${points}`;
+    if (w) {
+      return w.p === mySymbol()
+        ? `<mark>You win!</mark> Nice line.${points}`
+        : `<mark>${rival} wins.</mark> Go again?${points}`;
+    }
   }
   if (w && w.p === 'D') return `<mark>Cat's game.</mark> Nobody wins.`;
   if (w) {
@@ -128,11 +151,6 @@ function statusHTML() {
       return w.p === 'X'
         ? `<mark>You win!</mark> Nice line.`
         : `<mark>Computer wins.</mark> Go again?`;
-    }
-    if (online()) {
-      return w.p === mySymbol()
-        ? `<mark>You win!</mark> Nice line.`
-        : `<mark>${rival} wins.</mark> Go again?`;
     }
     return `<mark>${tag(w.p)} wins!</mark>`;
   }
@@ -143,6 +161,24 @@ function statusHTML() {
     return turn === mySymbol() ? `Your move, ${tag(turn)}` : `${rival} is thinking…`;
   }
   return `${tag(turn)} to play`;
+}
+
+// My rating points for the round on the board, once the server has sent them
+function roundChange() {
+  if (!lastRound || lastRound.match !== match?.id || lastRound.round !== match.round) return null;
+  return lastRound.change[me.id] ?? null;
+}
+
+function deltaHTML(n) {
+  const cls = n > 0 ? 'delta up' : n < 0 ? 'delta down' : 'delta';
+  return `<span class="${cls}" title="Rating points">${signed(n)}</span>`;
+}
+
+function renderMe() {
+  const chip = $('meRating');
+  const rating = me ? ratingOf(me) : null;
+  chip.hidden = !rating;
+  chip.textContent = rating ? String(rating) : '';
 }
 
 function playerLabel(p) {
@@ -184,6 +220,11 @@ function render() {
   if (inMatch()) {
     const rival = opponent();
     $('opponentName').textContent = `${countryFlag(rival.country)} ${rival.username}`;
+    const chip = document.createElement('span');
+    chip.className = 'rating-chip';
+    chip.title = 'Rating';
+    chip.textContent = String(ratingOf(rival));
+    $('opponentName').append(' ', chip);
     $('roomRole').textContent =
       mySymbol() === 'X' ? 'You are X and open the first round.' : 'You are O.';
   }
@@ -193,6 +234,7 @@ function render() {
   $('next').closest('.actions').hidden = online() && !inMatch();
 
   setLobby({ visible: online() && !$('gameView').hidden, inMatch: inMatch() });
+  renderMe();
 
   tally($('tX'), state.scores.X);
   tally($('tO'), state.scores.O);
@@ -386,6 +428,7 @@ function onMatch(next) {
       match = null;
       state.scores = zeroScores();
       resetBoard();
+      setLastOpponent(next.players[next.players.O.id === me.id ? 'X' : 'O']);
     }
   } else {
     if (!match || match.id !== next.id) setNetMessage('');
@@ -398,6 +441,7 @@ function onLiveMessage(msg) {
   switch (msg.t) {
     case 'hello':
       me = msg.me;
+      ratings.set(me.id, me.rating);
       if (msg.match && !msg.match.ended) showMatch(msg.match);
       else if (match) {
         match = null; // it ended while we were away
@@ -408,10 +452,19 @@ function onLiveMessage(msg) {
     case 'match':
       onMatch(msg.match);
       return;
+    case 'ratings': {
+      const change = {};
+      for (const [id, r] of Object.entries(msg.ratings)) {
+        ratings.set(Number(id), r.rating);
+        change[id] = r.change;
+      }
+      lastRound = { match: msg.match, round: msg.round, change };
+      break;
+    }
     case 'error':
       busy = false;
       setNetMessage(msg.message);
-      if (msg.re?.startsWith('invite')) lobbyError();
+      if (msg.re?.startsWith('invite') || msg.re?.startsWith('queue')) lobbyError();
       break;
     default:
       handleLobbyMessage(msg);
@@ -437,6 +490,8 @@ function goOffline() {
   liveStatus = 'offline';
   me = null;
   match = null;
+  ratings.clear();
+  lastRound = null;
   resetLobby();
 }
 
@@ -468,6 +523,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 initStats();
+initLeaderboard(currentUser);
 initLobby({
   send: (msg) => live?.send(msg),
   message: setNetMessage,

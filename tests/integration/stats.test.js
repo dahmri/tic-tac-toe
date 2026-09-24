@@ -1,6 +1,6 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { client, live, player, setup, wait } from './helpers.js';
+import { client, player, setup, startMatch, wait } from './helpers.js';
 
 let t;
 before(async () => {
@@ -8,38 +8,7 @@ before(async () => {
 });
 after(() => t.close());
 
-// Starts a match: `x` invites `o`
-async function match(x, o) {
-  const a = await live(t.app, x);
-  const b = await live(t.app, o);
-  a.send({ t: 'invite', to: o.user.id });
-  const { invite } = await b.next('invite');
-  b.send({ t: 'invite-accept', id: invite.id });
-  const [{ match: m }] = await Promise.all([a.next('match'), b.next('match')]);
-  const socketFor = { [x.user.id]: a, [o.user.id]: b };
-  let current = m;
-  return {
-    id: m.id,
-    a,
-    b,
-    // Plays squares in order; whoever's turn it is moves
-    async play(squares) {
-      for (const square of squares) {
-        const mover = socketFor[current.players[current.turn].id];
-        mover.send({ t: 'move', match: m.id, square });
-        const [next] = await Promise.all([a.next('match'), b.next('match')]);
-        current = next.match;
-      }
-      return current;
-    },
-    async nextRound() {
-      a.send({ t: 'next-round', match: m.id });
-      const [next] = await Promise.all([a.next('match'), b.next('match')]);
-      current = next.match;
-    },
-    close: () => Promise.all([a.close(), b.close()]),
-  };
-}
+const match = (x, o) => startMatch(t.app, x, o);
 
 const TOP_ROW_FOR_STARTER = [0, 3, 1, 4, 2]; // whoever opens the round wins it
 const DRAW = [0, 1, 2, 4, 3, 5, 7, 6, 8];

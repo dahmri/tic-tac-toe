@@ -15,6 +15,10 @@ accounts; a Node.js game server with PostgreSQL and Redis runs it all.
 - **Three modes:** vs Computer, Same screen (two players, one device), and Online.
 - **Online lobby:** see who is online, filter players by country, and invite one to play.
   They can accept or decline; invitations reach them whatever mode they're in.
+- **Quick match:** one click pairs you with a waiting player near your rating. After a
+  match, invite the same player again in one click.
+- **Ratings and leaderboard:** a skill rating (Elo, starting at 1200) that every online
+  round moves; the leaderboard ranks players worldwide or by country.
 - **Stats:** your online record (played, won, lost, drawn, win rate), win streaks, win
   rate as X and as O, fastest win, the opponents you've played most and your record
   against each, your results against the computer, and your full game history.
@@ -25,7 +29,8 @@ accounts; a Node.js game server with PostgreSQL and Redis runs it all.
 
 ## Playing online
 
-1. Pick **Online**. You see the players who are online now, most recently active
+1. Pick **Online**. Click **Find me an opponent** to be paired with a waiting player
+   near your rating, or pick someone yourself: you see the players who are online now, most recently active
    first, with their country. Use the country list to show only one country.
 2. Click **Invite** next to a player. They get the invitation wherever they are in
    the game and have 60 seconds to **Accept** or **Decline**. You can cancel it.
