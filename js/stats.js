@@ -5,6 +5,7 @@
 import { api } from './api.js';
 import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag } from './countries.js';
+import { openReplay } from './replay.js';
 
 const $ = (id) => document.getElementById(id);
 let nextCursor = null;
@@ -137,6 +138,14 @@ function historyItem(g) {
     meta.append(' · ', deltaEl(g.ratingChange));
   }
   li.append(outcome, who, meta);
+  if (g.squares?.length) {
+    const b = el('button', 'btn ghostbtn replay-btn', 'Replay');
+    b.type = 'button';
+    const title = `${OUTCOME[g.outcome]} · ${who.textContent}`;
+    b.setAttribute('aria-label', `Replay: ${title}`);
+    b.addEventListener('click', () => openReplay(g, title));
+    li.append(b);
+  }
   return li;
 }
 

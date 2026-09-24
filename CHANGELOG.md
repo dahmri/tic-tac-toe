@@ -22,6 +22,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Hints.** The **Hint** button (or <kbd>H</kbd>) highlights a good square
   to play, against the computer or on the same screen. Not available
   online.
+- **Replays.** Every game in your Stats history has a **Replay** button:
+  watch it play back move by move, or step through it with the controls.
 
 ## [1.4.0] - 2026-09-24
 

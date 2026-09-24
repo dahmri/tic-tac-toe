@@ -443,6 +443,32 @@
       </p>
     </dialog>
 
+    <dialog class="dialog replay" id="replayDialog" aria-labelledby="replayTitle">
+      <div class="dialog-head">
+        <h2 id="replayTitle">Replay</h2>
+        <button type="button" class="btn ghostbtn" data-close>Close</button>
+      </div>
+      <p class="replay-who" id="replayWho"></p>
+      <div class="board mini" id="replayBoard" aria-label="Replay board">
+        <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
+          <path d="M101 6 C98 80 103 190 99 294" />
+          <path d="M199 8 C202 100 197 210 201 292" />
+          <path d="M6 100 C90 97 200 103 294 99" />
+          <path d="M8 201 C110 203 190 197 292 200" />
+        </svg>
+      </div>
+      <p class="replay-step" id="replayStep" aria-live="polite"></p>
+      <div class="replay-controls">
+        <button id="replayFirst" type="button" class="btn ghostbtn" aria-label="First move">
+          ⏮
+        </button>
+        <button id="replayBack" type="button" class="btn ghostbtn" aria-label="Back">◀</button>
+        <button id="replayPlay" type="button" class="btn" aria-label="Play">▶ Play</button>
+        <button id="replayNext" type="button" class="btn ghostbtn" aria-label="Next">▶</button>
+        <button id="replayLast" type="button" class="btn ghostbtn" aria-label="Last move">⏭</button>
+      </div>
+    </dialog>
+
     <script type="module" src="js/main.js"></script>
   </body>
 </html>
