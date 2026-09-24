@@ -1,8 +1,8 @@
 // UI: renders the board, handles input, keeps score, and runs online
 // matches (played on the game server) through the live connection.
 
-import { winner, emptyBoard, other } from './rules.js';
-import { pickMove } from './ai.js';
+import { emptyBoard, gameResult, isVariant, nextToVanish, other, playOn, replay } from './rules.js';
+import { hintMove, pickMove, pickVanishMove } from './ai.js';
 import { currentUser, initAccount, isGuest, leaveGuest } from './account.js';
 import { avatarEmoji } from './avatars.js';
 import { connectLive } from './live.js';
@@ -21,6 +21,7 @@ import { setSound, sound, soundOn } from './sound.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
+const DIFFICULTIES = ['casual', 'medium', 'hard'];
 const CENTER = (i) => [50 + (i % 3) * 100, 50 + Math.floor(i / 3) * 100];
 const X_PATHS = ['M22 22 C40 40 58 60 79 79', 'M78 21 C60 40 42 58 22 80'];
 const O_PATH = 'M52 17 C73 16 85 33 83 51 C81 72 65 84 47 83 C28 81 16 65 18 46 C20 29 34 18 56 21';
@@ -39,12 +40,13 @@ const zeroScores = () => ({ X: 0, O: 0, D: 0 });
 
 const state = load();
 let board;
+let marks; // each player's marks on the board, oldest first (for the vanish rules)
 let turn;
 let over;
 let busy = false;
 let cpuTimer = null;
 // The round in progress, recorded when a game against the computer ends
-let round = { moves: [], starter: 'X', diff: 'casual', startedAt: 0 };
+let round = { moves: [], starter: 'X', diff: 'casual', variant: 'classic', startedAt: 0 };
 
 // Online: the live connection, the signed-in player, and the current match
 // exactly as the server last sent it (the server is the referee)
@@ -64,14 +66,24 @@ const inMatch = () => !!match && !match.ended;
 const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X');
 const opponent = () => (match ? match.players[other(mySymbol())] : null);
 const ratingOf = (p) => ratings.get(p.id) ?? p.rating;
+// The rules on the board: an online match's own, otherwise the player's choice
+const variant = () => (online() && match ? (match.variant ?? 'classic') : state.variant);
 
 function load() {
-  const base = { mode: 'cpu', diff: 'casual', scores: zeroScores(), starter: 'X' };
+  const base = {
+    mode: 'cpu',
+    diff: 'casual',
+    variant: 'classic',
+    scores: zeroScores(),
+    starter: 'X',
+  };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     if (saved && saved.scores) {
       const s = { ...base, ...saved };
       if (!MODES.includes(s.mode)) s.mode = 'cpu';
+      if (!DIFFICULTIES.includes(s.diff)) s.diff = 'casual';
+      if (!isVariant(s.variant)) s.variant = 'classic';
       if (s.mode === 'online') {
         s.scores = zeroScores();
         s.starter = 'X';
@@ -120,6 +132,12 @@ function drawMark(i, p) {
   cells[i].innerHTML = markSVG(p, '');
 }
 
+// A mark that vanished (3-mark rules)
+function eraseMark(i) {
+  delete cells[i].dataset.mark;
+  cells[i].innerHTML = '';
+}
+
 function isHumanTurn() {
   if (over) return false;
   if (state.mode === 'cpu') return turn === 'X';
@@ -136,7 +154,7 @@ function statusHTML() {
     return 'Find an opponent, or invite a player.';
   }
 
-  const w = winner(board);
+  const w = gameResult(board, online() ? match.moves.length : round.moves.length, variant());
   const rival = opponent()?.username;
   if (online() && over) {
     const change = roundChange();
@@ -200,12 +218,16 @@ function playerLabel(p) {
 
 function render() {
   const humanTurn = isHumanTurn();
+  // Under the 3-mark rules, the mark that goes when the player to move plays
+  const fading = over ? -1 : nextToVanish({ board, marks }, turn, variant());
   cells.forEach((c, i) => {
     const v = board[i];
     const row = Math.floor(i / 3) + 1;
     const col = (i % 3) + 1;
     c.disabled = !!v || !humanTurn || busy;
-    c.setAttribute('aria-label', `Row ${row}, column ${col}: ${v || 'empty'}`);
+    c.classList.toggle('fading', i === fading);
+    const note = i === fading ? ' (vanishes next)' : '';
+    c.setAttribute('aria-label', `Row ${row}, column ${col}: ${v || 'empty'}${note}`);
     if (!v) c.innerHTML = humanTurn && !busy ? markSVG(turn, 'ghost') : '';
   });
 
@@ -213,6 +235,15 @@ function render() {
   $('lblX').textContent = playerLabel('X');
   $('lblO').textContent = playerLabel('O');
   $('diffGroup').hidden = state.mode !== 'cpu';
+  $('diff-hard').textContent = state.variant === 'vanish' ? 'Hard' : 'Unbeatable';
+  // An online match keeps the rules it started with
+  $('rulesRow').hidden = inMatch() || guestLocked();
+  $('ruleNote').hidden = variant() !== 'vanish';
+  document
+    .querySelectorAll('[data-variant]')
+    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === state.variant));
+  $('hintBtn').hidden = online();
+  $('hintBtn').disabled = !humanTurn || busy;
   document
     .querySelectorAll('[data-mode]')
     .forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === state.mode));
@@ -235,8 +266,9 @@ function render() {
     chip.title = 'Rating';
     chip.textContent = String(ratingOf(rival));
     $('opponentName').append(' ', chip);
+    const rules = variant() === 'vanish' ? ' 3-mark rules.' : '';
     $('roomRole').textContent =
-      mySymbol() === 'X' ? 'You are X and open the first round.' : 'You are O.';
+      (mySymbol() === 'X' ? 'You are X and open the first round.' : 'You are O.') + rules;
   }
   const locked = online() && !inMatch();
   $('next').disabled = locked || (online() && !over);
@@ -276,13 +308,20 @@ function tally(el, n) {
 }
 
 function place(i, p) {
-  board[i] = p;
+  const before = board;
+  ({ board, marks } = playOn({ board, marks }, i, p, state.variant));
+  before.forEach((v, k) => {
+    if (v && !board[k]) eraseMark(k);
+  });
   drawMark(i, p);
-  // A game counts at the difficulty it started with, from its first move
-  if (!round.moves.length) round = { ...round, diff: state.diff, startedAt: Date.now() };
+  clearHint();
+  // A game counts at the difficulty and rules it started with, from its first move
+  if (!round.moves.length) {
+    round = { ...round, diff: state.diff, variant: state.variant, startedAt: Date.now() };
+  }
   round.moves.push(i);
   sound.mark(p);
-  const w = winner(board);
+  const w = gameResult(board, round.moves.length, state.variant);
   if (w) {
     over = true;
     if (w.p === 'D') sound.draw();
@@ -292,9 +331,11 @@ function place(i, p) {
       celebrate();
     }
     // Guests' games aren't recorded: they have no stats
-    if (state.mode === 'cpu' && state.diff === round.diff && currentUser()) {
+    const unchanged = state.diff === round.diff && state.variant === round.variant;
+    if (state.mode === 'cpu' && unchanged && currentUser()) {
       recordCpuGame({
         difficulty: round.diff,
+        variant: round.variant,
         starter: round.starter,
         moves: round.moves,
         seconds: Math.round((Date.now() - round.startedAt) / 1000),
@@ -363,7 +404,11 @@ function maybeCpu() {
     () => {
       cpuTimer = null;
       busy = false;
-      place(pickMove(board, 'O', state.diff), 'O');
+      const square =
+        state.variant === 'vanish'
+          ? pickVanishMove({ board, marks }, 'O', state.diff)
+          : pickMove(board, 'O', state.diff);
+      place(square, 'O');
     },
     420 + Math.random() * 250,
   );
@@ -374,15 +419,22 @@ function resetBoard() {
   clearTimeout(cpuTimer);
   cpuTimer = null;
   board = emptyBoard();
+  marks = { X: [], O: [] };
   turn = state.starter;
-  round = { moves: [], starter: turn, diff: state.diff, startedAt: Date.now() };
+  round = {
+    moves: [],
+    starter: turn,
+    diff: state.diff,
+    variant: state.variant,
+    startedAt: Date.now(),
+  };
   over = false;
   busy = false;
   winEl.innerHTML = '';
   confettiEl.replaceChildren();
   boardEl.classList.remove('won');
   cells.forEach((c) => {
-    c.classList.remove('hit');
+    c.classList.remove('hit', 'hinted', 'fading');
     delete c.dataset.mark;
     c.innerHTML = '';
   });
@@ -393,6 +445,29 @@ function newRound() {
     if (inMatch() && over) live.send({ t: 'next-round', match: match.id });
     return;
   }
+  resetBoard();
+  render();
+  maybeCpu();
+}
+
+// Hints: the move the computer would play, for vs Computer and Same screen
+function showHint() {
+  if (online() || !isHumanTurn() || busy) return;
+  clearHint();
+  const i = hintMove({ board, marks }, turn, state.variant);
+  cells[i].classList.add('hinted');
+  statusEl.innerHTML = `Try row ${Math.floor(i / 3) + 1}, column ${(i % 3) + 1}.`;
+}
+
+function clearHint() {
+  cells.forEach((c) => c.classList.remove('hinted'));
+}
+
+function setVariant(v) {
+  if (state.variant === v) return;
+  state.variant = v;
+  save();
+  if (online()) return render(); // for the next invitation or quick match
   resetBoard();
   render();
   maybeCpu();
@@ -447,12 +522,14 @@ function showMatch(next) {
   }
   if (newRound) resetBoard();
   board = next.board.slice();
+  marks = replay(next.moves, next.starter, next.variant ?? 'classic').marks;
   turn = next.turn;
   over = next.over;
   busy = false;
   state.scores = { ...next.score };
   board.forEach((v, i) => {
-    if (v && cells[i].dataset.mark !== v) drawMark(i, v);
+    if (!v && cells[i].dataset.mark) eraseMark(i);
+    else if (v && cells[i].dataset.mark !== v) drawMark(i, v);
   });
   if (next.line && !boardEl.classList.contains('won')) drawWin(next.line);
   if (fresh === 1) sound.mark(next.board[next.moves.at(-1)]);
@@ -560,7 +637,11 @@ document.querySelectorAll('[data-diff]').forEach((b) =>
     render();
   }),
 );
+document
+  .querySelectorAll('[data-variant]')
+  .forEach((b) => b.addEventListener('click', () => setVariant(b.dataset.variant)));
 $('next').addEventListener('click', newRound);
+$('hintBtn').addEventListener('click', showHint);
 function renderSound() {
   $('soundBtn').setAttribute('aria-pressed', String(soundOn()));
   $('soundBtn').textContent = soundOn() ? '🔊' : '🔇';
@@ -582,12 +663,14 @@ document.addEventListener('keydown', (e) => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
   if (e.key in KEYMAP) humanMove(KEYMAP[e.key]);
   else if (e.key === 'n' || e.key === 'N') newRound();
+  else if (e.key === 'h' || e.key === 'H') showHint();
 });
 
 initStats();
 initLeaderboard(currentUser);
 initLobby({
   send: (msg) => live?.send(msg),
+  variant: () => state.variant,
   message: setNetMessage,
 });
 

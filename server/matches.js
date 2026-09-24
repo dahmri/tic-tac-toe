@@ -79,8 +79,8 @@ export function createMatches(redis, { bus, onRoundFinished = async () => {} }) 
     get,
 
     // Starts a match between the inviter (X) and the invited player (O)
-    async start(x, o) {
-      const match = newMatch({ id: randomUUID(), x, o });
+    async start(x, o, variant = 'classic') {
+      const match = newMatch({ id: randomUUID(), x, o, variant });
       const claimed = await redis.ttClaimPlayers(playerKey(x.id), playerKey(o.id), match.id, TTL);
       if (!claimed) throw new MatchError('One of you is already in a game.');
       await redis.set(matchKey(match.id), JSON.stringify(match), 'EX', TTL);

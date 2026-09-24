@@ -1,9 +1,12 @@
 // Quick match: "find me an opponent". Waiting players sit in a Redis
 // queue ordered by rating, so every server instance shares it:
 //
-//   mm:queue   sorted set: user id -> rating
+//   mm:queue   sorted set: user id -> rating (classic rules)
 //   mm:since   hash: user id -> when they started waiting (ms)
+//   mm:queue:vanish, mm:since:vanish   the same for the vanish variant
+//   mm:variant hash: user id -> the rules they are waiting to play
 //
+// Players only meet others who want the same rules.
 // A player is paired with the waiting player closest to their rating,
 // within 100 points at first. The gap allowed grows by 10 points for every
 // second either of them has waited, so nobody waits forever. The instance
@@ -17,9 +20,15 @@
 
 import { MatchError } from './matches.js';
 import { ONLINE_WINDOW_MS } from './presence.js';
+import { isVariant } from '../js/rules.js';
 
-const QUEUE = 'mm:queue';
-const SINCE = 'mm:since';
+const queueKey = (variant) => (variant === 'vanish' ? 'mm:queue:vanish' : 'mm:queue');
+const sinceKey = (variant) => (variant === 'vanish' ? 'mm:since:vanish' : 'mm:since');
+const VARIANT = 'mm:variant';
+const ALL = [
+  ['mm:queue', 'mm:since'],
+  ['mm:queue:vanish', 'mm:since:vanish'],
+];
 export const BASE_GAP = 100; // rating points
 export const GAP_PER_SECOND = 10;
 const STALE_MS = 10 * 60_000; // disconnected and waiting this long: gone
@@ -92,18 +101,20 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
   const tell = (userId, waiting) => bus.send(userId, { t: 'queue', waiting });
 
   async function leave(userId) {
-    const [[, removed]] = await redis.multi().zrem(QUEUE, userId).hdel(SINCE, userId).exec();
-    if (removed) await tell(userId, false);
+    const m = redis.multi();
+    for (const [queue, since] of ALL) m.zrem(queue, userId).hdel(since, userId);
+    const res = await m.hdel(VARIANT, userId).exec();
+    if (res[0][1] || res[2][1]) await tell(userId, false);
   }
 
   // Starts a match with the player the queue paired us with. If either of
   // us started another game meanwhile, whoever is still free waits again.
-  async function pair(me, otherId) {
+  async function pair(me, otherId, variant) {
     const [a, b] = await Promise.all([presence.profile(me.id), presence.profile(otherId)]);
     const players = Math.random() < 0.5 ? [a || me, b] : [b, a || me];
     try {
       if (!b) throw new MatchError('That player is no longer online.');
-      const match = await matches.start(...players);
+      const match = await matches.start(...players, variant);
       await Promise.all([tell(me.id, false), tell(otherId, false)]);
       return match;
     } catch (err) {
@@ -112,8 +123,9 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
         if (!(await matches.isPlaying(id)) && (await presence.isOnline(id))) {
           await redis
             .multi()
-            .zadd(QUEUE, await stats.rating(id), id)
-            .hset(SINCE, id, Date.now())
+            .zadd(queueKey(variant), await stats.rating(id), id)
+            .hset(sinceKey(variant), id, Date.now())
+            .hset(VARIANT, id, variant)
             .exec();
           await tell(id, true);
         }
@@ -122,11 +134,11 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
     }
   }
 
-  async function search(me, mode, now) {
+  async function search(me, mode, now, variant) {
     const rating = await stats.rating(me.id);
     const found = await redis.ttMatchmake(
-      QUEUE,
-      SINCE,
+      queueKey(variant),
+      sinceKey(variant),
       'online',
       me.id,
       rating,
@@ -139,27 +151,45 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
     );
     if (found === -1) return { waiting: false };
     if (found === 0) return { waiting: true };
-    const match = await pair(me, found);
+    await redis.hdel(VARIANT, me.id, found);
+    const match = await pair(me, found, variant);
     return match ? { waiting: false, match } : { waiting: true };
   }
 
   return {
     // Joins the queue, or starts a match straight away if someone suitable
     // is waiting
-    async join(me, now = Date.now()) {
+    async join(me, variant = 'classic', now = Date.now()) {
+      if (!isVariant(variant)) throw new MatchError('Unknown rules.');
       if (await matches.isPlaying(me.id)) throw new MatchError('Finish your game first.');
-      const result = await search(me, 'join', now);
-      if (result.waiting) await tell(me.id, true);
+      // Waiting for other rules? Switch queues.
+      const before = await redis.hget(VARIANT, me.id);
+      if (before && before !== variant) {
+        await redis.multi().zrem(queueKey(before), me.id).hdel(sinceKey(before), me.id).exec();
+      }
+      const result = await search(me, 'join', now, variant);
+      if (result.waiting) {
+        await redis.hset(VARIANT, me.id, variant);
+        await tell(me.id, true);
+      }
       return result;
     },
 
     // Looks again for a player who is waiting (the gap allowed has grown)
-    retry: (me, now = Date.now()) => search(me, 'retry', now),
+    async retry(me, now = Date.now()) {
+      const variant = (await redis.hget(VARIANT, me.id)) || 'classic';
+      return search(me, 'retry', now, variant);
+    },
 
     leave,
 
     async isWaiting(userId) {
-      return (await redis.zscore(QUEUE, userId)) !== null;
+      const [[, a], [, b]] = await redis
+        .multi()
+        .zscore(ALL[0][0], userId)
+        .zscore(ALL[1][0], userId)
+        .exec();
+      return a !== null || b !== null;
     },
   };
 }

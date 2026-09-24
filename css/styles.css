@@ -256,6 +256,28 @@ h1 .o {
   animation: none;
 }
 
+/* 3-mark rules: the mark that vanishes on its owner's next move */
+.cell.fading svg:not(.ghost) {
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+/* A hint: the square to try */
+.cell.hinted {
+  background: var(--hi);
+  border-radius: 12px;
+  animation: hint-pulse 1s ease-in-out 2;
+}
+@keyframes hint-pulse {
+  50% {
+    transform: scale(0.94);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cell.hinted {
+    animation: none;
+  }
+}
+
 .board.won .cell:not(.hit) svg:not(.ghost) {
   opacity: 0.35;
   transition: opacity 0.4s 0.3s;
@@ -1034,4 +1056,18 @@ kbd {
   .board.won .cell:not(.hit) svg:not(.ghost) {
     transition: none;
   }
+}
+
+/* Rules: classic or 3 marks */
+.rules-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.rule-note {
+  margin: 0;
+  flex: 1 1 200px;
+  color: var(--muted);
+  font-size: 0.85rem;
 }

@@ -3,7 +3,7 @@
 //   GET  /api/me/stats   totals, streaks, top opponents
 //   GET  /api/me/games   history, newest first: ?cursor=...&limit=20
 //   POST /api/games/cpu  a finished game vs the computer:
-//                        { difficulty, starter, moves, seconds }
+//                        { difficulty, starter, moves, seconds, variant? }
 //   GET  /api/leaderboard  best ratings: ?country=FR&offset=0&limit=20
 //                        -> { total, players: [{ rank, id, username, country,
 //                             avatar, rating, played, won }], me: { rank, rating, ... } | null }
@@ -52,6 +52,8 @@ export default async function statsRoutes(app) {
     await stats.record({
       mode: 'cpu',
       difficulty: body.difficulty,
+      variant: body.variant ?? 'classic',
+      starter: body.starter,
       xId: req.userId,
       oId: null,
       result: checked.result,
