@@ -26,7 +26,7 @@ export default {
   'A new address has to be confirmed again before you play online.':
     'Une nouvelle adresse doit être confirmée avant de jouer en ligne.',
   "A new season starts on the 1st of every month, and everyone starts again at 1200. Each online round moves your rating: beating a stronger player earns more. Games against the computer don't count.":
-    "Une nouvelle saison commence le 1er de chaque mois, et tout le monde repart de 1200. Chaque manche en ligne fait bouger ton classement : battre un joueur plus fort rapporte plus. Les parties contre l'ordinateur ne comptent pas.",
+    "Une nouvelle saison commence le 1er de chaque mois, et tout le monde repart de 1200. Chaque manche en ligne fait bouger ta cote : battre un joueur plus fort rapporte plus. Les parties contre l'ordinateur ne comptent pas.",
   Accept: 'Accepter',
   Account: 'Compte',
   Achievements: 'Succès',
@@ -76,7 +76,7 @@ export default {
   'Computer · O': 'Ordinateur · O',
   'Confirm my email': 'Confirmer mon e-mail',
   'Confirm your email address to play online, get a rating and join the leaderboard:':
-    'Confirme ton adresse e-mail pour jouer en ligne, obtenir un classement Elo et apparaître au classement :',
+    'Confirme ton adresse e-mail pour jouer en ligne, obtenir une cote et apparaître au classement :',
   'Confirm your email for Pencil Tic-Tac-Toe': 'Confirme ton e-mail pour Morpion au crayon',
   'Confirm your email to play online.': 'Confirme ton e-mail pour jouer en ligne.',
   'Confirm your email to play online: click the link we sent to {email}.':
@@ -163,7 +163,7 @@ export default {
   Invite: 'Inviter',
   'Invite again': 'Réinviter',
   'Invite {name}': 'Inviter {name}',
-  Invited: 'Invité',
+  Invited: 'Invitation envoyée',
   "It's not your turn.": "Ce n'est pas ton tour.",
   'Keep your first name under 50 characters.': 'Ton prénom doit faire moins de 50 caractères.',
   'Keep your last name under 50 characters.': 'Ton nom doit faire moins de 50 caractères.',
@@ -201,16 +201,16 @@ export default {
   'No account needed: play the computer or a friend on this screen. Online games and stats need a free account; sign up later and your games come with you.':
     "Pas besoin de compte : joue contre l'ordinateur ou un ami sur cet écran. Les parties en ligne et les statistiques demandent un compte gratuit ; inscris-toi plus tard et tes parties te suivent.",
   'No friends yet. Add players you like with the ☆ next to their name, or by username.':
-    "Pas encore d'amis. Ajoute les joueurs que tu aimes avec l'☆ à côté de leur nom, ou par leur nom d'utilisateur.",
+    "Pas encore d'amis. Ajoute les joueurs que tu aimes avec l'étoile ☆ à côté de leur nom, ou par leur nom d'utilisateur.",
   'No games yet.': "Aucune partie pour l'instant.",
   'No one else is online right now. Invite a friend to sign up!':
     "Personne d'autre n'est en ligne pour l'instant. Invite un ami à s'inscrire !",
-  'No one from {country} is online right now.':
-    "Personne de {country} n'est en ligne pour l'instant.",
+  'No one from {country} is online right now.': "Aucun joueur en ligne pour l'instant ({country}).",
   'No online games yet. Invite someone from the lobby!':
     "Aucune partie en ligne pour l'instant. Invite quelqu'un depuis le salon !",
   'No player has that username.': "Aucun joueur n'a ce nom d'utilisateur.",
-  'Nobody from {country} has played online yet.': "Personne de {country} n'a encore joué en ligne.",
+  'Nobody from {country} has played online yet.':
+    "Aucun joueur n'a encore joué en ligne ({country}).",
   'Nobody has played online yet. Be the first!':
     "Personne n'a encore joué en ligne. Sois le premier !",
   'Not a finished game.': 'Partie non terminée.',
@@ -240,7 +240,7 @@ export default {
   'Pick your avatar': 'Choisis ton avatar',
   'Piggy Bank': 'Tirelire',
   'Pirate Parrot': 'Perroquet pirate',
-  Play: 'Lire',
+  Play: 'Lecture',
   'Play 100 games.': 'Joue 100 parties.',
   'Play an online game to get on the leaderboard.':
     'Joue une partie en ligne pour entrer au classement.',
@@ -259,9 +259,9 @@ export default {
   Profile: 'Profil',
   Puzzler: 'Casse-tête',
   Rank: 'Rang',
-  Rating: 'Classement Elo',
-  'Rating points': 'Points de classement',
-  'Reach a rating of 1400.': 'Atteins un classement de 1400.',
+  Rating: 'Cote',
+  'Rating points': 'Points de cote',
+  'Reach a rating of 1400.': 'Atteins une cote de 1400.',
   'React {emoji}': 'Réagir {emoji}',
   'Recent games': 'Parties récentes',
   'Reconnecting…': 'Reconnexion…',
@@ -403,14 +403,14 @@ export default {
   'Win streak': 'Série de victoires',
   'Wipe scores': 'Effacer les scores',
   'With an account you can play people around the world, get a rating, climb the leaderboard, keep your stats, and pick a funny avatar.':
-    'Avec un compte, tu peux jouer contre des gens du monde entier, obtenir un classement Elo, grimper au classement, garder tes statistiques et choisir un avatar rigolo.',
+    'Avec un compte, tu peux jouer contre des gens du monde entier, obtenir une cote, grimper au classement, garder tes statistiques et choisir un avatar rigolo.',
   Won: 'Gagnées',
   'Won when they left or timed out': 'Gagnées par abandon ou temps écoulé',
   'Wrong username or password.': "Nom d'utilisateur ou mot de passe incorrect.",
   Yeehaw: 'Yiha',
   You: 'Toi',
   'You already invited {name}.': 'Tu as déjà invité {name}.',
-  'You are #{rank} in {where}, rated {rating}.': 'Tu es n°{rank} dans {where}, avec {rating}.',
+  'You are #{rank} in {where}, rated {rating}.': 'Tu es n°{rank} ({where}), cote {rating}.',
   'You are O.': 'Tu joues les O.',
   'You are X and open the first round.': 'Tu joues les X et ouvres la première manche.',
   'You are not in this game.': 'Tu ne fais pas partie de cette partie.',
@@ -436,13 +436,13 @@ export default {
   'Your password is changed and your old code no longer works. Here is your new one.':
     'Ton mot de passe est changé et ton ancien code ne fonctionne plus. Voici le nouveau.',
   'Your profile': 'Ton profil',
-  'Your rating': 'Ton classement Elo',
+  'Your rating': 'Ta cote',
   'Your stats': 'Tes statistiques',
   'as {mark}': 'en {mark}',
   earned: 'obtenu',
   empty: 'vide',
   'not yet': 'pas encore',
-  'the world': 'le monde',
+  'the world': 'monde entier',
   'they left': "l'autre est parti",
   vs: 'contre',
   'vs Computer': "Contre l'ordinateur",
@@ -456,7 +456,7 @@ export default {
   '{name} is thinking…': '{name} réfléchit…',
   '{name} left the game.': '{name} a quitté la partie.',
   '{name} left the game. You win the round.': '{name} a quitté la partie. Tu gagnes la manche.',
-  '{name} podium:': 'Podium de {name} :',
+  '{name} podium:': 'Podium ({name}) :',
   '{now} now · best {best}': '{now} en cours · record {best}',
   '{n} moves': '{n} coups',
   '{rate} of {n}': '{rate} sur {n}',
@@ -465,7 +465,7 @@ export default {
   '⏱ Your time: {secs}s': '⏱ Ton temps : {secs} s',
   "⏱ {name}'s time: {secs}s": '⏱ Temps de {name} : {secs} s',
   '⏸ Pause': '⏸ Pause',
-  '▶ Play': '▶ Lire',
+  '▶ Play': '▶ Lecture',
   '✉️ Add your email to play online': '✉️ Ajoute ton e-mail pour jouer en ligne',
   '✉️ Confirm your email to play online': '✉️ Confirme ton e-mail pour jouer en ligne',
   '🌍 Whole world': '🌍 Monde entier',
