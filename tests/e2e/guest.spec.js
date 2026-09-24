@@ -1,3 +1,4 @@
+import { AVATARS } from '../../js/avatars.js';
 import { test, expect, cell, chooseMode, newPlayer, status } from './fixtures.js';
 
 test.use({ signedIn: false });
@@ -48,7 +49,7 @@ test('online play asks guests to make an account', async ({ page }) => {
     'aria-selected',
     'true',
   );
-  await expect(page.locator('#signupForm').getByRole('radio')).toHaveCount(18);
+  await expect(page.locator('#signupForm').getByRole('radio')).toHaveCount(AVATARS.length);
 
   // Leaving guest play is remembered too
   await page.reload();
@@ -91,7 +92,7 @@ test("a guest's games against the computer join their new account", async ({ pag
 
   const saveCode = page.getByRole('dialog', { name: 'Save your recovery code' });
   await expect(saveCode.locator('#recoveryNote')).toHaveText(
-    'We added your 1 game as a guest to your stats.',
+    'We added your game as a guest to your stats.',
   );
   await saveCode.getByRole('button', { name: "I've saved it" }).click();
   await page.getByRole('button', { name: 'Stats' }).click();

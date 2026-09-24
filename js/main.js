@@ -21,6 +21,11 @@ import { initLeaderboard } from './leaderboard.js';
 import { initReplay } from './replay.js';
 import { setSound, sound, soundOn } from './sound.js';
 import { REACTIONS } from './reactions.js';
+import { onLangChange, t } from './i18n.js';
+import { initLanguage } from './language.js';
+
+// First, before anything writes to the page
+initLanguage();
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
@@ -145,8 +150,8 @@ function statusHTML() {
 
   if (onlineLocked()) return '';
   if (online() && !inMatch()) {
-    if (liveStatus !== 'online') return 'Connecting…';
-    return 'Find an opponent, or invite a player.';
+    if (liveStatus !== 'online') return t('Connecting…');
+    return t('Find an opponent, or invite a player.');
   }
 
   const w = gameResult(board, online() ? match.moves.length : round.moves.length, variant());
@@ -156,37 +161,39 @@ function statusHTML() {
     const points = change === null ? '' : ` ${deltaHTML(change)}`;
     if (match.timeout) {
       return match.result === mySymbol()
-        ? `<mark>You win!</mark> ${rival} ran out of time.${points}`
-        : `<mark>Out of time.</mark> ${rival} wins the round.${points}`;
+        ? t('<mark>You win!</mark> {name} ran out of time.', { name: rival }) + points
+        : t('<mark>Out of time.</mark> {name} wins the round.', { name: rival }) + points;
     }
     if (match.forfeit) {
       return match.result === mySymbol()
-        ? `<mark>You win!</mark> ${rival} left.${points}`
-        : `<mark>${rival} wins.</mark>${points}`;
+        ? t('<mark>You win!</mark> {name} left.', { name: rival }) + points
+        : t('<mark>{name} wins.</mark>', { name: rival }) + points;
     }
-    if (w && w.p === 'D') return `<mark>Cat's game.</mark> Nobody wins.${points}`;
+    if (w && w.p === 'D') return t("<mark>Cat's game.</mark> Nobody wins.") + points;
     if (w) {
       return w.p === mySymbol()
-        ? `<mark>You win!</mark> Nice line.${points}`
-        : `<mark>${rival} wins.</mark> Go again?${points}`;
+        ? t('<mark>You win!</mark> Nice line.') + points
+        : t('<mark>{name} wins.</mark> Go again?', { name: rival }) + points;
     }
   }
-  if (w && w.p === 'D') return `<mark>Cat's game.</mark> Nobody wins.`;
+  if (w && w.p === 'D') return t("<mark>Cat's game.</mark> Nobody wins.");
   if (w) {
     if (state.mode === 'cpu') {
       return w.p === 'X'
-        ? `<mark>You win!</mark> Nice line.`
-        : `<mark>Computer wins.</mark> Go again?`;
+        ? t('<mark>You win!</mark> Nice line.')
+        : t('<mark>Computer wins.</mark> Go again?');
     }
-    return `<mark>${tag(w.p)} wins!</mark>`;
+    return t('<mark>{mark} wins!</mark>', { mark: tag(w.p) });
   }
   if (state.mode === 'cpu')
-    return turn === 'X' ? `Your move, ${tag('X')}` : 'Computer is thinking…';
+    return turn === 'X' ? t('Your move, {mark}', { mark: tag('X') }) : t('Computer is thinking…');
   if (online()) {
-    if (liveStatus !== 'online') return 'Reconnecting…';
-    return turn === mySymbol() ? `Your move, ${tag(turn)}` : `${rival} is thinking…`;
+    if (liveStatus !== 'online') return t('Reconnecting…');
+    return turn === mySymbol()
+      ? t('Your move, {mark}', { mark: tag(turn) })
+      : t('{name} is thinking…', { name: rival });
   }
-  return `${tag(turn)} to play`;
+  return t('{mark} to play', { mark: tag(turn) });
 }
 
 // My rating points for the round on the board, once the server has sent them
@@ -197,7 +204,7 @@ function roundChange() {
 
 function deltaHTML(n) {
   const cls = n > 0 ? 'delta up' : n < 0 ? 'delta down' : 'delta';
-  return `<span class="${cls}" title="Rating points">${signed(n)}</span>`;
+  return `<span class="${cls}" title="${t('Rating points')}">${signed(n)}</span>`;
 }
 
 function renderMe() {
@@ -208,12 +215,14 @@ function renderMe() {
 }
 
 function playerLabel(p) {
-  if (state.mode === 'cpu') return p === 'X' ? 'You · X' : 'Computer · O';
+  if (state.mode === 'cpu') return p === 'X' ? t('You · X') : t('Computer · O');
   if (online()) {
-    if (!inMatch()) return `Player ${p}`;
-    return p === mySymbol() ? `You · ${p}` : `${match.players[p].username} · ${p}`;
+    if (!inMatch()) return t('Player {mark}', { mark: p });
+    return p === mySymbol()
+      ? t('You · {mark}', { mark: p })
+      : `${match.players[p].username} · ${p}`;
   }
-  return `Player ${p}`;
+  return t('Player {mark}', { mark: p });
 }
 
 function render() {
@@ -226,8 +235,8 @@ function render() {
     const col = (i % 3) + 1;
     c.disabled = !!v || !humanTurn || busy;
     c.classList.toggle('fading', i === fading);
-    const note = i === fading ? ' (vanishes next)' : '';
-    c.setAttribute('aria-label', `Row ${row}, column ${col}: ${v || 'empty'}${note}`);
+    const label = t('Row {row}, column {col}: {value}', { row, col, value: v || t('empty') });
+    c.setAttribute('aria-label', i === fading ? `${label} ${t('(vanishes next)')}` : label);
     if (!v) c.innerHTML = humanTurn && !busy ? markSVG(turn, 'ghost') : '';
   });
 
@@ -235,7 +244,7 @@ function render() {
   $('lblX').textContent = playerLabel('X');
   $('lblO').textContent = playerLabel('O');
   $('diffGroup').hidden = state.mode !== 'cpu';
-  $('diff-hard').textContent = state.variant === 'vanish' ? 'Hard' : 'Unbeatable';
+  $('diff-hard').textContent = state.variant === 'vanish' ? t('Hard') : t('Unbeatable');
   // An online match keeps the rules it started with
   $('rulesRow').hidden = inMatch() || onlineLocked();
   $('ruleNote').hidden = variant() !== 'vanish';
@@ -263,12 +272,11 @@ function render() {
       `${avatarEmoji(rival.avatar)} ${countryFlag(rival.country)} ${rival.username}`;
     const chip = document.createElement('span');
     chip.className = 'rating-chip';
-    chip.title = 'Rating';
+    chip.title = t('Rating');
     chip.textContent = String(ratingOf(rival));
     $('opponentName').append(' ', chip);
-    const rules = variant() === 'vanish' ? ' 3-mark rules.' : '';
-    $('roomRole').textContent =
-      (mySymbol() === 'X' ? 'You are X and open the first round.' : 'You are O.') + rules;
+    const role = mySymbol() === 'X' ? t('You are X and open the first round.') : t('You are O.');
+    $('roomRole').textContent = variant() === 'vanish' ? `${role} ${t('3-mark rules.')}` : role;
   }
   const locked = online() && !inMatch();
   $('next').disabled = locked || (online() && !over);
@@ -460,7 +468,10 @@ function showHint() {
   clearHint();
   const i = hintMove({ board, marks }, turn, state.variant);
   cells[i].classList.add('hinted');
-  statusEl.innerHTML = `Try row ${Math.floor(i / 3) + 1}, column ${(i % 3) + 1}.`;
+  statusEl.innerHTML = t('Try row {row}, column {col}.', {
+    row: Math.floor(i / 3) + 1,
+    col: (i % 3) + 1,
+  });
 }
 
 function clearHint() {
@@ -489,7 +500,9 @@ function setMode(mode) {
   if (state.mode === mode) return;
   if (inMatch()) {
     const ok = window.confirm(
-      `Leave your game with ${opponent().username}? A round in progress counts as a loss.`,
+      t('Leave your game with {name}? A round in progress counts as a loss.', {
+        name: opponent().username,
+      }),
     );
     if (!ok) return;
     live.send({ t: 'leave', match: match.id });
@@ -514,20 +527,25 @@ function renderLocked() {
   const user = currentUser();
   const [title, text, button] = !user
     ? [
-        '🔒 Online games need a free account',
-        'With an account you can play people around the world, get a rating, climb the leaderboard, keep your stats, and pick a funny avatar.',
-        'Create a free account',
+        t('🔒 Online games need a free account'),
+        t(
+          'With an account you can play people around the world, get a rating, climb the leaderboard, keep your stats, and pick a funny avatar.',
+        ),
+        t('Create a free account'),
       ]
     : !user.email
       ? [
-          '✉️ Add your email to play online',
-          'We ask every player for a confirmed email address before they play online.',
-          'Add my email',
+          t('✉️ Add your email to play online'),
+          t('We ask every player for a confirmed email address before they play online.'),
+          t('Add my email'),
         ]
       : [
-          '✉️ Confirm your email to play online',
-          `Click the link we sent to ${user.email}. Can't find it? Check the spam folder, or send it again.`,
-          'Send it again',
+          t('✉️ Confirm your email to play online'),
+          t(
+            "Click the link we sent to {email}. Can't find it? Check the spam folder, or send it again.",
+            { email: user.email },
+          ),
+          t('Send it again'),
         ];
   $('lockedTitle').textContent = title;
   $('lockedText').textContent = text;
@@ -584,8 +602,8 @@ function onMatch(next) {
         iLeft
           ? ''
           : next.forfeit
-            ? `${rival} left the game. You win the round.`
-            : `${rival} left the game.`,
+            ? t('{name} left the game. You win the round.', { name: rival })
+            : t('{name} left the game.', { name: rival }),
       );
       match = null;
       state.scores = zeroScores();
@@ -670,8 +688,10 @@ function renderClock() {
   el.hidden = !running;
   if (!running) return;
   const secs = Math.max(0, Math.ceil((turnEndsAt - Date.now()) / 1000));
-  const who = turn === mySymbol() ? 'Your time' : `${opponent().username}'s time`;
-  el.textContent = `⏱ ${who}: ${secs}s`;
+  el.textContent =
+    turn === mySymbol()
+      ? t('⏱ Your time: {secs}s', { secs })
+      : t("⏱ {name}'s time: {secs}s", { name: opponent().username, secs });
   el.classList.toggle('low', secs <= 10);
 }
 setInterval(() => {
@@ -685,22 +705,24 @@ function showReaction({ from, emoji }) {
   bubble.textContent = emoji;
   $('reactionFeed').append(bubble);
   setTimeout(() => bubble.remove(), 2400);
-  $('reactionSaid').textContent = `${mine ? 'You' : opponent()?.username}: ${emoji}`;
+  $('reactionSaid').textContent = `${mine ? t('You') : opponent()?.username}: ${emoji}`;
 }
 
-$('reactions').replaceChildren(
-  ...REACTIONS.map((emoji) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'btn ghostbtn react';
-    b.textContent = emoji;
-    b.setAttribute('aria-label', `React ${emoji}`);
-    b.addEventListener('click', () => {
-      if (inMatch()) live.send({ t: 'react', match: match.id, emoji });
-    });
-    return b;
-  }),
-);
+const renderReactions = () =>
+  $('reactions').replaceChildren(
+    ...REACTIONS.map((emoji) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn ghostbtn react';
+      b.textContent = emoji;
+      b.setAttribute('aria-label', t('React {emoji}', { emoji }));
+      b.addEventListener('click', () => {
+        if (inMatch()) live.send({ t: 'react', match: match.id, emoji });
+      });
+      return b;
+    }),
+  );
+renderReactions();
 
 /* ---------- Wiring ---------- */
 
@@ -763,6 +785,12 @@ initLobby({
 });
 
 resetBoard();
+
+// A new language: redraw everything this file wrote
+onLangChange(() => {
+  renderReactions();
+  render();
+});
 
 initAccount({
   onSignIn() {

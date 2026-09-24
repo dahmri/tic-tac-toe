@@ -17,6 +17,7 @@ import { createStats } from './stats.js';
 import { createMatchmaking } from './matchmaking.js';
 import { createMailer } from './mailer.js';
 import { createEmailVerification } from './email-verification.js';
+import { pickLang, translate } from '../js/i18n.js';
 import accountRoutes from './routes/account.js';
 import playersRoutes from './routes/players.js';
 import liveRoutes from './routes/live.js';
@@ -127,6 +128,25 @@ export async function buildApp({ config, db, redis }) {
   });
   app.decorate('requireUser', async (req, reply) => {
     if (!req.userId) return reply.code(401).send({ error: 'Please log in.' });
+  });
+
+  // Messages are written in English and translated on the way out, into
+  // the language the page asked for (Accept-Language)
+  app.decorateRequest('lang', 'en');
+  app.addHook('onRequest', async (req) => {
+    req.lang = pickLang(req.headers['accept-language']);
+  });
+  app.addHook('preSerialization', async (req, reply, payload) => {
+    if (req.lang === 'en' || !payload || typeof payload !== 'object') return payload;
+    if (typeof payload.error !== 'string' && !payload.fields) return payload;
+    const out = { ...payload };
+    if (typeof out.error === 'string') out.error = translate(req.lang, out.error);
+    if (out.fields) {
+      out.fields = Object.fromEntries(
+        Object.entries(out.fields).map(([k, v]) => [k, translate(req.lang, v)]),
+      );
+    }
+    return out;
   });
 
   app.addHook('onSend', async (req, reply) => {

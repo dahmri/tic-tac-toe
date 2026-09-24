@@ -1,9 +1,12 @@
 // Talks to the game server's JSON API. The session lives in an HttpOnly
-// cookie the browser sends by itself; scripts never see it.
+// cookie the browser sends by itself; scripts never see it. Requests say
+// which language the page is in, so the server answers in it.
+
+import { lang } from './i18n.js';
 
 export class ApiError extends Error {
   constructor(status, body) {
-    super(body?.error || 'Something went wrong. Try again.');
+    super(body?.error || 'Something went wrong. Try again.'); // translated where shown
     this.status = status;
     this.fields = body?.fields || {};
   }
@@ -15,7 +18,10 @@ export async function api(method, path, body) {
     res = await fetch(path, {
       method,
       credentials: 'same-origin',
-      headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+      headers: {
+        'Accept-Language': lang(),
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {

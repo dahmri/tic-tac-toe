@@ -61,7 +61,7 @@ export default async function accountRoutes(app) {
   // can ask for it again
   async function sendConfirmation(req, user) {
     try {
-      await emailVerification.send(user, siteUrl(req));
+      await emailVerification.send(user, siteUrl(req), req.lang);
       return true;
     } catch (err) {
       req.log.error({ err }, 'Could not send the confirmation email');

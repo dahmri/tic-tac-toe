@@ -15,7 +15,15 @@ import { isVariant } from '../js/rules.js';
 
 export const INVITE_TTL = 60; // seconds
 
-export class InviteError extends Error {}
+// `message` is English with the names filled in; `template` and `vars`
+// let it be translated
+export class InviteError extends Error {
+  constructor(template, vars) {
+    super(vars ? template.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m) : template);
+    this.template = template;
+    this.vars = vars;
+  }
+}
 
 export function createInvites(redis, { bus, presence, matches }) {
   // Removes an invitation and returns it, or null if it was already gone
@@ -58,10 +66,10 @@ export function createInvites(redis, { bus, presence, matches }) {
       }
       if (await matches.isPlaying(from.id)) throw new InviteError('Finish your game first.');
       if (await matches.isPlaying(toId)) {
-        throw new InviteError(`${to.username} is already playing.`);
+        throw new InviteError('{name} is already playing.', { name: to.username });
       }
       const first = await redis.set(`invpair:${from.id}:${toId}`, '1', 'EX', INVITE_TTL, 'NX');
-      if (!first) throw new InviteError(`You already invited ${to.username}.`);
+      if (!first) throw new InviteError('You already invited {name}.', { name: to.username });
 
       const id = randomUUID();
       await redis
@@ -112,7 +120,7 @@ export function createInvites(redis, { bus, presence, matches }) {
       } catch (err) {
         if (err instanceof MatchError) {
           await bus.send(invite.from, { t: 'invite-declined', id, by: user.username });
-          throw new InviteError(`${from.username} is already playing.`);
+          throw new InviteError('{name} is already playing.', { name: from.username });
         }
         throw err;
       }

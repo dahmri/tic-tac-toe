@@ -2,6 +2,8 @@
 // come from the browser's own translations (Intl.DisplayNames), so the list
 // stays small and every visitor reads names in their language.
 
+import { lang } from './i18n.js';
+
 export const COUNTRY_CODES = Object.freeze([
   'AD',
   'AE',
@@ -260,11 +262,12 @@ export function isCountryCode(code) {
   return CODE_SET.has(code);
 }
 
-let names = null;
+// Names in the page's language (one formatter per language)
+const namers = new Map();
 export function countryName(code) {
   try {
-    names ??= new Intl.DisplayNames(undefined, { type: 'region' });
-    return names.of(code) || code;
+    if (!namers.has(lang())) namers.set(lang(), new Intl.DisplayNames(lang(), { type: 'region' }));
+    return namers.get(lang()).of(code) || code;
   } catch {
     return code;
   }
@@ -278,6 +281,6 @@ export function countryFlag(code) {
 // All countries sorted by their display name, for <select> lists
 export function sortedCountries() {
   return COUNTRY_CODES.map((code) => ({ code, name: countryName(code) })).sort((a, b) =>
-    a.name.localeCompare(b.name),
+    a.name.localeCompare(b.name, lang()),
   );
 }
