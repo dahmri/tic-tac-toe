@@ -25,6 +25,14 @@ import {
 } from './board.js';
 import { game, saveSettings, settings, zeroScores } from './game.js';
 import {
+  initPuzzle,
+  puzzleCanMove,
+  puzzleMove,
+  puzzleStatus,
+  renderPuzzle,
+  startPuzzle,
+} from './puzzle-play.js';
+import {
   abandonMatch,
   askNextRound,
   canMove,
@@ -63,11 +71,13 @@ function isHumanTurn() {
   if (game.over) return false;
   if (settings.mode === 'cpu') return game.turn === 'X';
   if (settings.mode === 'pvp') return true;
+  if (settings.mode === 'puzzle') return puzzleCanMove();
   return canMove();
 }
 
 function statusHTML() {
   const tag = (m) => `<span class="${m.toLowerCase()}">${m}</span>`;
+  if (settings.mode === 'puzzle') return puzzleStatus();
   const w = gameResult(game.board, online() ? matchMoves() : round.moves.length, variant());
   if (online()) return onlineStatus(w, tag);
 
@@ -110,12 +120,13 @@ function render() {
   $('diffGroup').hidden = settings.mode !== 'cpu';
   $('diff-hard').textContent = settings.variant === 'vanish' ? t('Hard') : t('Unbeatable');
   // An online match keeps the rules it started with
-  $('rulesRow').hidden = inMatch() || onlineLocked();
+  const puzzle = settings.mode === 'puzzle';
+  $('rulesRow').hidden = inMatch() || onlineLocked() || puzzle;
   $('ruleNote').hidden = variant() !== 'vanish';
   document
     .querySelectorAll('[data-variant]')
     .forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === settings.variant));
-  $('hintBtn').hidden = online();
+  $('hintBtn').hidden = online() || puzzle;
   $('hintBtn').disabled = !humanTurn || game.busy;
   document
     .querySelectorAll('[data-mode]')
@@ -126,10 +137,11 @@ function render() {
 
   renderOnline();
   $('board').hidden = online() && !inMatch();
-  document.querySelector('.scores').hidden = online() && !inMatch();
+  document.querySelector('.scores').hidden = (online() && !inMatch()) || puzzle;
   $('next').disabled = (online() && !inMatch()) || (online() && !game.over);
   $('reset').hidden = online();
-  $('next').closest('.actions').hidden = online() && !inMatch();
+  $('next').closest('.actions').hidden = (online() && !inMatch()) || puzzle;
+  renderPuzzle(puzzle);
 
   tally($('tX'), settings.scores.X);
   tally($('tO'), settings.scores.O);
@@ -187,6 +199,7 @@ function humanMove(i) {
     render();
     return;
   }
+  if (settings.mode === 'puzzle') return puzzleMove(i);
   place(i, game.turn);
   maybeCpu();
 }
@@ -226,10 +239,12 @@ function resetBoard() {
     startedAt: Date.now(),
   };
   clearBoard();
+  if (settings.mode === 'puzzle') startPuzzle();
 }
 
 function newRound() {
   if (online()) return askNextRound();
+  if (settings.mode === 'puzzle') return;
   resetBoard();
   render();
   maybeCpu();
@@ -237,7 +252,7 @@ function newRound() {
 
 // Hints: the move the computer would play, for vs Computer and Same screen
 function showHint() {
-  if (online() || !isHumanTurn() || game.busy) return;
+  if (online() || settings.mode === 'puzzle' || !isHumanTurn() || game.busy) return;
   const i = hintMove(game, game.turn, settings.variant);
   highlight(i);
   statusEl.innerHTML = t('Try row {row}, column {col}.', {
@@ -289,6 +304,7 @@ function setMode(mode) {
 
 initBoard(humanMove);
 initOnline({ render, resetBoard });
+initPuzzle({ render });
 
 document
   .querySelectorAll('[data-mode]')

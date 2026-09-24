@@ -8,6 +8,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Daily puzzle.** 🧩 Puzzle, next to the other modes: every day a new
+  position where you can win in 2 moves, the same for everyone. Find the
+  move that makes two threats at once. Your first try each day counts
+  toward your streak (kept on your account, or in your browser as a
+  guest); after that you can practise as much as you like.
+
 - **Reset your password by email.** "Forgot your password?" now sends a
   link to your confirmed email address (it works once, for an hour, and
   stops working if your password changes). Recovery codes still work:

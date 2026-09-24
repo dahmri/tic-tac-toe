@@ -8,8 +8,12 @@ export default {
   '3-mark rules.': 'Reglas de 3 marcas.',
   "<mark>Cat's game.</mark> Nobody wins.": '<mark>Empate.</mark> Nadie gana.',
   '<mark>Computer wins.</mark> Go again?': '<mark>Gana la computadora.</mark> ¿Otra vez?',
+  '<mark>Good move!</mark> Now finish it.': '<mark>¡Buena jugada!</mark> Ahora remata.',
+  '<mark>Not this time.</mark> The winning move was row {row}, column {col}.':
+    '<mark>Esta vez no.</mark> La jugada ganadora era fila {row}, columna {col}.',
   '<mark>Out of time.</mark> {name} wins the round.':
     '<mark>Se acabó el tiempo.</mark> {name} gana la ronda.',
+  '<mark>Solved!</mark> 🧩': '<mark>¡Resuelto!</mark> 🧩',
   '<mark>You win!</mark> Nice line.': '<mark>¡Ganaste!</mark> Buena línea.',
   '<mark>You win!</mark> {name} left.': '<mark>¡Ganaste!</mark> {name} se fue.',
   '<mark>You win!</mark> {name} ran out of time.':
@@ -84,6 +88,8 @@ export default {
   'Cross-site connection refused.': 'Conexión desde otro sitio rechazada.',
   'Cross-site request refused.': 'Solicitud desde otro sitio rechazada.',
   'Current password': 'Contraseña actual',
+  'Daily puzzle: win in 2 moves. You play {mark}.':
+    'Reto del día: gana en 2 jugadas. Juegas con {mark}.',
   'Date of birth': 'Fecha de nacimiento',
   Decline: 'Rechazar',
   'Delete account': 'Eliminar la cuenta',
@@ -181,6 +187,7 @@ export default {
   'New code made. Your old one no longer works.':
     'Código nuevo creado. El anterior ya no funciona.',
   'New password': 'Nueva contraseña',
+  'New puzzle tomorrow!': '¡Nuevo reto mañana!',
   'New round': 'Nueva ronda',
   Next: 'Siguiente',
   'Night Owl': 'Búho nocturno',
@@ -234,6 +241,9 @@ export default {
   'Playing since': 'Juega desde',
   'Please log in.': 'Inicia sesión, por favor.',
   'Pocket Wizard': 'Mago de bolsillo',
+  'Practice again': 'Practicar otra vez',
+  "Practice: only the day's first try counts. New puzzle tomorrow!":
+    'Práctica: solo cuenta el primer intento del día. ¡Nuevo reto mañana!',
   Profile: 'Perfil',
   Rank: 'Puesto',
   Rating: 'Puntuación',
@@ -428,4 +438,7 @@ export default {
   '✉️ Confirm your email to play online': '✉️ Confirma tu correo para jugar en línea',
   '🌍 Whole world': '🌍 Todo el mundo',
   '🔒 Online games need a free account': '🔒 Las partidas en línea necesitan una cuenta gratis',
+  '🔥 Streak: {n} · Best: {best} · Solved: {total}':
+    '🔥 Racha: {n} · Mejor: {best} · Resueltos: {total}',
+  '🧩 Puzzle': '🧩 Reto',
 };

@@ -4,7 +4,7 @@
 import { emptyBoard, isVariant } from './rules.js';
 
 const STORAGE_KEY = 'pencil-ttt';
-const MODES = ['cpu', 'pvp', 'online'];
+const MODES = ['cpu', 'pvp', 'online', 'puzzle'];
 const DIFFICULTIES = ['casual', 'medium', 'hard'];
 
 export const zeroScores = () => ({ X: 0, O: 0, D: 0 });
