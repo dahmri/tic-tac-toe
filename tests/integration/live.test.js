@@ -33,7 +33,13 @@ test('connected players are listed as online, filtered by country, without yours
   const names = all.players.map((p) => p.username);
   assert.ok(names.includes(fr.user.username) && names.includes(ma.user.username));
   assert.ok(!names.includes(viewer.user.username));
-  assert.deepEqual(Object.keys(all.players[0]).sort(), ['country', 'id', 'playing', 'username']);
+  assert.deepEqual(Object.keys(all.players[0]).sort(), [
+    'country',
+    'id',
+    'playing',
+    'rating',
+    'username',
+  ]);
 
   const france = await onlineList(viewer, '?country=fr');
   assert.ok(france.players.every((p) => p.country === 'FR'));
@@ -60,6 +66,21 @@ test('a player with two tabs stays online until both are closed', async () => {
   await wait(100);
   assert.ok((await onlineList(viewer)).players.some((p) => p.id === ann.user.id));
   await tab2.close();
+  await wait(100);
+  assert.ok(!(await onlineList(viewer)).players.some((p) => p.id === ann.user.id));
+});
+
+test('a reload (one connection closing as another opens) keeps the player online', async () => {
+  const ann = await player(t.app);
+  const viewer = await player(t.app);
+  let tab = await live(t.app, ann);
+  for (let i = 0; i < 20; i++) {
+    const [next] = await Promise.all([live(t.app, ann), tab.close()]);
+    tab = next;
+  }
+  await wait(100);
+  assert.ok((await onlineList(viewer)).players.some((p) => p.id === ann.user.id));
+  await tab.close();
   await wait(100);
   assert.ok(!(await onlineList(viewer)).players.some((p) => p.id === ann.user.id));
 });

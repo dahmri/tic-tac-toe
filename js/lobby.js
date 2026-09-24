@@ -23,6 +23,10 @@ let total = 0;
 let refreshTimer = null;
 let tickTimer = null;
 let loading = null;
+// Quick match: waiting since (local ms), or 0 when not searching
+let searchingSince = 0;
+let searchTimer = null;
+let lastOpponent = null; // offered again after a match ends
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -35,6 +39,11 @@ function who(p) {
   const span = el('span', 'who-line');
   span.append(el('span', 'flag', countryFlag(p.country)), el('strong', 'name', p.username));
   span.querySelector('.flag').setAttribute('aria-hidden', 'true');
+  if (p.rating) {
+    const chip = el('span', 'rating-chip', String(p.rating));
+    chip.title = 'Rating';
+    span.append(chip);
+  }
   return span;
 }
 
@@ -178,6 +187,39 @@ function tick() {
 
 const withExpiry = (inv) => ({ ...inv, expires: Date.now() + inv.expiresIn });
 
+/* ---------- Quick match and "invite again" ---------- */
+
+function setSearching(waiting) {
+  if (waiting && !searchingSince) searchingSince = Date.now();
+  if (!waiting) searchingSince = 0;
+  renderQuick();
+}
+
+function renderQuick() {
+  const searching = searchingSince > 0;
+  $('quickIdle').hidden = searching;
+  $('quickSearching').hidden = !searching;
+  $('findMatch').disabled = busy;
+  clearInterval(searchTimer);
+  if (searching) {
+    const show = () => {
+      const s = Math.floor((Date.now() - searchingSince) / 1000);
+      $('searchTime').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    };
+    show();
+    searchTimer = setInterval(show, 1000);
+  }
+
+  const rematch = $('rematch');
+  rematch.hidden = !lastOpponent || busy;
+  if (lastOpponent) {
+    const text = $('rematchText');
+    text.replaceChildren('Last game: vs ', who(lastOpponent));
+    const invited = [...outgoing.values()].some((i) => i.to.id === lastOpponent.id);
+    $('inviteAgain').disabled = invited;
+  }
+}
+
 /* ---------- Public API ---------- */
 
 // Handles lobby messages from the live connection; returns true if it did
@@ -186,7 +228,11 @@ export function handleLobbyMessage(msg) {
     case 'hello':
       incoming.clear();
       for (const inv of msg.invites || []) incoming.set(inv.id, withExpiry(inv));
+      setSearching(!!msg.waiting);
       break;
+    case 'queue':
+      setSearching(msg.waiting);
+      return true;
     case 'invite':
       incoming.set(msg.invite.id, withExpiry(msg.invite));
       break;
@@ -208,22 +254,35 @@ export function handleLobbyMessage(msg) {
   }
   renderInvites();
   renderPlayers();
+  renderQuick();
   return true;
 }
 
-// A failed invite re-enables its button
+// A failed request re-enables its button
 export function lobbyError() {
   renderPlayers();
   renderInvites();
+  renderQuick();
+}
+
+// The player a match that just ended was against, to invite them again
+export function setLastOpponent(player) {
+  lastOpponent = player;
+  renderQuick();
 }
 
 // Visible and not in a match: poll the list. In a match: invitations wait.
 export function setLobby({ visible, inMatch }) {
   if (busy !== inMatch) {
     busy = inMatch;
-    if (inMatch) outgoing.clear();
+    if (inMatch) {
+      outgoing.clear();
+      searchingSince = 0;
+      lastOpponent = null;
+    }
     renderInvites();
     renderPlayers();
+    renderQuick();
   }
   const nowActive = visible && !inMatch;
   if (nowActive === active) return;
@@ -242,6 +301,9 @@ export function resetLobby() {
   outgoing.clear();
   players = [];
   total = 0;
+  searchingSince = 0;
+  lastOpponent = null;
+  renderQuick();
   setLobby({ visible: false, inMatch: false });
   renderInvites();
   renderPlayers();
@@ -268,5 +330,20 @@ export function initLobby(callbacks) {
     load();
   });
   $('morePlayers').addEventListener('click', () => load({ more: true }));
+  $('findMatch').addEventListener('click', () => {
+    $('findMatch').disabled = true;
+    actions.message('');
+    actions.send({ t: 'queue-join' });
+  });
+  $('cancelSearch').addEventListener('click', () => {
+    setSearching(false);
+    actions.send({ t: 'queue-leave' });
+  });
+  $('inviteAgain').addEventListener('click', () => {
+    $('inviteAgain').disabled = true;
+    actions.message('');
+    actions.send({ t: 'invite', to: lastOpponent.id });
+  });
   renderInvites();
+  renderQuick();
 }

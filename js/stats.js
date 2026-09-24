@@ -16,6 +16,13 @@ const el = (tag, cls, text) => {
 };
 
 const pct = (n) => (n === null ? '—' : `${n}%`);
+
+// Rating points as "+16", "−16" or "±0"
+export const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
+export function deltaEl(n) {
+  const cls = n > 0 ? 'delta up' : n < 0 ? 'delta down' : 'delta';
+  return el('span', cls, signed(n));
+}
 const dateFmt = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 const timeFmt = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -47,6 +54,11 @@ function playerName(p) {
 }
 
 function renderSummary({ stats, opponents }) {
+  tiles($('ratingTiles'), [
+    ['Rating', stats.rating],
+    ['Rank', stats.rank ? `#${stats.rank}` : '—'],
+    ['Best', stats.peakRating],
+  ]);
   const o = stats.online;
   tiles($('onlineTiles'), [
     ['Played', o.played],
@@ -109,6 +121,9 @@ function historyItem(g) {
     'game-meta',
     `${timeFmt.format(new Date(g.endedAt))} · ${detail.join(' · ')}`,
   );
+  if (g.ratingChange !== null && g.ratingChange !== undefined) {
+    meta.append(' · ', deltaEl(g.ratingChange));
+  }
   li.append(outcome, who, meta);
   return li;
 }

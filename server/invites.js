@@ -35,8 +35,13 @@ export function createInvites(redis, { bus, presence, matches }) {
     return invite;
   }
 
+  // A player's public profile with their latest rating (the connection's
+  // copy is from when it opened)
+  const fresh = async (user) => (await presence.profile(user.id)) || user;
+
   return {
-    async send(from, toId) {
+    async send(me, toId) {
+      const from = await fresh(me);
       if (!Number.isInteger(toId) || toId === from.id) {
         throw new InviteError('Choose another player to invite.');
       }
@@ -48,8 +53,8 @@ export function createInvites(redis, { bus, presence, matches }) {
       if (await matches.isPlaying(toId)) {
         throw new InviteError(`${to.username} is already playing.`);
       }
-      const fresh = await redis.set(`invpair:${from.id}:${toId}`, '1', 'EX', INVITE_TTL, 'NX');
-      if (!fresh) throw new InviteError(`You already invited ${to.username}.`);
+      const first = await redis.set(`invpair:${from.id}:${toId}`, '1', 'EX', INVITE_TTL, 'NX');
+      if (!first) throw new InviteError(`You already invited ${to.username}.`);
 
       const id = randomUUID();
       await redis
@@ -94,7 +99,7 @@ export function createInvites(redis, { bus, presence, matches }) {
         throw new InviteError('That player is no longer online.');
       }
       try {
-        const match = await matches.start(from, user);
+        const match = await matches.start(from, await fresh(user));
         await bus.send(user.id, { t: 'invite-gone', id }); // for the player's other tabs
         return match;
       } catch (err) {

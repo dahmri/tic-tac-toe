@@ -2,12 +2,14 @@
 //
 //   online            sorted set: user id -> last time seen (ms)
 //   online:<CC>       the same, per country, for the country filter
-//   player:<id>       hash: public profile (username, country)
+//   player:<id>       hash: public profile (username, country, rating)
 //   conns:<id>        open connections across all instances
 //
 // A player is online while they have the game open in at least one tab.
 // Each instance refreshes its players' "last seen" every 30 s; anyone not
 // seen for 90 s (a crashed instance, a lost network) drops off the list.
+
+import { START_RATING } from './rating.js';
 
 export const ONLINE_WINDOW_MS = 90_000;
 const CONNS_TTL = 120; // seconds; refreshed by the heartbeat
@@ -15,16 +17,33 @@ const CONNS_TTL = 120; // seconds; refreshed by the heartbeat
 const setKey = (country) => (country ? `online:${country}` : 'online');
 
 export function createPresence(redis) {
-  async function remove(userId, country) {
-    await redis.multi().zrem('online', userId).zrem(setKey(country), userId).exec();
-  }
+  // Closing a connection and taking the player offline must be one step:
+  // otherwise a new tab (or a reload) connecting in between would be
+  // counted, then wiped out, leaving the player connected but not listed
+  redis.defineCommand('ttDisconnect', {
+    numberOfKeys: 3,
+    lua: `if redis.call('DECR', KEYS[1]) > 0 then return 0 end
+          redis.call('DEL', KEYS[1])
+          redis.call('ZREM', KEYS[2], ARGV[1])
+          local country = redis.call('HGET', KEYS[3], 'country')
+          if country then redis.call('ZREM', 'online:' .. country, ARGV[1]) end
+          return 1`,
+  });
 
   return {
     // A connection opened
     async connect(user, now = Date.now()) {
       await redis
         .multi()
-        .hset(`player:${user.id}`, 'username', user.username, 'country', user.country)
+        .hset(
+          `player:${user.id}`,
+          'username',
+          user.username,
+          'country',
+          user.country,
+          'rating',
+          user.rating ?? START_RATING,
+        )
         .incr(`conns:${user.id}`)
         .expire(`conns:${user.id}`, CONNS_TTL)
         .zadd('online', now, user.id)
@@ -34,12 +53,9 @@ export function createPresence(redis) {
 
     // A connection closed. Returns true if it was the player's last one.
     async disconnect(userId) {
-      const left = await redis.decr(`conns:${userId}`);
-      if (left > 0) return false;
-      const country = await redis.hget(`player:${userId}`, 'country');
-      await redis.del(`conns:${userId}`);
-      await remove(userId, country);
-      return true;
+      return (
+        (await redis.ttDisconnect(`conns:${userId}`, 'online', `player:${userId}`, userId)) === 1
+      );
     },
 
     async isConnected(userId) {
@@ -70,6 +86,12 @@ export function createPresence(redis) {
       await m.exec();
     },
 
+    // After a rated round
+    async setRating(userId, rating) {
+      if (await redis.exists(`player:${userId}`))
+        await redis.hset(`player:${userId}`, 'rating', rating);
+    },
+
     // One page of online players, most recently active first, optionally
     // in one country. `playing` marks players already in a game.
     async list({ country = null, offset = 0, limit = 30, excludeId = null, now = Date.now() }) {
@@ -90,13 +112,16 @@ export function createPresence(redis) {
         .slice(0, limit);
       const m = redis.multi();
       for (const id of pageIds)
-        m.hmget(`player:${id}`, 'username', 'country').exists(`ingame:${id}`);
+        m.hmget(`player:${id}`, 'username', 'country', 'rating').exists(`ingame:${id}`);
       const res = pageIds.length ? await m.exec() : [];
 
       const players = pageIds
         .map((id, i) => {
-          const [username, cc] = res[i * 2][1];
-          return username ? { id, username, country: cc, playing: res[i * 2 + 1][1] === 1 } : null;
+          const [username, cc, rating] = res[i * 2][1];
+          const playing = res[i * 2 + 1][1] === 1;
+          return username
+            ? { id, username, country: cc, rating: Number(rating) || START_RATING, playing }
+            : null;
         })
         .filter(Boolean);
       const self = selfScore !== null && Number(selfScore) >= min ? 1 : 0;
@@ -109,8 +134,15 @@ export function createPresence(redis) {
     },
 
     async profile(userId) {
-      const [username, country] = await redis.hmget(`player:${userId}`, 'username', 'country');
-      return username ? { id: userId, username, country } : null;
+      const [username, country, rating] = await redis.hmget(
+        `player:${userId}`,
+        'username',
+        'country',
+        'rating',
+      );
+      return username
+        ? { id: userId, username, country, rating: Number(rating) || START_RATING }
+        : null;
     },
   };
 }
