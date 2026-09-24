@@ -4,6 +4,7 @@
 
 import { api } from './api.js';
 import { countryFlag, countryName, sortedCountries } from './countries.js';
+import { sound } from './sound.js';
 
 const PAGE = 20;
 const REFRESH_MS = 10_000;
@@ -235,6 +236,7 @@ export function handleLobbyMessage(msg) {
       return true;
     case 'invite':
       incoming.set(msg.invite.id, withExpiry(msg.invite));
+      if (!busy) sound.invite();
       break;
     case 'invite-sent':
       outgoing.set(msg.invite.id, withExpiry(msg.invite));

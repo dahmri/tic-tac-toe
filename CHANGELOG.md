@@ -6,6 +6,21 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-24
+
+### Added
+
+- **Sound.** A pencil scratch for every mark (yours and your opponent's),
+  a short tune when you win, a lower one when you lose, two notes for a
+  draw, a ding for an invitation and a chime when an online match starts.
+  The sounds are made in the browser, so there is nothing to download. The
+  🔊 button next to your name turns sound off and on; the choice is saved
+  in your browser.
+- **Win celebration.** When you win, your winning marks give a little hop
+  and pencil stars and spirals pop out around the board. Nothing pops when
+  the computer or your opponent wins, and it is skipped when your device
+  asks for reduced motion.
+
 ## [1.2.0] - 2026-09-24
 
 ### Added

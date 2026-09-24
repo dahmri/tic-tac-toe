@@ -25,6 +25,11 @@ accounts; a Node.js game server with PostgreSQL and Redis runs it all.
 - **Two difficulty levels:** _Casual_ can be beaten; _Unbeatable_ uses minimax and never loses.
 - **Tally-mark scoreboard**, saved in your browser between visits.
 - **Keyboard play:** `1`–`9` place a mark (keypad layout, `7` is top-left), `N` starts a new round.
+- **Sound:** a pencil scratch for every mark, short tunes for a win, loss or draw, and a
+  ding for invitations. Made in the browser, no audio files; the 🔊 button mutes it and
+  your choice is remembered.
+- **Win celebration:** your winning marks hop and pencil stars pop around the board
+  (skipped when your device asks for reduced motion).
 - Light and dark themes, works on phones.
 
 ## Playing online
@@ -116,6 +121,7 @@ js/account.js         Log in, sign up, profile dialog
 js/lobby.js           Online players, country filter, invitations
 js/live.js            Live connection to the game server (WebSocket)
 js/stats.js           Stats dialog, recording games against the computer
+js/sound.js           Sound effects (Web Audio API) and the mute setting
 js/validation.js      Account rules, shared by browser and server
 js/countries.js       Country codes, names and flags
 js/api.js             Calls to the game server
