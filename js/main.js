@@ -1,348 +1,165 @@
-// UI: renders the board, handles input, keeps score, and runs online
-// matches (played on the game server) through the live connection.
+// The game page: local play (against the computer or on the same screen),
+// the status line, and wiring. The board is drawn by board.js and online
+// matches are run by online.js; both share the position in game.js.
 
-import { emptyBoard, gameResult, isVariant, nextToVanish, other, playOn, replay } from './rules.js';
+import { emptyBoard, gameResult, nextToVanish, other, playOn } from './rules.js';
 import { hintMove, pickMove, pickVanishMove } from './ai.js';
 import { canPlayOnline, currentUser, initAccount, isGuest, leaveGuest } from './account.js';
-import { avatarEmoji } from './avatars.js';
-import { markSVG } from './marks.js';
-import { connectLive } from './live.js';
-import { countryFlag } from './countries.js';
-import {
-  handleLobbyMessage,
-  initLobby,
-  lobbyError,
-  resetLobby,
-  setLastOpponent,
-  setLobby,
-} from './lobby.js';
-import { initStats, recordCpuGame, recordGuestGame, signed } from './stats.js';
+import { initLobby } from './lobby.js';
+import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initReplay } from './replay.js';
 import { setSound, sound, soundOn } from './sound.js';
-import { REACTIONS } from './reactions.js';
 import { onLangChange, t } from './i18n.js';
 import { initLanguage } from './language.js';
+import {
+  celebrate,
+  clearBoard,
+  clearHighlight,
+  drawWin,
+  highlight,
+  initBoard,
+  renderSquares,
+  syncMarks,
+  tally,
+} from './board.js';
+import { game, saveSettings, settings, zeroScores } from './game.js';
+import {
+  abandonMatch,
+  askNextRound,
+  canMove,
+  goOffline,
+  goOnline,
+  inMatch,
+  initOnline,
+  matchMoves,
+  online,
+  onlineLocked,
+  onlineStatus,
+  opponent,
+  playerLabel as onlineLabel,
+  renderOnline,
+  renderReactions,
+  sendMove,
+  sendToLobby,
+  setNetMessage,
+  variant,
+} from './online.js';
 
 // First, before anything writes to the page
 initLanguage();
 
-const STORAGE_KEY = 'pencil-ttt';
-const MODES = ['cpu', 'pvp', 'online'];
-const DIFFICULTIES = ['casual', 'medium', 'hard'];
-const CENTER = (i) => [50 + (i % 3) * 100, 50 + Math.floor(i / 3) * 100];
 // Keypad layout: 7 8 9 on top, 1 2 3 on the bottom
 const KEYMAP = { 7: 0, 8: 1, 9: 2, 4: 3, 5: 4, 6: 5, 1: 6, 2: 7, 3: 8 };
 
 const $ = (id) => document.getElementById(id);
-const boardEl = $('board');
 const statusEl = $('status');
-const winEl = $('winline');
-const confettiEl = $('confetti');
-const STAR = 'M0 -12 L3 -3 L12 -3 L5 3 L8 12 L0 6 L-8 12 L-5 3 L-12 -3 L-3 -3 Z';
-const SPIRAL = 'M0 0 C4 -4 9 1 5 6 C0 11 -9 5 -6 -3 C-2 -12 12 -10 12 1';
 
-const zeroScores = () => ({ X: 0, O: 0, D: 0 });
-
-const state = load();
-let board;
-let marks; // each player's marks on the board, oldest first (for the vanish rules)
-let turn;
-let over;
-let busy = false;
 let cpuTimer = null;
 // The round in progress, recorded when a game against the computer ends
 let round = { moves: [], starter: 'X', diff: 'casual', variant: 'classic', startedAt: 0 };
 
-// Online: the live connection, the signed-in player, and the current match
-// exactly as the server last sent it (the server is the referee)
-let live = null;
-let liveStatus = 'offline'; // 'connecting' | 'online' | 'offline'
-let me = null;
-let match = null;
-// Latest known ratings, by player id, and the points each player won or
-// lost in the round that just ended ({ match, round, change: { id: n } })
-const ratings = new Map();
-let lastRound = null;
-// When the player to move runs out of time (local clock), or null
-let turnEndsAt = null;
-
-const online = () => state.mode === 'online';
-// Guests, and players who haven't confirmed their email, can pick Online
-// but only see what they need to do first
-const onlineLocked = () => online() && !canPlayOnline();
-const inMatch = () => !!match && !match.ended;
-const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X');
-const opponent = () => (match ? match.players[other(mySymbol())] : null);
-const ratingOf = (p) => ratings.get(p.id) ?? p.rating;
-// The rules on the board: an online match's own, otherwise the player's choice
-const variant = () => (online() && match ? (match.variant ?? 'classic') : state.variant);
-
-function load() {
-  const base = {
-    mode: 'cpu',
-    diff: 'casual',
-    variant: 'classic',
-    scores: zeroScores(),
-    starter: 'X',
-  };
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    if (saved && saved.scores) {
-      const s = { ...base, ...saved };
-      if (!MODES.includes(s.mode)) s.mode = 'cpu';
-      if (!DIFFICULTIES.includes(s.diff)) s.diff = 'casual';
-      if (!isVariant(s.variant)) s.variant = 'classic';
-      if (s.mode === 'online') {
-        s.scores = zeroScores();
-        s.starter = 'X';
-      }
-      return s;
-    }
-  } catch {
-    /* storage unavailable: start fresh */
-  }
-  return base;
-}
-
-function save() {
-  // Online scores belong to the match, not this browser
-  const data = online() ? { ...state, scores: zeroScores(), starter: 'X' } : state;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    /* ignore */
-  }
-}
-
-// Build the nine squares
-const cells = [];
-for (let i = 0; i < 9; i++) {
-  const b = document.createElement('button');
-  b.className = 'cell';
-  b.type = 'button';
-  b.id = 'cell-' + i;
-  b.addEventListener('click', () => humanMove(i));
-  boardEl.appendChild(b);
-  cells.push(b);
-}
-
-function drawMark(i, p) {
-  cells[i].dataset.mark = p;
-  cells[i].innerHTML = markSVG(p, '');
-}
-
-// A mark that vanished (3-mark rules)
-function eraseMark(i) {
-  delete cells[i].dataset.mark;
-  cells[i].innerHTML = '';
-}
-
 function isHumanTurn() {
-  if (over) return false;
-  if (state.mode === 'cpu') return turn === 'X';
-  if (state.mode === 'pvp') return true;
-  return inMatch() && liveStatus === 'online' && turn === mySymbol();
+  if (game.over) return false;
+  if (settings.mode === 'cpu') return game.turn === 'X';
+  if (settings.mode === 'pvp') return true;
+  return canMove();
 }
 
 function statusHTML() {
-  const tag = (t) => `<span class="${t.toLowerCase()}">${t}</span>`;
+  const tag = (m) => `<span class="${m.toLowerCase()}">${m}</span>`;
+  const w = gameResult(game.board, online() ? matchMoves() : round.moves.length, variant());
+  if (online()) return onlineStatus(w, tag);
 
-  if (onlineLocked()) return '';
-  if (online() && !inMatch()) {
-    if (liveStatus !== 'online') return t('Connecting…');
-    return t('Find an opponent, or invite a player.');
-  }
-
-  const w = gameResult(board, online() ? match.moves.length : round.moves.length, variant());
-  const rival = opponent()?.username;
-  if (online() && over) {
-    const change = roundChange();
-    const points = change === null ? '' : ` ${deltaHTML(change)}`;
-    if (match.timeout) {
-      return match.result === mySymbol()
-        ? t('<mark>You win!</mark> {name} ran out of time.', { name: rival }) + points
-        : t('<mark>Out of time.</mark> {name} wins the round.', { name: rival }) + points;
-    }
-    if (match.forfeit) {
-      return match.result === mySymbol()
-        ? t('<mark>You win!</mark> {name} left.', { name: rival }) + points
-        : t('<mark>{name} wins.</mark>', { name: rival }) + points;
-    }
-    if (w && w.p === 'D') return t("<mark>Cat's game.</mark> Nobody wins.") + points;
-    if (w) {
-      return w.p === mySymbol()
-        ? t('<mark>You win!</mark> Nice line.') + points
-        : t('<mark>{name} wins.</mark> Go again?', { name: rival }) + points;
-    }
-  }
   if (w && w.p === 'D') return t("<mark>Cat's game.</mark> Nobody wins.");
   if (w) {
-    if (state.mode === 'cpu') {
+    if (settings.mode === 'cpu') {
       return w.p === 'X'
         ? t('<mark>You win!</mark> Nice line.')
         : t('<mark>Computer wins.</mark> Go again?');
     }
     return t('<mark>{mark} wins!</mark>', { mark: tag(w.p) });
   }
-  if (state.mode === 'cpu')
-    return turn === 'X' ? t('Your move, {mark}', { mark: tag('X') }) : t('Computer is thinking…');
-  if (online()) {
-    if (liveStatus !== 'online') return t('Reconnecting…');
-    return turn === mySymbol()
-      ? t('Your move, {mark}', { mark: tag(turn) })
-      : t('{name} is thinking…', { name: rival });
+  if (settings.mode === 'cpu') {
+    return game.turn === 'X'
+      ? t('Your move, {mark}', { mark: tag('X') })
+      : t('Computer is thinking…');
   }
-  return t('{mark} to play', { mark: tag(turn) });
-}
-
-// My rating points for the round on the board, once the server has sent them
-function roundChange() {
-  if (!lastRound || lastRound.match !== match?.id || lastRound.round !== match.round) return null;
-  return lastRound.change[me.id] ?? null;
-}
-
-function deltaHTML(n) {
-  const cls = n > 0 ? 'delta up' : n < 0 ? 'delta down' : 'delta';
-  return `<span class="${cls}" title="${t('Rating points')}">${signed(n)}</span>`;
-}
-
-function renderMe() {
-  const chip = $('meRating');
-  const rating = me ? ratingOf(me) : null;
-  chip.hidden = !rating;
-  chip.textContent = rating ? String(rating) : '';
+  return t('{mark} to play', { mark: tag(game.turn) });
 }
 
 function playerLabel(p) {
-  if (state.mode === 'cpu') return p === 'X' ? t('You · X') : t('Computer · O');
-  if (online()) {
-    if (!inMatch()) return t('Player {mark}', { mark: p });
-    return p === mySymbol()
-      ? t('You · {mark}', { mark: p })
-      : `${match.players[p].username} · ${p}`;
-  }
+  if (settings.mode === 'cpu') return p === 'X' ? t('You · X') : t('Computer · O');
+  if (online()) return onlineLabel(p);
   return t('Player {mark}', { mark: p });
 }
 
 function render() {
   const humanTurn = isHumanTurn();
-  // Under the 3-mark rules, the mark that goes when the player to move plays
-  const fading = over ? -1 : nextToVanish({ board, marks }, turn, variant());
-  cells.forEach((c, i) => {
-    const v = board[i];
-    const row = Math.floor(i / 3) + 1;
-    const col = (i % 3) + 1;
-    c.disabled = !!v || !humanTurn || busy;
-    c.classList.toggle('fading', i === fading);
-    const label = t('Row {row}, column {col}: {value}', { row, col, value: v || t('empty') });
-    c.setAttribute('aria-label', i === fading ? `${label} ${t('(vanishes next)')}` : label);
-    if (!v) c.innerHTML = humanTurn && !busy ? markSVG(turn, 'ghost') : '';
+  renderSquares({
+    board: game.board,
+    turn: game.turn,
+    playable: humanTurn && !game.busy,
+    // Under the 3-mark rules, the mark that goes when the player to move plays
+    fading: game.over ? -1 : nextToVanish(game, game.turn, variant()),
   });
 
   statusEl.innerHTML = statusHTML();
   $('lblX').textContent = playerLabel('X');
   $('lblO').textContent = playerLabel('O');
-  $('diffGroup').hidden = state.mode !== 'cpu';
-  $('diff-hard').textContent = state.variant === 'vanish' ? t('Hard') : t('Unbeatable');
+  $('diffGroup').hidden = settings.mode !== 'cpu';
+  $('diff-hard').textContent = settings.variant === 'vanish' ? t('Hard') : t('Unbeatable');
   // An online match keeps the rules it started with
   $('rulesRow').hidden = inMatch() || onlineLocked();
   $('ruleNote').hidden = variant() !== 'vanish';
   document
     .querySelectorAll('[data-variant]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === state.variant));
+    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === settings.variant));
   $('hintBtn').hidden = online();
-  $('hintBtn').disabled = !humanTurn || busy;
+  $('hintBtn').disabled = !humanTurn || game.busy;
   document
     .querySelectorAll('[data-mode]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === state.mode));
+    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === settings.mode));
   document
     .querySelectorAll('[data-diff]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.diff === state.diff));
+    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.diff === settings.diff));
 
-  renderLocked();
-  $('onlinePanel').hidden = !online() || onlineLocked();
-  $('lobby').hidden = inMatch();
-  $('roomInfo').hidden = !inMatch();
+  renderOnline();
   $('board').hidden = online() && !inMatch();
   document.querySelector('.scores').hidden = online() && !inMatch();
-  if (inMatch()) {
-    const rival = opponent();
-    $('opponentName').textContent =
-      `${avatarEmoji(rival.avatar)} ${countryFlag(rival.country)} ${rival.username}`;
-    const chip = document.createElement('span');
-    chip.className = 'rating-chip';
-    chip.title = t('Rating');
-    chip.textContent = String(ratingOf(rival));
-    $('opponentName').append(' ', chip);
-    const role = mySymbol() === 'X' ? t('You are X and open the first round.') : t('You are O.');
-    $('roomRole').textContent = variant() === 'vanish' ? `${role} ${t('3-mark rules.')}` : role;
-  }
-  const locked = online() && !inMatch();
-  $('next').disabled = locked || (online() && !over);
+  $('next').disabled = (online() && !inMatch()) || (online() && !game.over);
   $('reset').hidden = online();
   $('next').closest('.actions').hidden = online() && !inMatch();
 
-  setLobby({ visible: online() && !onlineLocked() && !$('gameView').hidden, inMatch: inMatch() });
-  renderMe();
-
-  renderClock();
-  tally($('tX'), state.scores.X);
-  tally($('tO'), state.scores.O);
-  tally($('tD'), state.scores.D);
+  tally($('tX'), settings.scores.X);
+  tally($('tO'), settings.scores.O);
+  tally($('tD'), settings.scores.D);
 }
 
-// Scores as tally marks: four uprights and a slash per gate of five
-function tally(el, n) {
-  el.setAttribute('aria-label', String(n));
-  if (n === 0) {
-    el.innerHTML = '<span class="zero">—</span>';
-    return;
-  }
-  const groups = Math.min(Math.ceil(n / 5), 4);
-  let html = '';
-  for (let g = 0; g < groups; g++) {
-    const k = Math.min(5, n - g * 5);
-    let paths = '';
-    for (let j = 0; j < Math.min(k, 4); j++) {
-      const x = 5 + j * 7;
-      const wobble = (j % 2 ? 1 : -1) * 0.8;
-      paths += `<path d="M${x} 3 L${x + wobble} 25"/>`;
-    }
-    if (k === 5) paths += '<path d="M1 19 L30 8"/>';
-    html += `<svg viewBox="0 0 32 28" aria-hidden="true">${paths}</svg>`;
-  }
-  if (n > 20) html += `<span class="n">${n}</span>`;
-  el.innerHTML = html;
-}
+/* ---------- Local play ---------- */
 
 function place(i, p) {
-  const before = board;
-  ({ board, marks } = playOn({ board, marks }, i, p, state.variant));
-  before.forEach((v, k) => {
-    if (v && !board[k]) eraseMark(k);
-  });
-  drawMark(i, p);
-  clearHint();
+  Object.assign(game, playOn(game, i, p, settings.variant));
+  syncMarks(game.board);
+  clearHighlight();
   // A game counts at the difficulty and rules it started with, from its first move
   if (!round.moves.length) {
-    round = { ...round, diff: state.diff, variant: state.variant, startedAt: Date.now() };
+    round = { ...round, diff: settings.diff, variant: settings.variant, startedAt: Date.now() };
   }
   round.moves.push(i);
   sound.mark(p);
-  const w = gameResult(board, round.moves.length, state.variant);
+  const w = gameResult(game.board, round.moves.length, settings.variant);
   if (w) {
-    over = true;
+    game.over = true;
     if (w.p === 'D') sound.draw();
-    else if (state.mode === 'cpu' && w.p === 'O') sound.lose();
+    else if (settings.mode === 'cpu' && w.p === 'O') sound.lose();
     else {
       sound.win();
       celebrate();
     }
-    // Guests' games aren't recorded: they have no stats
-    const unchanged = state.diff === round.diff && state.variant === round.variant;
-    if (state.mode === 'cpu' && unchanged) {
-      const game = {
+    const unchanged = settings.diff === round.diff && settings.variant === round.variant;
+    if (settings.mode === 'cpu' && unchanged) {
+      const played = {
         difficulty: round.diff,
         variant: round.variant,
         starter: round.starter,
@@ -350,76 +167,42 @@ function place(i, p) {
         seconds: Math.round((Date.now() - round.startedAt) / 1000),
       };
       // Guests' games are kept in the browser in case they sign up
-      if (currentUser()) recordCpuGame(game);
-      else if (isGuest()) recordGuestGame(game);
+      if (currentUser()) recordCpuGame(played);
+      else if (isGuest()) recordGuestGame(played);
     }
-    state.scores[w.p]++;
-    state.starter = other(state.starter); // alternate who opens the next round
-    save();
+    settings.scores[w.p]++;
+    settings.starter = other(settings.starter); // alternate who opens the next round
+    saveSettings();
     if (w.line) drawWin(w.line);
   } else {
-    turn = other(p);
+    game.turn = other(p);
   }
   render();
 }
 
-function drawWin(line) {
-  const [x1, y1] = CENTER(line[0]);
-  const [x2, y2] = CENTER(line[2]);
-  const len = Math.hypot(x2 - x1, y2 - y1);
-  const ex = ((x2 - x1) / len) * 38;
-  const ey = ((y2 - y1) / len) * 38;
-  const bend = 4;
-  winEl.innerHTML = `<path class="draw" pathLength="1"
-    d="M${x1 - ex} ${y1 - ey} Q${(x1 + x2) / 2 + bend} ${(y1 + y2) / 2 - bend} ${x2 + ex} ${y2 + ey}"/>`;
-  boardEl.classList.add('won');
-  line.forEach((i) => cells[i].classList.add('hit'));
-}
-
-// Pencil stars and spirals around the board, for the player's own wins.
-// Built through the DOM: the page's CSP doesn't allow inline style attributes.
-function celebrate() {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const shapes = [];
-  for (let k = 0; k < 10; k++) {
-    const angle = (k / 10) * Math.PI * 2 + Math.random() * 0.5;
-    const r = 95 + Math.random() * 45;
-    // Keep them on the board: on a phone it fills the screen's width
-    const at = (v) => Math.min(Math.max(150 + v * r, 16), 284).toFixed(1);
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', k % 3 === 2 ? SPIRAL : STAR);
-    path.setAttribute('transform', `translate(${at(Math.cos(angle))} ${at(Math.sin(angle))})`);
-    path.classList.add(`c${k % 3}`);
-    path.style.animationDelay = `${(0.55 + Math.random() * 0.45).toFixed(2)}s`;
-    shapes.push(path);
-  }
-  confettiEl.replaceChildren(...shapes);
-}
-
 function humanMove(i) {
-  if (board[i] || !isHumanTurn() || busy) return;
+  if (game.board[i] || !isHumanTurn() || game.busy) return;
   if (online()) {
-    // The server checks the move and sends everyone the new board
-    busy = live.send({ t: 'move', match: match.id, square: i });
+    sendMove(i);
     render();
     return;
   }
-  place(i, turn);
+  place(i, game.turn);
   maybeCpu();
 }
 
 function maybeCpu() {
-  if (over || state.mode !== 'cpu' || turn !== 'O') return;
-  busy = true;
+  if (game.over || settings.mode !== 'cpu' || game.turn !== 'O') return;
+  game.busy = true;
   render();
   cpuTimer = setTimeout(
     () => {
       cpuTimer = null;
-      busy = false;
+      game.busy = false;
       const square =
-        state.variant === 'vanish'
-          ? pickVanishMove({ board, marks }, 'O', state.diff)
-          : pickMove(board, 'O', state.diff);
+        settings.variant === 'vanish'
+          ? pickVanishMove(game, 'O', settings.diff)
+          : pickMove(game.board, 'O', settings.diff);
       place(square, 'O');
     },
     420 + Math.random() * 250,
@@ -430,33 +213,23 @@ function maybeCpu() {
 function resetBoard() {
   clearTimeout(cpuTimer);
   cpuTimer = null;
-  board = emptyBoard();
-  marks = { X: [], O: [] };
-  turn = state.starter;
+  game.board = emptyBoard();
+  game.marks = { X: [], O: [] };
+  game.turn = settings.starter;
+  game.over = false;
+  game.busy = false;
   round = {
     moves: [],
-    starter: turn,
-    diff: state.diff,
-    variant: state.variant,
+    starter: game.turn,
+    diff: settings.diff,
+    variant: settings.variant,
     startedAt: Date.now(),
   };
-  over = false;
-  busy = false;
-  winEl.innerHTML = '';
-  confettiEl.replaceChildren();
-  boardEl.classList.remove('won');
-  cells.forEach((c) => {
-    c.classList.remove('hit', 'hinted', 'fading');
-    delete c.dataset.mark;
-    c.innerHTML = '';
-  });
+  clearBoard();
 }
 
 function newRound() {
-  if (online()) {
-    if (inMatch() && over) live.send({ t: 'next-round', match: match.id });
-    return;
-  }
+  if (online()) return askNextRound();
   resetBoard();
   render();
   maybeCpu();
@@ -464,24 +237,19 @@ function newRound() {
 
 // Hints: the move the computer would play, for vs Computer and Same screen
 function showHint() {
-  if (online() || !isHumanTurn() || busy) return;
-  clearHint();
-  const i = hintMove({ board, marks }, turn, state.variant);
-  cells[i].classList.add('hinted');
+  if (online() || !isHumanTurn() || game.busy) return;
+  const i = hintMove(game, game.turn, settings.variant);
+  highlight(i);
   statusEl.innerHTML = t('Try row {row}, column {col}.', {
     row: Math.floor(i / 3) + 1,
     col: (i % 3) + 1,
   });
 }
 
-function clearHint() {
-  cells.forEach((c) => c.classList.remove('hinted'));
-}
-
 function setVariant(v) {
-  if (state.variant === v) return;
-  state.variant = v;
-  save();
+  if (settings.variant === v) return;
+  settings.variant = v;
+  saveSettings();
   if (online()) return render(); // for the next invitation or quick match
   resetBoard();
   render();
@@ -490,14 +258,14 @@ function setVariant(v) {
 
 function resetScores() {
   if (online()) return;
-  state.scores = zeroScores();
-  state.starter = 'X';
-  save();
+  settings.scores = zeroScores();
+  settings.starter = 'X';
+  saveSettings();
   newRound();
 }
 
 function setMode(mode) {
-  if (state.mode === mode) return;
+  if (settings.mode === mode) return;
   if (inMatch()) {
     const ok = window.confirm(
       t('Leave your game with {name}? A round in progress counts as a loss.', {
@@ -505,235 +273,31 @@ function setMode(mode) {
       }),
     );
     if (!ok) return;
-    live.send({ t: 'leave', match: match.id });
-    match = null;
+    abandonMatch();
   }
-  state.mode = mode;
-  state.scores = zeroScores();
-  state.starter = 'X';
-  save();
+  settings.mode = mode;
+  settings.scores = zeroScores();
+  settings.starter = 'X';
+  saveSettings();
   resetBoard();
   setNetMessage('');
   render();
   maybeCpu();
 }
 
-/* ---------- Online play ---------- */
-
-// What stands between the player and online games
-function renderLocked() {
-  $('guestLocked').hidden = !onlineLocked();
-  if (!onlineLocked()) return;
-  const user = currentUser();
-  const [title, text, button] = !user
-    ? [
-        t('🔒 Online games need a free account'),
-        t(
-          'With an account you can play people around the world, get a rating, climb the leaderboard, keep your stats, and pick a funny avatar.',
-        ),
-        t('Create a free account'),
-      ]
-    : !user.email
-      ? [
-          t('✉️ Add your email to play online'),
-          t('We ask every player for a confirmed email address before they play online.'),
-          t('Add my email'),
-        ]
-      : [
-          t('✉️ Confirm your email to play online'),
-          t(
-            "Click the link we sent to {email}. Can't find it? Check the spam folder, or send it again.",
-            { email: user.email },
-          ),
-          t('Send it again'),
-        ];
-  $('lockedTitle').textContent = title;
-  $('lockedText').textContent = text;
-  $('guestJoin').textContent = button;
-}
-
-function setNetMessage(text) {
-  $('netMsg').textContent = text || '';
-}
-
-// Shows the match exactly as the server sent it
-function showMatch(next) {
-  const newMatch = !match || match.id !== next.id;
-  const newRound = newMatch || match.round !== next.round;
-  const wasOver = !newRound && over;
-  // A single new mark is a move played live (a reload redraws them all)
-  const fresh = newRound ? next.moves.length : next.moves.length - match.moves.length;
-  if (newMatch && next.round === 1 && next.moves.length === 0) sound.matchFound();
-  match = next;
-  if (!online()) {
-    state.mode = 'online';
-    save();
-  }
-  if (newRound) resetBoard();
-  turnEndsAt =
-    next.turnLeft === null || next.turnLeft === undefined ? null : Date.now() + next.turnLeft;
-  board = next.board.slice();
-  marks = replay(next.moves, next.starter, next.variant ?? 'classic').marks;
-  turn = next.turn;
-  over = next.over;
-  busy = false;
-  state.scores = { ...next.score };
-  board.forEach((v, i) => {
-    if (!v && cells[i].dataset.mark) eraseMark(i);
-    else if (v && cells[i].dataset.mark !== v) drawMark(i, v);
-  });
-  if (next.line && !boardEl.classList.contains('won')) drawWin(next.line);
-  if (fresh === 1) sound.mark(next.board[next.moves.at(-1)]);
-  if (next.over && !wasOver && fresh <= 1) {
-    if (next.result === 'D') sound.draw();
-    else if (next.result === mySymbol()) {
-      sound.win();
-      celebrate();
-    } else sound.lose();
-  }
-}
-
-function onMatch(next) {
-  if (next.ended) {
-    const rival = next.players[other(next.players.O.id === me.id ? 'O' : 'X')].username;
-    const iLeft = next.leftBy === (next.players.O.id === me.id ? 'O' : 'X');
-    if (match?.id === next.id || !match) {
-      setNetMessage(
-        iLeft
-          ? ''
-          : next.forfeit
-            ? t('{name} left the game. You win the round.', { name: rival })
-            : t('{name} left the game.', { name: rival }),
-      );
-      match = null;
-      state.scores = zeroScores();
-      resetBoard();
-      setLastOpponent(next.players[next.players.O.id === me.id ? 'X' : 'O']);
-    }
-  } else {
-    if (!match || match.id !== next.id) setNetMessage('');
-    showMatch(next);
-  }
-  render();
-}
-
-function onLiveMessage(msg) {
-  switch (msg.t) {
-    case 'hello':
-      me = msg.me;
-      ratings.set(me.id, me.rating);
-      if (msg.match && !msg.match.ended) showMatch(msg.match);
-      else if (match) {
-        match = null; // it ended while we were away
-        resetBoard();
-      }
-      handleLobbyMessage(msg); // pending invitations
-      break;
-    case 'match':
-      onMatch(msg.match);
-      return;
-    case 'reaction':
-      if (msg.match === match?.id) showReaction(msg);
-      return;
-    case 'ratings': {
-      const change = {};
-      for (const [id, r] of Object.entries(msg.ratings)) {
-        ratings.set(Number(id), r.rating);
-        change[id] = r.change;
-      }
-      lastRound = { match: msg.match, round: msg.round, change };
-      break;
-    }
-    case 'error':
-      busy = false;
-      setNetMessage(msg.message);
-      if (msg.re?.startsWith('invite') || msg.re?.startsWith('queue')) lobbyError();
-      break;
-    default:
-      handleLobbyMessage(msg);
-      return;
-  }
-  render();
-}
-
-function goOnline() {
-  live?.close();
-  live = connectLive({
-    onMessage: onLiveMessage,
-    onStatus: (status) => {
-      liveStatus = status;
-      render();
-    },
-  });
-}
-
-function goOffline() {
-  live?.close();
-  live = null;
-  liveStatus = 'offline';
-  me = null;
-  match = null;
-  ratings.clear();
-  lastRound = null;
-  resetLobby();
-}
-
-/* ---------- Turn clock and reactions ---------- */
-
-// Seconds left for the move, shown under the status; the server decides
-// when time is up, this is only the countdown
-function renderClock() {
-  const el = $('turnClock');
-  const running = inMatch() && !over && turnEndsAt !== null && liveStatus === 'online';
-  el.hidden = !running;
-  if (!running) return;
-  const secs = Math.max(0, Math.ceil((turnEndsAt - Date.now()) / 1000));
-  el.textContent =
-    turn === mySymbol()
-      ? t('⏱ Your time: {secs}s', { secs })
-      : t("⏱ {name}'s time: {secs}s", { name: opponent().username, secs });
-  el.classList.toggle('low', secs <= 10);
-}
-setInterval(() => {
-  if (!$('turnClock').hidden) renderClock();
-}, 250);
-
-function showReaction({ from, emoji }) {
-  const mine = from === me?.id;
-  const bubble = document.createElement('span');
-  bubble.className = `bubble ${mine ? 'mine' : 'theirs'}`;
-  bubble.textContent = emoji;
-  $('reactionFeed').append(bubble);
-  setTimeout(() => bubble.remove(), 2400);
-  $('reactionSaid').textContent = `${mine ? t('You') : opponent()?.username}: ${emoji}`;
-}
-
-const renderReactions = () =>
-  $('reactions').replaceChildren(
-    ...REACTIONS.map((emoji) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'btn ghostbtn react';
-      b.textContent = emoji;
-      b.setAttribute('aria-label', t('React {emoji}', { emoji }));
-      b.addEventListener('click', () => {
-        if (inMatch()) live.send({ t: 'react', match: match.id, emoji });
-      });
-      return b;
-    }),
-  );
-renderReactions();
-
 /* ---------- Wiring ---------- */
+
+initBoard(humanMove);
+initOnline({ render, resetBoard });
 
 document
   .querySelectorAll('[data-mode]')
   .forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
 document.querySelectorAll('[data-diff]').forEach((b) =>
   b.addEventListener('click', () => {
-    if (state.diff === b.dataset.diff) return;
-    state.diff = b.dataset.diff;
-    save();
+    if (settings.diff === b.dataset.diff) return;
+    settings.diff = b.dataset.diff;
+    saveSettings();
     render();
   }),
 );
@@ -756,9 +320,6 @@ $('reset').addEventListener('click', resetScores);
 $('guestJoin').addEventListener('click', () =>
   currentUser() ? $('emailAction').click() : leaveGuest(),
 );
-$('leave').addEventListener('click', () => {
-  if (inMatch()) live.send({ t: 'leave', match: match.id });
-});
 
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -779,14 +340,14 @@ if ('serviceWorker' in navigator) {
 }
 initLeaderboard(currentUser);
 initLobby({
-  send: (msg) => live?.send(msg),
-  variant: () => state.variant,
+  send: sendToLobby,
+  variant: () => settings.variant,
   message: setNetMessage,
 });
 
 resetBoard();
 
-// A new language: redraw everything this file wrote
+// A new language: redraw everything this file and online.js wrote
 onLangChange(() => {
   renderReactions();
   render();
@@ -817,7 +378,7 @@ initAccount({
   },
   onSignOut() {
     goOffline();
-    if (online()) state.scores = zeroScores();
+    if (online()) settings.scores = zeroScores();
     resetBoard();
     setNetMessage('');
     render();
