@@ -114,7 +114,10 @@ test('the leaderboard ranks players, for the world or one country', async () => 
   assert.equal(page2.players[0].rank, 2);
 
   assert.equal((await board(top, '?country=ZZ')).status, 400);
-  assert.equal((await board(client(t.app))).status, 401);
+  // Public: without a session there's simply no "you" on it
+  const guest = await board(client(t.app));
+  assert.equal(guest.status, 200);
+  assert.equal(guest.body.me, null);
 });
 
 test('online players and new matches show the latest rating', async () => {
