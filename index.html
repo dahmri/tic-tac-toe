@@ -582,6 +582,9 @@
       </div>
       <p class="form-msg" id="statsMsg" role="alert"></p>
       <div id="statsBody" hidden>
+        <h3>Achievements <span class="count" id="badgeCount"></span></h3>
+        <ul class="badges" id="badgeList"></ul>
+
         <h3>Rating</h3>
         <div class="tiles" id="ratingTiles"></div>
 
@@ -674,6 +677,8 @@
         <button id="replayLast" type="button" class="btn ghostbtn" aria-label="Last move">⏭</button>
       </div>
     </dialog>
+
+    <div class="toast" id="toast" role="status" hidden></div>
 
     <script type="module" src="js/main.js"></script>
   </body>

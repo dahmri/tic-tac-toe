@@ -274,6 +274,7 @@ sentence to its translation, and anything missing falls back to English.
 | `DELETE` | `/api/friends/:id`          | Remove a friend                                           |
 | `GET`    | `/api/me/stats`             | Your totals, streaks and most played opponents            |
 | `GET`    | `/api/me/games`             | Your game history, newest first: `?cursor=&limit=20`      |
+| `GET`    | `/api/me/achievements`      | Your achievements, with progress towards goals            |
 | `POST`   | `/api/games/cpu`            | Record a finished game against the computer               |
 | `GET`    | `/api/puzzle?day=`          | Your daily puzzle result and streaks                      |
 | `POST`   | `/api/puzzle/:day`          | A try at the day's puzzle: `{ moves }` (the first counts) |

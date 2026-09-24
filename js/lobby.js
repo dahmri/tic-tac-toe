@@ -7,6 +7,7 @@ import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, countryName, sortedCountries } from './countries.js';
 import { sound } from './sound.js';
 import { onLangChange, t } from './i18n.js';
+import { checkAchievements } from './achievements-ui.js';
 
 const PAGE = 20;
 const REFRESH_MS = 10_000;
@@ -122,7 +123,10 @@ function starButton(p) {
     b.disabled = true;
     try {
       if (on) await api('DELETE', `/api/friends/${p.id}`);
-      else await api('POST', '/api/friends', { id: p.id });
+      else {
+        await api('POST', '/api/friends', { id: p.id });
+        checkAchievements();
+      }
       await loadFriends();
     } catch (err) {
       actions.message(err.message);
@@ -193,6 +197,7 @@ async function addFriend(e) {
   $('friendMsg').textContent = '';
   try {
     await api('POST', '/api/friends', { username });
+    checkAchievements();
     input.value = '';
     await loadFriends();
   } catch (err) {

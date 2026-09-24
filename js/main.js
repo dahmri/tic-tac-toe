@@ -9,6 +9,7 @@ import { initLobby } from './lobby.js';
 import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initReplay } from './replay.js';
+import { checkAchievements } from './achievements-ui.js';
 import { setSound, sound, soundOn } from './sound.js';
 import { onLangChange, t } from './i18n.js';
 import { initLanguage } from './language.js';
@@ -371,6 +372,7 @@ onLangChange(() => {
 
 initAccount({
   onSignIn() {
+    checkAchievements(); // takes note of what's already earned
     resetBoard();
     if (canPlayOnline()) goOnline();
     render();

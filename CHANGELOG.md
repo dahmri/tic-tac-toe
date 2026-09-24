@@ -8,6 +8,14 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Achievements.** 12 badges to earn: First win 🏆, Online winner 🌐,
+  On fire 🔥 (3 online wins in a row), Unstoppable ☄️ (10), Hundred club
+  💯, Held the line 🛡️ (draw against Unbeatable), Vanishing act 🌫️ (beat
+  Hard at 3 marks), Puzzler 🧩, Week of puzzles 📅, Social butterfly 🤝
+  (5 friends), Rising star 📈 (rating 1400) and On the podium 🥇. They're
+  in your Stats, with progress towards the ones with a goal, and a toast
+  pops up when you earn one. Games you played before count too.
+
 - **Monthly seasons.** The leaderboard now runs by month: on the 1st,
   everyone starts again at 1200, so anyone can reach the top. The
   leaderboard shows the season and how many days are left, and last
