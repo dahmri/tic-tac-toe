@@ -3,6 +3,7 @@
 // running totals, all in one transaction, so the numbers always add up.
 
 import { START_RATING, ratingChange } from './rating.js';
+import { previousSeason, seasonEnd, seasonOf } from '../js/seasons.js';
 
 const RETRY_KEY = 'stats:retry';
 
@@ -43,9 +44,10 @@ const UPSERT_STATS = `
   INSERT INTO player_stats (user_id, played, won, lost, drawn, won_as_x, played_as_x,
     won_as_o, played_as_o, wins_by_forfeit, losses_by_forfeit, current_streak, best_streak,
     fastest_win, cpu_played, cpu_won, cpu_lost, cpu_drawn, hard_played, hard_drawn,
-    first_played_at, last_played_at, rating, peak_rating)
+    first_played_at, last_played_at, rating, peak_rating, season_played, season_won)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
-    $19, $20, $21, $21, ${START_RATING} + $22, GREATEST(${START_RATING}, ${START_RATING} + $22))
+    $19, $20, $21, $21, ${START_RATING} + $22, GREATEST(${START_RATING}, ${START_RATING} + $22),
+    $2, $3)
   ON CONFLICT (user_id) DO UPDATE SET
     played = player_stats.played + EXCLUDED.played,
     won = player_stats.won + EXCLUDED.won,
@@ -74,8 +76,26 @@ const UPSERT_STATS = `
     first_played_at = LEAST(player_stats.first_played_at, EXCLUDED.first_played_at),
     last_played_at = GREATEST(player_stats.last_played_at, EXCLUDED.last_played_at),
     rating = player_stats.rating + $22,
-    peak_rating = GREATEST(player_stats.peak_rating, player_stats.rating + $22)
+    peak_rating = GREATEST(player_stats.peak_rating, player_stats.rating + $22),
+    season_played = player_stats.season_played + EXCLUDED.played,
+    season_won = player_stats.season_won + EXCLUDED.won
   RETURNING rating`;
+
+// A player's first rated game of a new season: last season's result is
+// archived and the rating starts again. Only moves forward, so a game
+// saved late (retried) never reopens an old season.
+const NEW_SEASON = `
+  WITH old AS (
+    SELECT user_id, season, rating, season_played, season_won FROM player_stats
+    WHERE user_id = ANY($1) AND season < $2
+  ), archived AS (
+    INSERT INTO season_results (season, user_id, rating, played, won)
+    SELECT season, user_id, rating, season_played, season_won FROM old WHERE season_played > 0
+    ON CONFLICT DO NOTHING
+  )
+  UPDATE player_stats s
+  SET season = $2, rating = ${START_RATING}, season_played = 0, season_won = 0
+  FROM old WHERE s.user_id = old.user_id`;
 
 const UPSERT_H2H = `
   INSERT INTO head_to_head (user_id, opponent_id, played, won, lost, drawn, last_played_at)
@@ -150,8 +170,14 @@ export function createStats(db, redis, log = console) {
            ON CONFLICT DO NOTHING`,
           [ids],
         );
+        // Locked first, then moved into this game's season if they're behind
+        await client.query(
+          'SELECT user_id FROM player_stats WHERE user_id = ANY($1) ORDER BY user_id FOR UPDATE',
+          [ids],
+        );
+        await client.query(NEW_SEASON, [ids, seasonOf(endedAt)]);
         const { rows: current } = await client.query(
-          'SELECT user_id, rating FROM player_stats WHERE user_id = ANY($1) ORDER BY user_id FOR UPDATE',
+          'SELECT user_id, rating FROM player_stats WHERE user_id = ANY($1)',
           [ids],
         );
         const rating = new Map(current.map((r) => [r.user_id, r.rating]));
@@ -253,26 +279,71 @@ export function createStats(db, redis, log = console) {
 
   // Position on the leaderboard (1 = top), ties broken the way the
   // leaderboard orders them. Null for players who haven't played online.
-  async function rankOf(userId, rating, country = null) {
+  // In the season: players who played in it, best rating first
+  async function rankOf(userId, rating, season, country = null) {
     const { rows } = await db.query(
       `SELECT count(*)::int + 1 AS rank
        FROM player_stats s ${country ? 'JOIN users u ON u.id = s.user_id' : ''}
-       WHERE s.played > 0 AND (s.rating > $1 OR (s.rating = $1 AND s.user_id < $2))
-       ${country ? 'AND u.country = $3' : ''}`,
-      country ? [rating, userId, country] : [rating, userId],
+       WHERE s.season = $3 AND s.season_played > 0
+         AND (s.rating > $1 OR (s.rating = $1 AND s.user_id < $2))
+       ${country ? 'AND u.country = $4' : ''}`,
+      country ? [rating, userId, season, country] : [rating, userId, season],
     );
     return rows[0].rank;
   }
 
-  async function summary(userId) {
+  // The top three of a finished season: archived results, plus players who
+  // haven't played since (their row still holds that season)
+  async function podium(season) {
+    const { rows } = await db.query(
+      `SELECT r.user_id, u.username, u.country, u.avatar, r.rating
+       FROM (
+         SELECT user_id, rating FROM season_results WHERE season = $1
+         UNION ALL
+         SELECT user_id, rating FROM player_stats WHERE season = $1 AND season_played > 0
+       ) r JOIN users u ON u.id = r.user_id
+       ORDER BY r.rating DESC, r.user_id
+       LIMIT 3`,
+      [season],
+    );
+    return rows.map((r, i) => ({
+      rank: i + 1,
+      id: Number(r.user_id),
+      username: r.username,
+      country: r.country,
+      avatar: r.avatar,
+      rating: r.rating,
+    }));
+  }
+
+  // Every finished season where the player made the top three
+  async function medals(userId, now = new Date()) {
+    const { rows } = await db.query(
+      `SELECT season FROM season_results WHERE user_id = $1 AND season < $2
+       UNION
+       SELECT season FROM player_stats WHERE user_id = $1 AND season_played > 0 AND season < $2
+       ORDER BY season`,
+      [userId, seasonOf(now)],
+    );
+    const out = [];
+    for (const { season } of rows) {
+      const mine = (await podium(season)).find((p) => p.id === Number(userId));
+      if (mine) out.push({ season, rank: mine.rank });
+    }
+    return out;
+  }
+
+  async function summary(userId, now = new Date()) {
     const { rows } = await db.query('SELECT * FROM player_stats WHERE user_id = $1', [userId]);
     const s = rows[0];
     const z = (k) => s?.[k] ?? 0;
-    const rated = z('played') > 0;
+    const season = seasonOf(now);
+    const inSeason = s?.season === season && s.season_played > 0;
     return {
-      rating: s?.rating ?? START_RATING,
+      season,
+      rating: inSeason ? s.rating : START_RATING,
       peakRating: s?.peak_rating ?? START_RATING,
-      rank: rated ? await rankOf(userId, s.rating) : null,
+      rank: inSeason ? await rankOf(userId, s.rating, season) : null,
       online: {
         played: z('played'),
         won: z('won'),
@@ -386,29 +457,33 @@ export function createStats(db, redis, log = console) {
 
   // One page of the leaderboard, best first, for the world or one country,
   // and where `userId` stands on it
-  async function leaderboard({ userId, country = null, offset = 0, limit = 20 }) {
-    const filter = country ? 'AND u.country = $1' : '';
-    const params = country ? [country] : [];
+  async function leaderboard({ userId, country = null, offset = 0, limit = 20, now = new Date() }) {
+    const season = seasonOf(now);
+    const filter = country ? 'AND u.country = $2' : '';
+    const params = country ? [season, country] : [season];
     const n = params.length;
-    const [page, count, mine] = await Promise.all([
+    const [page, count, mine, last] = await Promise.all([
       db.query(
-        `SELECT s.user_id, u.username, u.country, u.avatar, s.rating, s.played, s.won
+        `SELECT s.user_id, u.username, u.country, u.avatar, s.rating,
+                s.season_played AS played, s.season_won AS won
          FROM player_stats s JOIN users u ON u.id = s.user_id
-         WHERE s.played > 0 ${filter}
+         WHERE s.season = $1 AND s.season_played > 0 ${filter}
          ORDER BY s.rating DESC, s.user_id
          LIMIT $${n + 1} OFFSET $${n + 2}`,
         [...params, limit, offset],
       ),
       db.query(
         `SELECT count(*)::int AS n FROM player_stats s JOIN users u ON u.id = s.user_id
-         WHERE s.played > 0 ${filter}`,
+         WHERE s.season = $1 AND s.season_played > 0 ${filter}`,
         params,
       ),
       db.query(
-        `SELECT s.rating, s.played, s.won, u.country FROM player_stats s
-         JOIN users u ON u.id = s.user_id WHERE s.user_id = $1`,
-        [userId],
+        `SELECT s.rating, s.season_played AS played, s.season_won AS won, u.country
+         FROM player_stats s JOIN users u ON u.id = s.user_id
+         WHERE s.user_id = $1 AND s.season = $2`,
+        [userId, season],
       ),
+      podium(previousSeason(season)),
     ]);
     const self = mine.rows[0];
     const ranked = self && self.played > 0 && (!country || self.country === country);
@@ -426,18 +501,24 @@ export function createStats(db, redis, log = console) {
       })),
       me: ranked
         ? {
-            rank: await rankOf(userId, self.rating, country),
+            rank: await rankOf(userId, self.rating, season, country),
             rating: self.rating,
             played: self.played,
             won: self.won,
           }
         : null,
+      // The season on show, when it ends, and the last one's top three
+      season: { id: season, endsAt: seasonEnd(season).toISOString() },
+      lastSeason: { id: previousSeason(season), podium: last },
     };
   }
 
-  // A player's current rating (1200 until they play online)
-  async function rating(userId) {
-    const { rows } = await db.query('SELECT rating FROM player_stats WHERE user_id = $1', [userId]);
+  // The rating in the current season (1200 until the player's first game in it)
+  async function rating(userId, now = new Date()) {
+    const { rows } = await db.query(
+      'SELECT rating FROM player_stats WHERE user_id = $1 AND season = $2',
+      [userId, seasonOf(now)],
+    );
     return rows[0]?.rating ?? START_RATING;
   }
 
@@ -450,5 +531,7 @@ export function createStats(db, redis, log = console) {
     history,
     leaderboard,
     rating,
+    podium,
+    medals,
   };
 }

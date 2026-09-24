@@ -64,9 +64,9 @@ function playerName(p) {
 
 function renderSummary({ stats, opponents }) {
   tiles($('ratingTiles'), [
-    ['Rating', stats.rating],
+    ['This season', stats.rating],
     ['Rank', stats.rank ? `#${stats.rank}` : '—'],
-    ['Best', stats.peakRating],
+    ['Best ever', stats.peakRating],
   ]);
   const o = stats.online;
   tiles($('onlineTiles'), [

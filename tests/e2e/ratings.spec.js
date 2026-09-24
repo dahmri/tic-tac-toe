@@ -34,6 +34,9 @@ test('a win moves both ratings and puts the players on the leaderboard', async (
   const rowOf = (name) => dialog.locator('tbody tr', { hasText: name });
   await dialog.getByLabel('Leaderboard for').selectOption('');
   await expect(dialog.locator('#lbMe')).toContainText('rated 1216');
+  await expect(dialog.locator('#lbSeason')).toContainText(
+    /^Season \w+ \d{4}: (\d+ days left|last day!)$/,
+  );
 
   await dialog.getByLabel('Leaderboard for').selectOption('IS');
   await expect(rowOf(ann.player.username)).toContainText('1216');
@@ -48,7 +51,9 @@ test('a win moves both ratings and puts the players on the leaderboard', async (
   // The round shows in the history with its points
   await bob.page.getByRole('button', { name: 'Stats' }).click();
   const stats = bob.page.getByRole('dialog', { name: 'Your stats' });
-  await expect(stats.locator('#ratingTiles .tile', { hasText: 'Rating' })).toContainText('1184');
+  await expect(stats.locator('#ratingTiles .tile', { hasText: 'This season' })).toContainText(
+    '1184',
+  );
   await expect(stats.locator('#historyList .history-item').first()).toContainText('−16');
   await closePlayers(ann, bob);
 });

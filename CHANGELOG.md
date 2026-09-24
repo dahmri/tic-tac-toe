@@ -8,6 +8,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Monthly seasons.** The leaderboard now runs by month: on the 1st,
+  everyone starts again at 1200, so anyone can reach the top. The
+  leaderboard shows the season and how many days are left, and last
+  month's podium 🥇🥈🥉. Your Stats show your rating this season and your
+  best ever.
+
 - **Daily puzzle.** 🧩 Puzzle, next to the other modes: every day a new
   position where you can win in 2 moves, the same for everyone. Find the
   move that makes two threats at once. Your first try each day counts

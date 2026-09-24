@@ -216,6 +216,17 @@ could make. "Unbeatable" must play perfectly (so a win against it is
 refused), "Casual" always takes a winning move. The server works out the
 result itself. They are counted apart from online games.
 
+## Seasons
+
+Ratings run by calendar month (UTC, [`js/seasons.js`](../js/seasons.js)).
+`player_stats.rating` is the rating in `player_stats.season`. When a
+player's first rated game of a new month is saved, their old season is
+copied to `season_results` and the rating starts again from 1200, in the
+same transaction (no job at midnight, nothing lost if they don't play for
+months). A finished season's podium combines `season_results` with the
+players who haven't played since. `peak_rating` and the lifetime totals
+never reset.
+
 ## Languages
 
 The site is in English, French and Spanish. English text is the key:
