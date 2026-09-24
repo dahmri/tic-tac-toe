@@ -50,6 +50,8 @@ export default {
   'Check the code, or the username.': "Vérifie le code ou le nom d'utilisateur.",
   'Check the highlighted fields.': 'Vérifie les champs en surbrillance.',
   'Cheeky Monkey': 'Singe farceur',
+  'Choose a new password': 'Choisir un nouveau mot de passe',
+  'Choose a new password for your account.': 'Choisis un nouveau mot de passe pour ton compte.',
   'Choose another player to invite.': 'Choisis un autre joueur à inviter.',
   'Choose your country.': 'Choisis ton pays.',
   'Choose…': 'Choisir…',
@@ -97,6 +99,7 @@ export default {
   Email: 'E-mail',
   'Email confirmed. Log in to play online.': 'E-mail confirmé. Connecte-toi pour jouer en ligne.',
   'Email confirmed. You can play online now!': 'E-mail confirmé. Tu peux jouer en ligne !',
+  'Email me a link': "M'envoyer un lien",
   'Enter your current password.': 'Saisis ton mot de passe actuel.',
   'Enter your date of birth.': 'Saisis ta date de naissance.',
   'Enter your email address.': 'Saisis ton adresse e-mail.',
@@ -107,6 +110,9 @@ export default {
   'Enter your username and password.': "Saisis ton nom d'utilisateur et ton mot de passe.",
   'Enter your username and recovery code.':
     "Saisis ton nom d'utilisateur et ton code de récupération.",
+  'Enter your username or email address.': "Saisis ton nom d'utilisateur ou ton adresse e-mail.",
+  "Enter your username or email. If your email is confirmed, we'll send you a link to choose a new password.":
+    "Saisis ton nom d'utilisateur ou ton e-mail. Si ton e-mail est confirmé, nous t'enverrons un lien pour choisir un nouveau mot de passe.",
   "Everyone starts at 1200. Each online round moves your rating: beating a stronger player earns more. Games against the computer don't count.":
     "Tout le monde commence à 1200. Chaque manche en ligne fait bouger ton classement : battre un joueur plus fort rapporte plus. Les parties contre l'ordinateur ne comptent pas.",
   'Fancy Flamingo': 'Flamant chic',
@@ -126,6 +132,8 @@ export default {
   'Hot Diggity Dog': 'Hot-dog en folie',
   'Hug Me Cactus': 'Cactus câlin',
   "I've saved it": "Je l'ai noté",
+  "If an account with a confirmed email matches, we've sent it a link. It works for 1 hour.":
+    'Si un compte avec un e-mail confirmé correspond, nous lui avons envoyé un lien. Il fonctionne pendant 1 heure.',
   "If you ever forget your password, this code lets you set a new one. We can't show it again, so write it down or keep it in a password manager.":
     "Si tu oublies ton mot de passe, ce code te permet d'en choisir un nouveau. Nous ne pourrons pas le réafficher : note-le ou garde-le dans un gestionnaire de mots de passe.",
   'If you forget your password, a recovery code lets you set a new one. Making a new code replaces your old one.':
@@ -229,10 +237,12 @@ export default {
   'Replay board': 'Plateau de la rediffusion',
   'Replay: {title}': 'Revoir : {title}',
   'Request too large.': 'Requête trop volumineuse.',
+  'Reset your Pencil Tic-Tac-Toe password': 'Réinitialise ton mot de passe Morpion au crayon',
   'Row {row}, column {col}: {value}': 'Ligne {row}, colonne {col} : {value}',
   Rules: 'Règles',
   'Same screen': 'Même écran',
   'Save changes': 'Enregistrer',
+  'Save my new password': 'Enregistrer mon nouveau mot de passe',
   'Save your recovery code': 'Garde ton code de récupération',
   'Saved.': 'Enregistré.',
   'Saved. We sent a link to {email}: click it to confirm.':
@@ -248,6 +258,8 @@ export default {
   'Sleepy Zombie': 'Zombie endormi',
   'Smug Cat': 'Chat satisfait',
   'Sneaky Ninja': 'Ninja sournois',
+  'Someone asked to reset the password of your account. To choose a new one:':
+    "Quelqu'un a demandé à réinitialiser le mot de passe de ton compte. Pour en choisir un nouveau :",
   'Something went wrong on our side. Try again.':
     'Un problème est survenu de notre côté. Réessaie.',
   'Something went wrong. Try again.': 'Un problème est survenu. Réessaie.',
@@ -270,12 +282,16 @@ export default {
   'That is not your current password.': "Ce n'est pas ton mot de passe actuel.",
   'That is not your password.': "Ce n'est pas ton mot de passe.",
   'That player is no longer online.': "Ce joueur n'est plus en ligne.",
+  'That reset link has expired or was already used. Ask for a new one.':
+    'Ce lien de réinitialisation a expiré ou a déjà été utilisé. Demandes-en un nouveau.',
   'That square is taken.': 'Cette case est déjà prise.',
   'That username and recovery code don’t match.':
     "Ce nom d'utilisateur et ce code de récupération ne correspondent pas.",
   'That username is taken. Try another.': "Ce nom d'utilisateur est déjà pris. Essaie-en un autre.",
   'The GOAT': 'Le GOAT',
   'The game is busy. Try again.': 'La partie est occupée. Réessaie.',
+  'The link works for 1 hour. If you didn’t ask for this, ignore this email: your password stays the same.':
+    "Le lien fonctionne pendant 1 heure. Si tu n'as rien demandé, ignore cet e-mail : ton mot de passe reste le même.",
   'The link works for 24 hours. If you didn’t sign up, you can ignore this email.':
     "Le lien fonctionne pendant 24 heures. Si tu ne t'es pas inscrit, ignore cet e-mail.",
   'This deletes your profile, stats and games against the computer for good. Your online games stay in your opponents\' histories as "Deleted player".':
@@ -304,6 +320,7 @@ export default {
   'Unknown reaction.': 'Réaction inconnue.',
   'Unknown request.': 'Requête inconnue.',
   'Unknown rules.': 'Règles inconnues.',
+  'Use a recovery code instead': 'Utiliser plutôt un code de récupération',
   'Use at least 10 characters.': 'Utilise au moins 10 caractères.',
   'Use at most 128 characters.': 'Utilise au plus 128 caractères.',
   'Use letters only in your first name.': 'Utilise uniquement des lettres dans ton prénom.',
@@ -314,6 +331,7 @@ export default {
   'Use the recovery code you saved when you signed up. It lets you choose a new password.':
     "Utilise le code de récupération noté à l'inscription. Il te permet de choisir un nouveau mot de passe.",
   Username: "Nom d'utilisateur",
+  'Username or email': "Nom d'utilisateur ou e-mail",
   'Usernames are 3 to 20 characters.': "Les noms d'utilisateur font de 3 à 20 caractères.",
   'Waiting for {who} (3 marks)…': 'En attente de {who} (3 marques)…',
   'Waiting for {who}…': 'En attente de {who}…',
@@ -360,6 +378,8 @@ export default {
   'Your data': 'Tes données',
   'Your email is already confirmed.': 'Ton e-mail est déjà confirmé.',
   'Your move, {mark}': 'À toi de jouer, {mark}',
+  'Your new password is saved. Other devices have been logged out.':
+    'Ton nouveau mot de passe est enregistré. Tes autres appareils ont été déconnectés.',
   'Your password': 'Ton mot de passe',
   "Your password can't contain your username.":
     "Ton mot de passe ne peut pas contenir ton nom d'utilisateur.",

@@ -141,6 +141,20 @@ export function createUsers(db, dataKey) {
 
     emailHash: (email) => emailHash(email, dataKey),
 
+    // For a reset by email: the account with this username or email
+    // address, if its address is confirmed
+    async findConfirmed(login) {
+      const hash = login.includes('@') ? emailHash(login, dataKey) : null;
+      const { rows } = await db.query(
+        `SELECT ${COLUMNS}, password_hash FROM users
+         WHERE email_verified_at IS NOT NULL
+           AND (lower(username) = lower($1) OR email_hash = $2)
+         LIMIT 1`,
+        [login, hash],
+      );
+      return rows[0] ? { ...toProfile(rows[0]), passwordHash: rows[0].password_hash } : null;
+    },
+
     // For a password reset: the account and its recovery code's hash
     async findRecovery(username) {
       const { rows } = await db.query(

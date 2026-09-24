@@ -131,7 +131,7 @@ function setAuthTab(tab) {
     .forEach((b) => b.setAttribute('aria-selected', String(b.dataset.auth === tab)));
   $('loginForm').hidden = tab !== 'login';
   $('signupForm').hidden = tab !== 'signup';
-  $('resetForm').hidden = true;
+  for (const id of ['resetForm', 'resetMailForm', 'newPasswordForm']) $(id).hidden = true;
   const form = tab === 'login' ? $('loginForm') : $('signupForm');
   showErrors(form);
   form.elements[tab === 'login' ? 'username' : 'firstName'].focus();
@@ -279,12 +279,88 @@ function showRecovery(code, note = '') {
   $('recoveryDialog').showModal();
 }
 
-function showReset() {
-  const form = $('resetForm');
+// Shows one of the forms that replace the log-in form
+function showOnly(id) {
+  for (const f of ['loginForm', 'signupForm', 'resetForm', 'resetMailForm', 'newPasswordForm']) {
+    $(f).hidden = f !== id;
+  }
+  const form = $(id);
+  showErrors(form);
+  return form;
+}
+
+// Forgot your password: the email link first, a recovery code as the other way
+function showResetMail() {
+  const form = showOnly('resetMailForm');
   form.reset();
-  form.elements.username.value = $('loginForm').elements.username.value;
-  $('loginForm').hidden = true;
-  form.hidden = false;
+  form.elements.login.value = $('loginForm').elements.username.value;
+  form.elements.login.focus();
+}
+
+async function sendResetMail(e) {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const login = formData(form).login.trim();
+  if (!login) return showErrors(form, {}, 'Enter your username or email address.');
+  const res = await submit(form, () =>
+    api('POST', '/api/password-reset/email', { login }).then(() => true),
+  );
+  if (!res) return;
+  showErrors(
+    form,
+    {},
+    "If an account with a confirmed email matches, we've sent it a link. It works for 1 hour.",
+  );
+}
+
+// The link from the email opens the site with ?reset=<token>
+let resetToken = null;
+async function resetFromLink() {
+  const token = new URLSearchParams(location.search).get('reset');
+  if (!token) return false;
+  history.replaceState(null, '', location.pathname);
+  show('auth');
+  const { valid } = await api(
+    'GET',
+    `/api/password-reset/token?token=${encodeURIComponent(token)}`,
+  ).catch(() => ({ valid: false }));
+  if (!valid) {
+    setAuthTab('login');
+    showErrors(
+      $('loginForm'),
+      {},
+      'That reset link has expired or was already used. Ask for a new one.',
+    );
+    return true;
+  }
+  resetToken = token;
+  showOnly('newPasswordForm').elements.newPassword.focus();
+  return true;
+}
+
+async function saveNewPassword(e) {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const { newPassword } = formData(form);
+  const problem = passwordError(newPassword);
+  if (problem) return showErrors(form, { newPassword: problem });
+  const res = await submit(form, () =>
+    api('POST', '/api/password-reset/token', { token: resetToken, newPassword }),
+  );
+  if (!res) return;
+  resetToken = null;
+  form.reset();
+  signedIn(res.user);
+  setFlash('Your new password is saved. Other devices have been logged out.');
+}
+
+function showReset() {
+  const form = showOnly('resetForm');
+  form.reset();
+  // What they typed to get an email, unless it was an email address
+  const typed = $('resetMailForm').elements.login.value;
+  form.elements.username.value =
+    typed && !typed.includes('@') ? typed : $('loginForm').elements.username.value;
   showErrors(form);
   form.elements[form.elements.username.value ? 'recoveryCode' : 'username'].focus();
 }
@@ -458,8 +534,13 @@ export async function initAccount(callbacks) {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refreshIfPending();
   });
-  $('forgotBtn').addEventListener('click', showReset);
-  $('backToLogin').addEventListener('click', () => setAuthTab('login'));
+  $('forgotBtn').addEventListener('click', showResetMail);
+  $('useRecoveryCode').addEventListener('click', showReset);
+  document
+    .querySelectorAll('[data-back-login]')
+    .forEach((b) => b.addEventListener('click', () => setAuthTab('login')));
+  $('resetMailForm').addEventListener('submit', sendResetMail);
+  $('newPasswordForm').addEventListener('submit', saveNewPassword);
   $('resetForm').addEventListener('submit', resetPassword);
   $('recoveryForm').addEventListener('submit', newRecoveryCode);
   $('deleteForm').addEventListener('submit', deleteAccount);
@@ -485,6 +566,7 @@ export async function initAccount(callbacks) {
     signedOut();
   });
 
+  if (await resetFromLink()) return;
   const confirmed = await confirmFromLink();
   try {
     signedIn((await api('GET', '/api/me')).user);

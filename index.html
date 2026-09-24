@@ -64,6 +64,44 @@
           </div>
         </form>
 
+        <form class="form" id="resetMailForm" novalidate hidden>
+          <p class="help">
+            Enter your username or email. If your email is confirmed, we'll send you a link to
+            choose a new password.
+          </p>
+          <label class="field">
+            <span>Username or email</span>
+            <input
+              name="login"
+              autocomplete="username"
+              required
+              spellcheck="false"
+              autocapitalize="none"
+            />
+          </label>
+          <p class="form-msg" role="status"></p>
+          <div class="form-actions">
+            <button type="submit" class="btn primary">Email me a link</button>
+            <button type="button" class="btn ghostbtn" id="useRecoveryCode">
+              Use a recovery code instead
+            </button>
+            <button type="button" class="btn ghostbtn" data-back-login>Back to log in</button>
+          </div>
+        </form>
+
+        <form class="form" id="newPasswordForm" novalidate hidden>
+          <p class="help">Choose a new password for your account.</p>
+          <input name="username" autocomplete="username" hidden />
+          <label class="field">
+            <span>New password</span>
+            <input name="newPassword" type="password" autocomplete="new-password" required />
+            <small class="help">At least 10 characters. A few random words work well.</small>
+            <small class="err" data-err="newPassword"></small>
+          </label>
+          <p class="form-msg" role="alert"></p>
+          <button type="submit" class="btn primary">Save my new password</button>
+        </form>
+
         <form class="form" id="resetForm" novalidate hidden>
           <p class="help">
             Use the recovery code you saved when you signed up. It lets you choose a new password.
@@ -93,7 +131,7 @@
           <p class="form-msg" role="alert"></p>
           <div class="form-actions">
             <button type="submit" class="btn primary">Set new password</button>
-            <button type="button" class="btn ghostbtn" id="backToLogin">Back to log in</button>
+            <button type="button" class="btn ghostbtn" data-back-login>Back to log in</button>
           </div>
         </form>
 

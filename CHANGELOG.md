@@ -6,6 +6,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Reset your password by email.** "Forgot your password?" now sends a
+  link to your confirmed email address (it works once, for an hour, and
+  stops working if your password changes). Recovery codes still work:
+  choose "Use a recovery code instead".
+
 ## [1.7.0] - 2026-09-24
 
 ### Added
