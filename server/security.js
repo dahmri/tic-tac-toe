@@ -6,6 +6,7 @@ import {
   createCipheriv,
   createDecipheriv,
   createHash,
+  createHmac,
   randomBytes,
   randomInt,
   timingSafeEqual,
@@ -98,6 +99,10 @@ export function sameHash(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
   return timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
+
+// Keeps email addresses unique without storing them in plain form
+export const emailHash = (email, key) =>
+  createHmac('sha256', key).update(`email:${email.toLowerCase()}`).digest('base64url');
 
 // Session tokens: 256 random bits for the cookie; only their SHA-256 is
 // stored, so reading Redis doesn't give anyone a usable session

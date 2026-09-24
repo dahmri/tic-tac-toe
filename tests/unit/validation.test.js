@@ -12,6 +12,7 @@ const valid = {
   firstName: '  Anne-Marie ',
   lastName: "O'Brien",
   username: 'anne_m',
+  email: ' Anne@Example.org ',
   avatar: 'llama',
   birthDate: '1995-02-28',
   country: 'fr',
@@ -26,6 +27,7 @@ test('a complete registration is accepted and cleaned up', () => {
     firstName: 'Anne-Marie',
     lastName: "O'Brien",
     username: 'anne_m',
+    email: 'anne@example.org',
     avatar: 'llama',
     birthDate: '1995-02-28',
     country: 'FR',
@@ -123,4 +125,20 @@ test('an avatar from the list is required', () => {
   );
   assert.ok(validateRegistration({ ...valid, avatar: '<img>' }, TODAY).errors.avatar);
   assert.deepEqual(validateProfile({ avatar: 'robot' }, TODAY).value, { avatar: 'robot' });
+});
+
+test('emails: required, lowercased, and roughly the right shape', () => {
+  assert.equal(
+    validateRegistration({ ...valid, email: '' }, TODAY).errors.email,
+    'Enter your email address.',
+  );
+  for (const bad of ['anne', 'anne@', 'anne@example', 'an ne@example.org', 'a@b.c']) {
+    assert.ok(validateRegistration({ ...valid, email: bad }, TODAY).errors.email, bad);
+  }
+  assert.ok(
+    validateRegistration({ ...valid, email: `${'a'.repeat(250)}@x.org` }, TODAY).errors.email,
+  );
+  assert.deepEqual(validateProfile({ email: 'New@Mail.COM' }, TODAY).value, {
+    email: 'new@mail.com',
+  });
 });

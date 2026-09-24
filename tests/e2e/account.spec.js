@@ -1,4 +1,4 @@
-import { test, expect, newPlayer, signUp } from './fixtures.js';
+import { test, expect, emailToken, newPlayer, signUp } from './fixtures.js';
 
 test.describe('signed out', () => {
   test.use({ signedIn: false });
@@ -18,6 +18,7 @@ test.describe('signed out', () => {
     await form.getByLabel('First name').fill(p.firstName);
     await form.getByLabel('Last name').fill(p.lastName);
     await form.getByLabel('Username').fill(p.username);
+    await form.getByLabel('Email').fill(p.email);
     await form.getByTitle('Drama Llama').click();
     await form.getByLabel('Date of birth').fill(p.birthDate);
     await form.getByLabel('Country').selectOption('GB');
@@ -35,6 +36,23 @@ test.describe('signed out', () => {
     const code = await saveCode.locator('#recoveryCode').textContent();
     expect(code).toMatch(/^([A-Z2-9]{5}-){3}[A-Z2-9]{5}$/);
     await saveCode.getByRole('button', { name: "I've saved it" }).click();
+
+    // Online waits for the email to be confirmed
+    await expect(page.locator('#emailNotice')).toContainText(`the link we sent to ${p.email}`);
+    await page.getByRole('button', { name: 'Online', exact: true }).click();
+    await expect(page.locator('#guestLocked')).toContainText('Confirm your email to play online');
+    await page.locator('#emailNotice').getByRole('button', { name: 'Send it again' }).click();
+    await expect(page.locator('#emailNotice')).toContainText('Sent! Check your inbox');
+
+    // Clicking the link in the email confirms it
+    await page.goto(`/?verify=${await emailToken(page, p.email)}`);
+    await expect(page.locator('#emailNoticeText')).toHaveText(
+      'Email confirmed. You can play online now!',
+    );
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('#guestLocked')).toBeHidden();
+    await expect(page.locator('#lobby')).toBeVisible();
+    await page.getByRole('button', { name: 'vs Computer' }).click();
 
     // Still logged in after a reload: the session lives in a cookie
     await page.reload();
@@ -92,6 +110,7 @@ test.describe('signed out', () => {
     await form.getByLabel('First name').fill(p.firstName);
     await form.getByLabel('Last name').fill(p.lastName);
     await form.getByLabel('Username').fill(taken.username);
+    await form.getByLabel('Email').fill(p.email);
     await form.getByTitle('Top Banana').click();
     await form.getByLabel('Date of birth').fill(p.birthDate);
     await form.getByLabel('Country').selectOption('FR');
@@ -161,4 +180,53 @@ test('download your data, then delete the account', async ({ page, player }) => 
   await login.getByLabel('Password').fill(player.password);
   await login.getByRole('button', { name: 'Log in' }).click();
   await expect(login.getByRole('alert')).toHaveText('Wrong username or password.');
+});
+
+test('changing the email address means confirming the new one', async ({ page, player }) => {
+  await page.goto('/');
+  await expect(page.locator('#emailNotice')).toBeHidden();
+  await page.getByRole('button', { name: 'Profile' }).click();
+  const profile = page.locator('#profileForm');
+  await expect(profile.getByLabel('Email')).toHaveValue(player.email);
+  const next = `new_${player.email}`;
+  await profile.getByLabel('Email').fill(next);
+  await profile.getByRole('button', { name: 'Save changes' }).click();
+  await expect(profile.getByRole('status')).toContainText(`We sent a link to ${next}`);
+  await page
+    .getByRole('dialog', { name: 'Your profile' })
+    .getByRole('button', { name: 'Close' })
+    .click();
+  await expect(page.locator('#emailNotice')).toContainText(next);
+
+  // Confirmed in another tab: this one notices when it gets the focus back
+  const other = await page.context().newPage();
+  await other.goto(`/?verify=${await emailToken(page, next)}`);
+  await expect(other.locator('#emailNotice')).toContainText('Email confirmed');
+  await other.close();
+  await page.bringToFront();
+  await page.evaluate(() => globalThis.dispatchEvent(new Event('focus')));
+  await expect(page.locator('#emailNoticeText')).toHaveText(
+    'Email confirmed. You can play online now!',
+  );
+});
+
+test('players from before emails are asked to add one', async ({ page, player }) => {
+  // Play the account as one created before emails existed
+  await page.route('/api/me', async (route) => {
+    const res = await route.fetch();
+    const body = await res.json();
+    await route.fulfill({
+      response: res,
+      json: { user: { ...body.user, email: null, emailVerified: false } },
+    });
+  });
+  await page.goto('/');
+  await expect(page.locator('#meName')).toHaveText(player.username);
+  await expect(page.locator('#emailNoticeText')).toHaveText(
+    'Add your email address to play online.',
+  );
+  await page.getByRole('button', { name: 'Online', exact: true }).click();
+  await expect(page.locator('#guestLocked')).toContainText('Add your email to play online');
+  await page.locator('#emailNotice').getByRole('button', { name: 'Add my email' }).click();
+  await expect(page.locator('#profileForm').getByLabel('Email')).toBeFocused();
 });

@@ -119,6 +119,22 @@
             <small class="help">What other players see. Letters, numbers and _.</small>
             <small class="err" data-err="username"></small>
           </label>
+          <label class="field">
+            <span>Email</span>
+            <input
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              maxlength="254"
+              spellcheck="false"
+              autocapitalize="none"
+            />
+            <small class="help"
+              >We'll send you a link to confirm it. Other players never see it.</small
+            >
+            <small class="err" data-err="email"></small>
+          </label>
           <fieldset class="field avatar-field">
             <legend>Pick your avatar</legend>
             <div class="avatar-grid" data-avatars></div>
@@ -197,6 +213,11 @@
           </button>
         </div>
 
+        <div class="email-notice" id="emailNotice" hidden>
+          <p class="email-notice-text" id="emailNoticeText" role="status"></p>
+          <button id="emailAction" type="button" class="btn"></button>
+        </div>
+
         <div class="invites" id="invites" aria-live="polite"></div>
 
         <div class="controls">
@@ -239,8 +260,8 @@
         </div>
 
         <section class="guest-locked" id="guestLocked" aria-label="Online game" hidden>
-          <p class="guest-locked-title">🔒 Online games need a free account</p>
-          <p class="help">
+          <p class="guest-locked-title" id="lockedTitle">🔒 Online games need a free account</p>
+          <p class="help" id="lockedText">
             With an account you can play people around the world, get a rating, climb the
             leaderboard, keep your stats, and pick a funny avatar.
           </p>
@@ -362,6 +383,21 @@
             autocapitalize="none"
           />
           <small class="err" data-err="username"></small>
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input
+            name="email"
+            type="email"
+            autocomplete="email"
+            maxlength="254"
+            spellcheck="false"
+            autocapitalize="none"
+          />
+          <small class="help"
+            >A new address has to be confirmed again before you play online.</small
+          >
+          <small class="err" data-err="email"></small>
         </label>
         <fieldset class="field avatar-field">
           <legend>Avatar</legend>

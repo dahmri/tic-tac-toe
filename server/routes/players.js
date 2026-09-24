@@ -9,9 +9,12 @@ const MAX_LIMIT = 50;
 const MAX_OFFSET = 5000;
 
 export default async function playersRoutes(app) {
-  const { presence } = app.ctx;
+  const { presence, users } = app.ctx;
 
   app.get('/api/players/online', { preHandler: app.requireUser }, async (req, reply) => {
+    if (!(await users.publicProfile(req.userId))?.verified) {
+      return reply.code(403).send({ error: 'Confirm your email to play online.' });
+    }
     const country = String(req.query.country || '').toUpperCase() || null;
     if (country && !isCountryCode(country)) {
       return reply.code(400).send({ error: 'Unknown country.' });

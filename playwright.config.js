@@ -38,6 +38,7 @@ export default defineConfig({
           DATABASE_URL: process.env.E2E_DATABASE_URL || 'postgres://localhost/tictactoe_e2e',
           REDIS_URL: process.env.E2E_REDIS_URL || 'redis://127.0.0.1:6379/14',
           RATE_LIMITS: 'off', // every test signs up a new player
+          MAIL_OUTBOX: 'on', // tests read confirmation emails back
         },
         reuseExistingServer: !CI,
       },
