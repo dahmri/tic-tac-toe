@@ -4,6 +4,7 @@
 
 import { gameResult, replay } from './rules.js';
 import { markSVG } from './marks.js';
+import { t } from './i18n.js';
 
 const STEP_MS = 800;
 const $ = (id) => document.getElementById(id);
@@ -16,8 +17,8 @@ let cells = [];
 function stop() {
   clearInterval(timer);
   timer = null;
-  $('replayPlay').textContent = '▶ Play';
-  $('replayPlay').setAttribute('aria-label', 'Play');
+  $('replayPlay').textContent = t('▶ Play');
+  $('replayPlay').setAttribute('aria-label', t('Play'));
 }
 
 function show(n) {
@@ -33,12 +34,15 @@ function show(n) {
     c.classList.toggle('hit', !!end?.line?.includes(i));
     const row = Math.floor(i / 3) + 1;
     const col = (i % 3) + 1;
-    c.setAttribute('aria-label', `Row ${row}, column ${col}: ${v || 'empty'}`);
+    c.setAttribute(
+      'aria-label',
+      t('Row {row}, column {col}: {value}', { row, col, value: v || t('empty') }),
+    );
   });
   $('replayBoard').classList.toggle('won', !!end?.line);
   $('replayStep').textContent = step
-    ? `Move ${step} of ${game.squares.length}`
-    : `Start: ${game.starter} moves first`;
+    ? t('Move {n} of {total}', { n: step, total: game.squares.length })
+    : t('Start: {mark} moves first', { mark: game.starter });
   $('replayBack').disabled = $('replayFirst').disabled = step === 0;
   $('replayNext').disabled = $('replayLast').disabled = step === game.squares.length;
 }
@@ -46,8 +50,8 @@ function show(n) {
 function play() {
   if (timer) return stop();
   if (step === game.squares.length) show(0);
-  $('replayPlay').textContent = '⏸ Pause';
-  $('replayPlay').setAttribute('aria-label', 'Pause');
+  $('replayPlay').textContent = t('⏸ Pause');
+  $('replayPlay').setAttribute('aria-label', t('Pause'));
   timer = setInterval(() => {
     show(step + 1);
     if (step === game.squares.length) stop();

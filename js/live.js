@@ -2,6 +2,8 @@
 // reconnecting with a growing pause if the network drops, so a closed
 // laptop lid or a server restart heals by itself.
 
+import { lang } from './i18n.js';
+
 const PING_MS = 25_000; // keeps proxies from closing an idle connection
 const MAX_RETRY_MS = 15_000;
 
@@ -15,7 +17,8 @@ export function connectLive({ onMessage, onStatus }) {
 
   function open() {
     const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(`${scheme}://${location.host}/ws`);
+    // The server's messages come back in the page's language
+    ws = new WebSocket(`${scheme}://${location.host}/ws?lang=${lang()}`);
     onStatus(retries ? 'offline' : 'connecting');
 
     ws.addEventListener('open', () => {

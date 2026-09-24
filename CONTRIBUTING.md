@@ -118,3 +118,19 @@ Example: `fix(online): keep the guest's board locked until the host replies`
   DOM code so it stays testable.
 - Treat everything received over the network as untrusted and validate it in
   `protocol.js`.
+
+## Languages
+
+The site speaks English, French and Spanish (see
+[ARCHITECTURE.md](docs/ARCHITECTURE.md#languages)). When you add or change
+text players can see:
+
+- In `index.html`, just write English: the page's text is translated
+  automatically.
+- In scripts, wrap it: `t('{name} is thinking…', { name })`. Put names and
+  numbers in `{placeholders}`, never glue sentences together from pieces.
+- Server messages stay plain English sentences: they are translated on the
+  way out.
+- Add the translation to `js/locales/fr.js` and `js/locales/es.js`.
+  `npm test` fails and lists anything missing, stale, or with a
+  `{placeholder}` that doesn't match.

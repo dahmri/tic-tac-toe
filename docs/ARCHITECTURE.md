@@ -211,6 +211,29 @@ could make. "Unbeatable" must play perfectly (so a win against it is
 refused), "Casual" always takes a winning move. The server works out the
 result itself. They are counted apart from online games.
 
+## Languages
+
+The site is in English, French and Spanish. English text is the key:
+[`js/locales/fr.js`](../js/locales/fr.js) and `es.js` map each English
+sentence to its translation, and anything missing falls back to English.
+
+- **Choosing:** the menu in the header. The choice is saved in the
+  browser; the first visit follows the browser's own language.
+- **The page:** [`js/language.js`](../js/language.js) records the static
+  text of `index.html` once and translates it; switching language
+  translates it again, and each module redraws what it wrote with `t()`.
+  Country names and dates come from the browser (`Intl`), in the chosen
+  language.
+- **The server** writes its messages in English. Requests say the page's
+  language (`Accept-Language` on the API, `?lang=` on `/ws`), and a hook
+  translates `error` and `fields` on the way out. Messages with a name in
+  them are sent as a template (`'{name} is already playing.'`) with their
+  values. Confirmation emails go out in the language of the page that
+  asked for them.
+- **Completeness:** `tests/unit/i18n.test.js` finds every English text
+  (the page, `t()` calls, server and form messages, avatar names) and fails
+  if a translation is missing, stale, or loses a `{placeholder}`.
+
 ## API
 
 | Method   | Path                    | What it does                                          |

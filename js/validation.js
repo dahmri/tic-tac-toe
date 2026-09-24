@@ -25,18 +25,34 @@ const EMAIL_MAX = 254;
 
 const text = (v) => (typeof v === 'string' ? v.normalize('NFC').trim().replace(/\s+/g, ' ') : '');
 
-function checkName(value, label) {
+// Messages are whole sentences (not pieced together) so they can be
+// translated; the numbers in them match the limits above
+const NAME_MESSAGES = {
+  first: {
+    empty: 'Enter your first name.',
+    long: 'Keep your first name under 50 characters.',
+    letters: 'Use letters only in your first name.',
+  },
+  last: {
+    empty: 'Enter your last name.',
+    long: 'Keep your last name under 50 characters.',
+    letters: 'Use letters only in your last name.',
+  },
+};
+
+function checkName(value, which) {
   const v = text(value);
-  if (!v) return [v, `Enter your ${label}.`];
-  if ([...v].length > NAME_MAX) return [v, `Keep your ${label} under ${NAME_MAX} characters.`];
-  if (!NAME_RE.test(v)) return [v, `Use letters only in your ${label}.`];
+  const msg = NAME_MESSAGES[which];
+  if (!v) return [v, msg.empty];
+  if ([...v].length > NAME_MAX) return [v, msg.long];
+  if (!NAME_RE.test(v)) return [v, msg.letters];
   return [v, null];
 }
 
 function checkUsername(value) {
   const v = text(value);
   if (v.length < USERNAME_MIN || v.length > USERNAME_MAX) {
-    return [v, `Usernames are ${USERNAME_MIN} to ${USERNAME_MAX} characters.`];
+    return [v, 'Usernames are 3 to 20 characters.'];
   }
   if (!USERNAME_RE.test(v)) return [v, 'Use letters, numbers and _ only.'];
   return [v, null];
@@ -61,7 +77,7 @@ function checkBirthDate(value, today) {
     return [v, 'That date does not exist.'];
   }
   if (y < 1900 || date > today) return [v, 'Enter your real date of birth.'];
-  if (ageOn(v, today) < MIN_AGE) return [v, `You must be at least ${MIN_AGE} to play.`];
+  if (ageOn(v, today) < MIN_AGE) return [v, 'You must be at least 13 to play.'];
   return [v, null];
 }
 
@@ -98,9 +114,9 @@ function checkPhone(value) {
 
 export function passwordError(password, username = '') {
   if (typeof password !== 'string' || [...password].length < PASSWORD_MIN) {
-    return `Use at least ${PASSWORD_MIN} characters.`;
+    return 'Use at least 10 characters.';
   }
-  if ([...password].length > PASSWORD_MAX) return `Use at most ${PASSWORD_MAX} characters.`;
+  if ([...password].length > PASSWORD_MAX) return 'Use at most 128 characters.';
   if (username && password.toLowerCase().includes(username.toLowerCase())) {
     return "Your password can't contain your username.";
   }
@@ -108,8 +124,8 @@ export function passwordError(password, username = '') {
 }
 
 const PROFILE_CHECKS = {
-  firstName: (v) => checkName(v, 'first name'),
-  lastName: (v) => checkName(v, 'last name'),
+  firstName: (v) => checkName(v, 'first'),
+  lastName: (v) => checkName(v, 'last'),
   username: checkUsername,
   email: checkEmail,
   avatar: checkAvatar,

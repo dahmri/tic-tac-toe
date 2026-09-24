@@ -13,6 +13,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   Spiky Hugger 🦔, Fancy Flamingo 🦩, The GOAT 🐐, Sleepy Zombie 🧟, Sneaky
   Ninja 🥷, Pocket Wizard 🧙, Pirate Parrot 🦜, Stone Face 🗿, Big Cheese 🧀,
   Turbo Snail 🐌, Crabby Pants 🦀, Tiny Dragon 🐉 and Cheeky Monkey 🙈.
+- **Français and Español.** The whole site is now also in French and
+  Spanish: pick the language in the menu at the top right. Your choice is
+  remembered, and on a first visit the site follows your browser's
+  language. Everything is translated, including messages from the server,
+  country names and dates, and the confirmation email.
 
 ## [1.6.0] - 2026-09-24
 

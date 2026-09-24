@@ -17,6 +17,7 @@ import { InviteError } from '../invites.js';
 import { MatchError } from '../matches.js';
 import { symbolOf } from '../match.js';
 import { isReaction } from '../../js/reactions.js';
+import { pickLang, translate } from '../../js/i18n.js';
 
 const HEARTBEAT_MS = 30_000;
 const MAX_MESSAGES_PER_10S = 60;
@@ -158,8 +159,15 @@ export default async function liveRoutes(app) {
     const { id, username, country, avatar, rating } = req.profile;
     const me = { id, username, country, avatar, rating };
 
-    const send = (msg) => {
-      if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(msg));
+    // Error messages in the page's language (/ws?lang=fr)
+    const lang = pickLang(req.query.lang);
+    const send = ({ template, vars, ...msg }) => {
+      if (socket.readyState !== socket.OPEN) return;
+      const out =
+        msg.t === 'error' && lang !== 'en'
+          ? { ...msg, message: translate(lang, template ?? msg.message, vars) }
+          : msg;
+      socket.send(JSON.stringify(out));
     };
     socket.alive = true;
     socket.on('pong', () => {
@@ -220,7 +228,13 @@ export default async function liveRoutes(app) {
         if (reply?.t) send(reply);
       } catch (err) {
         if (err instanceof InviteError || err instanceof MatchError) {
-          send({ t: 'error', message: err.message, re: msg.t });
+          send({
+            t: 'error',
+            message: err.message,
+            template: err.template,
+            vars: err.vars,
+            re: msg.t,
+          });
         } else {
           app.log.error(err);
           send({ t: 'error', message: 'Something went wrong on our side. Try again.', re: msg.t });
