@@ -81,8 +81,8 @@ function renderSummary({ stats, opponents }) {
     ['Win rate as O', `${pct(o.asO.winRate)} of ${o.asO.played}`],
     ['Fastest win', o.fastestWin ? `${o.fastestWin} moves` : '—'],
     ['Opponents', String(opponents.total)],
-    ['Won when they left', String(o.winsByForfeit)],
-    ['Left mid-round', String(o.lossesByForfeit)],
+    ['Won when they left or timed out', String(o.winsByForfeit)],
+    ['Left or ran out of time', String(o.lossesByForfeit)],
     ['Playing since', since],
   ]);
 

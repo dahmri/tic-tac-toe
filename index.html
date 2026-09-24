@@ -246,11 +246,14 @@
               <button id="leave" type="button" class="btn ghostbtn">Leave</button>
             </div>
             <p class="room-role" id="roomRole"></p>
+            <div class="reactions" id="reactions" role="group" aria-label="Send a reaction"></div>
           </div>
           <p class="net-msg" id="netMsg" role="alert"></p>
+          <p class="sr-only" id="reactionSaid" aria-live="polite"></p>
         </section>
 
         <p class="status" id="status" aria-live="polite"></p>
+        <p class="turn-clock" id="turnClock" hidden></p>
 
         <div class="board" id="board">
           <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
@@ -261,6 +264,7 @@
           </svg>
           <svg class="winline" id="winline" viewBox="0 0 300 300" aria-hidden="true"></svg>
           <svg class="confetti" id="confetti" viewBox="0 0 300 300" aria-hidden="true"></svg>
+          <div class="reaction-feed" id="reactionFeed" aria-hidden="true"></div>
         </div>
 
         <section class="scores" aria-label="Score">

@@ -4,19 +4,24 @@
 // Browser -> server: { t: 'invite', to, variant? } | { t: 'invite-accept', id }
 //   | { t: 'invite-decline', id } | { t: 'invite-cancel', id }
 //   | { t: 'move', match, square } | { t: 'next-round', match }
-//   | { t: 'leave', match } | { t: 'queue-join', variant? } | { t: 'queue-leave' } | { t: 'ping' }
+//   | { t: 'leave', match } | { t: 'queue-join', variant? } | { t: 'queue-leave' }
+//   | { t: 'react', match, emoji } | { t: 'ping' }
 // Server -> browser: { t: 'hello', me, match, invites, waiting } | { t: 'match', match }
 //   | { t: 'queue', waiting } | { t: 'ratings', match, round, ratings }
 //   | { t: 'invite', invite } | { t: 'invite-sent', invite }
 //   | { t: 'invite-declined', id, by } | { t: 'invite-gone', id }
+//   | { t: 'reaction', match, from, emoji }
 //   | { t: 'error', message } | { t: 'pong' }
 
 import { InviteError } from '../invites.js';
 import { MatchError } from '../matches.js';
+import { symbolOf } from '../match.js';
+import { isReaction } from '../../js/reactions.js';
 
 const HEARTBEAT_MS = 30_000;
 const MAX_MESSAGES_PER_10S = 60;
 const QUEUE_RETRY_MS = 3_000; // waiting players look again this often
+const REACTION_GAP_MS = 1_500; // one reaction per player this often, at most
 
 export default async function liveRoutes(app) {
   const { presence, bus, invites, matches, matchmaking, users, config } = app.ctx;
@@ -81,6 +86,24 @@ export default async function liveRoutes(app) {
     leaveTimers.set(userId, timer);
   }
 
+  // Relays a reaction to both players of the match (the sender's other
+  // tabs show it too). Extra ones inside the gap are quietly dropped.
+  async function react(me, msg) {
+    if (!isReaction(msg.emoji)) return { t: 'error', message: 'Unknown reaction.' };
+    if (typeof msg.match !== 'string' || msg.match.length > 64) {
+      throw new MatchError('This game has ended.');
+    }
+    const match = await matches.get(msg.match);
+    if (!match || match.ended || !symbolOf(match, me.id)) {
+      throw new MatchError('This game has ended.');
+    }
+    const first = await app.ctx.redis.set(`react:${me.id}`, '1', 'PX', REACTION_GAP_MS, 'NX');
+    if (!first) return null;
+    const out = { t: 'reaction', match: match.id, from: me.id, emoji: msg.emoji };
+    await Promise.all([bus.send(match.players.X.id, out), bus.send(match.players.O.id, out)]);
+    return null;
+  }
+
   async function handle(me, msg) {
     switch (msg.t) {
       case 'ping':
@@ -108,6 +131,8 @@ export default async function liveRoutes(app) {
         return null;
       case 'queue-leave':
         return matchmaking.leave(me.id);
+      case 'react':
+        return react(me, msg);
       default:
         return { t: 'error', message: 'Unknown request.' };
     }

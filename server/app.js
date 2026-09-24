@@ -53,7 +53,11 @@ export async function buildApp({ config, db, redis }) {
       app.log.error({ err }, 'Could not announce new ratings');
     }
   }
-  const matches = createMatches(redis, { bus, onRoundFinished: roundFinished });
+  const matches = createMatches(redis, {
+    bus,
+    onRoundFinished: roundFinished,
+    turnMs: config.turnMs,
+  });
   app.decorate('ctx', {
     config,
     db,
@@ -74,8 +78,14 @@ export async function buildApp({ config, db, redis }) {
     stats.retryPending().catch((err) => app.log.error({ err }, 'Retrying game records failed'));
   }, 30_000);
   retry.unref();
+  // Players who ran out of time lose the round
+  const turnClock = setInterval(() => {
+    matches.sweep().catch((err) => app.log.error({ err }, 'Turn clock sweep failed'));
+  }, 1000);
+  turnClock.unref();
   app.addHook('onClose', () => {
     clearInterval(retry);
+    clearInterval(turnClock);
     return bus.close();
   });
 
