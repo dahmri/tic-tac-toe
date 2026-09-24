@@ -42,7 +42,13 @@ export const opponent = () => (match ? match.players[other(mySymbol())] : null);
 export const matchMoves = () => match?.moves.length ?? 0;
 const ratingOf = (p) => ratings.get(p.id) ?? p.rating;
 // The rules on the board: an online match's own, otherwise the player's choice
-export const variant = () => (online() && match ? (match.variant ?? 'classic') : settings.variant);
+// (the daily puzzle is always classic)
+export const variant = () =>
+  online() && match
+    ? (match.variant ?? 'classic')
+    : settings.mode === 'puzzle'
+      ? 'classic'
+      : settings.variant;
 
 // The player whose turn it is may move, if the connection is up
 export const canMove = () => inMatch() && isConnected() && game.turn === mySymbol();

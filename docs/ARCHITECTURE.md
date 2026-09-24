@@ -241,32 +241,34 @@ sentence to its translation, and anything missing falls back to English.
 
 ## API
 
-| Method   | Path                        | What it does                                             |
-| -------- | --------------------------- | -------------------------------------------------------- |
-| `POST`   | `/api/account`              | Create an account and log in                             |
-| `POST`   | `/api/session`              | Log in                                                   |
-| `DELETE` | `/api/session`              | Log out                                                  |
-| `GET`    | `/api/me`                   | Your profile                                             |
-| `PATCH`  | `/api/me`                   | Change any profile fields                                |
-| `PUT`    | `/api/me/password`          | Change password (logs out your other devices)            |
-| `POST`   | `/api/me/recovery-code`     | A new recovery code (needs the password)                 |
-| `POST`   | `/api/password-reset`       | Forgotten password: username + recovery code             |
-| `POST`   | `/api/password-reset/email` | Email a reset link: `{ login }` (same answer either way) |
-| `POST`   | `/api/password-reset/token` | New password from that link: `{ token, newPassword }`    |
-| `GET`    | `/api/me/export`            | Everything stored about you, as a JSON download          |
-| `DELETE` | `/api/me`                   | Delete your account (needs the password)                 |
-| `POST`   | `/api/me/email/resend`      | Send the confirmation email again                        |
-| `POST`   | `/api/email/verify`         | Confirm an address: `{ token }` from the email link      |
-| `GET`    | `/api/players/online`       | Online players: `?country=FR&offset=0&limit=30`          |
-| `GET`    | `/api/friends`              | Your friends, with whether they're online or playing     |
-| `POST`   | `/api/friends`              | Add a friend: `{ id }` or `{ username }`                 |
-| `DELETE` | `/api/friends/:id`          | Remove a friend                                          |
-| `GET`    | `/api/me/stats`             | Your totals, streaks and most played opponents           |
-| `GET`    | `/api/me/games`             | Your game history, newest first: `?cursor=&limit=20`     |
-| `POST`   | `/api/games/cpu`            | Record a finished game against the computer              |
-| `GET`    | `/api/leaderboard`          | Best ratings, public: `?country=FR&offset=0&limit=20`    |
-| `GET`    | `/ws`                       | The live connection (WebSocket), see above               |
-| `GET`    | `/api/health`               | `{ ok: true }` when PostgreSQL and Redis answer          |
+| Method   | Path                        | What it does                                              |
+| -------- | --------------------------- | --------------------------------------------------------- |
+| `POST`   | `/api/account`              | Create an account and log in                              |
+| `POST`   | `/api/session`              | Log in                                                    |
+| `DELETE` | `/api/session`              | Log out                                                   |
+| `GET`    | `/api/me`                   | Your profile                                              |
+| `PATCH`  | `/api/me`                   | Change any profile fields                                 |
+| `PUT`    | `/api/me/password`          | Change password (logs out your other devices)             |
+| `POST`   | `/api/me/recovery-code`     | A new recovery code (needs the password)                  |
+| `POST`   | `/api/password-reset`       | Forgotten password: username + recovery code              |
+| `POST`   | `/api/password-reset/email` | Email a reset link: `{ login }` (same answer either way)  |
+| `POST`   | `/api/password-reset/token` | New password from that link: `{ token, newPassword }`     |
+| `GET`    | `/api/me/export`            | Everything stored about you, as a JSON download           |
+| `DELETE` | `/api/me`                   | Delete your account (needs the password)                  |
+| `POST`   | `/api/me/email/resend`      | Send the confirmation email again                         |
+| `POST`   | `/api/email/verify`         | Confirm an address: `{ token }` from the email link       |
+| `GET`    | `/api/players/online`       | Online players: `?country=FR&offset=0&limit=30`           |
+| `GET`    | `/api/friends`              | Your friends, with whether they're online or playing      |
+| `POST`   | `/api/friends`              | Add a friend: `{ id }` or `{ username }`                  |
+| `DELETE` | `/api/friends/:id`          | Remove a friend                                           |
+| `GET`    | `/api/me/stats`             | Your totals, streaks and most played opponents            |
+| `GET`    | `/api/me/games`             | Your game history, newest first: `?cursor=&limit=20`      |
+| `POST`   | `/api/games/cpu`            | Record a finished game against the computer               |
+| `GET`    | `/api/puzzle?day=`          | Your daily puzzle result and streaks                      |
+| `POST`   | `/api/puzzle/:day`          | A try at the day's puzzle: `{ moves }` (the first counts) |
+| `GET`    | `/api/leaderboard`          | Best ratings, public: `?country=FR&offset=0&limit=20`     |
+| `GET`    | `/ws`                       | The live connection (WebSocket), see above                |
+| `GET`    | `/api/health`               | `{ ok: true }` when PostgreSQL and Redis answer           |
 
 Errors are JSON: `{ "error": "message", "fields": { "username": "message" } }`.
 

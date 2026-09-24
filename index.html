@@ -274,6 +274,9 @@
             <button id="mode-online" type="button" data-mode="online" aria-pressed="false">
               Online
             </button>
+            <button id="mode-puzzle" type="button" data-mode="puzzle" aria-pressed="false">
+              🧩 Puzzle
+            </button>
           </div>
           <div class="seg" role="group" aria-label="Difficulty" id="diffGroup">
             <button id="diff-casual" type="button" data-diff="casual" aria-pressed="true">
@@ -377,6 +380,10 @@
 
         <p class="status" id="status" aria-live="polite"></p>
         <p class="turn-clock" id="turnClock" hidden></p>
+        <div class="puzzle-info" id="puzzleInfo" hidden>
+          <p class="puzzle-note" id="puzzleNote" role="status"></p>
+          <button id="puzzleAgain" type="button" class="btn ghostbtn" hidden>Practice again</button>
+        </div>
 
         <div class="board" id="board">
           <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">

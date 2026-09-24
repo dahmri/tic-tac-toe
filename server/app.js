@@ -19,12 +19,14 @@ import { createMailer } from './mailer.js';
 import { createEmailVerification } from './email-verification.js';
 import { createPasswordReset } from './password-reset.js';
 import { createFriends } from './friends.js';
+import { createPuzzles } from './puzzles.js';
 import { pickLang, translate } from '../js/i18n.js';
 import accountRoutes from './routes/account.js';
 import playersRoutes from './routes/players.js';
 import liveRoutes from './routes/live.js';
 import statsRoutes from './routes/stats.js';
 import friendsRoutes from './routes/friends.js';
+import puzzleRoutes from './routes/puzzles.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -75,6 +77,7 @@ export async function buildApp({ config, db, redis }) {
     emailVerification: createEmailVerification({ redis, mailer, users }),
     passwordReset: createPasswordReset({ redis, mailer, users }),
     friends: createFriends(db, redis),
+    puzzles: createPuzzles(db),
     sessions: createSessions(redis),
     rateLimit: createRateLimiter(redis, config.rateLimits),
     presence,
@@ -187,6 +190,7 @@ export async function buildApp({ config, db, redis }) {
   await app.register(liveRoutes);
   await app.register(statsRoutes);
   await app.register(friendsRoutes);
+  await app.register(puzzleRoutes);
 
   app.setNotFoundHandler((req, reply) => reply.code(404).send({ error: 'Not found.' }));
 

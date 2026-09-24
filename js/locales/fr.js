@@ -8,8 +8,12 @@ export default {
   '3-mark rules.': 'Règle des 3 marques.',
   "<mark>Cat's game.</mark> Nobody wins.": '<mark>Match nul.</mark> Personne ne gagne.',
   '<mark>Computer wins.</mark> Go again?': "<mark>L'ordinateur gagne.</mark> On recommence ?",
+  '<mark>Good move!</mark> Now finish it.': '<mark>Bien joué !</mark> Maintenant, termine.',
+  '<mark>Not this time.</mark> The winning move was row {row}, column {col}.':
+    '<mark>Pas cette fois.</mark> Le coup gagnant était ligne {row}, colonne {col}.',
   '<mark>Out of time.</mark> {name} wins the round.':
     '<mark>Temps écoulé.</mark> {name} gagne la manche.',
+  '<mark>Solved!</mark> 🧩': '<mark>Résolu !</mark> 🧩',
   '<mark>You win!</mark> Nice line.': '<mark>Tu as gagné !</mark> Belle ligne.',
   '<mark>You win!</mark> {name} left.': '<mark>Tu as gagné !</mark> {name} est parti.',
   '<mark>You win!</mark> {name} ran out of time.':
@@ -84,6 +88,8 @@ export default {
   'Cross-site connection refused.': 'Connexion depuis un autre site refusée.',
   'Cross-site request refused.': 'Requête depuis un autre site refusée.',
   'Current password': 'Mot de passe actuel',
+  'Daily puzzle: win in 2 moves. You play {mark}.':
+    'Défi du jour : gagne en 2 coups. Tu joues les {mark}.',
   'Date of birth': 'Date de naissance',
   Decline: 'Refuser',
   'Delete account': 'Supprimer le compte',
@@ -179,6 +185,7 @@ export default {
   'Mystery Guest': 'Invité mystère',
   'New code made. Your old one no longer works.': "Nouveau code créé. L'ancien ne fonctionne plus.",
   'New password': 'Nouveau mot de passe',
+  'New puzzle tomorrow!': 'Nouveau défi demain !',
   'New round': 'Nouvelle manche',
   Next: 'Suivant',
   'Night Owl': 'Oiseau de nuit',
@@ -233,6 +240,9 @@ export default {
   'Playing since': 'Joue depuis',
   'Please log in.': "Connecte-toi, s'il te plaît.",
   'Pocket Wizard': 'Sorcier de poche',
+  'Practice again': "S'entraîner encore",
+  "Practice: only the day's first try counts. New puzzle tomorrow!":
+    'Entraînement : seul le premier essai du jour compte. Nouveau défi demain !',
   Profile: 'Profil',
   Rank: 'Rang',
   Rating: 'Classement Elo',
@@ -427,4 +437,7 @@ export default {
   '✉️ Confirm your email to play online': '✉️ Confirme ton e-mail pour jouer en ligne',
   '🌍 Whole world': '🌍 Monde entier',
   '🔒 Online games need a free account': '🔒 Les parties en ligne demandent un compte gratuit',
+  '🔥 Streak: {n} · Best: {best} · Solved: {total}':
+    '🔥 Série : {n} · Record : {best} · Résolus : {total}',
+  '🧩 Puzzle': '🧩 Défi',
 };
