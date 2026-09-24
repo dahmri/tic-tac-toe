@@ -57,12 +57,26 @@ POSTGRES_PASSWORD=$(openssl rand -hex 24)
 DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)
 WEB_PORT=8080
 API_REPLICAS=2
+SITE_URL=https://tictactoe.example.com
+SMTP_HOST=smtp.your-provider.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+MAIL_FROM="Pencil Tic-Tac-Toe <no-reply@tictactoe.example.com>"
 EOF
 chmod 600 /srv/tic-tac-toe/.env
 ```
 
+`SITE_URL` is the site's public address: the links in confirmation emails
+point there. The `SMTP_*` settings come from your email provider (Brevo,
+Mailgun, Postmark, Amazon SES, Resend and most others offer SMTP). Players
+must confirm their email to play online, so without SMTP settings nobody
+can. Emails are then only written to the api's log (`docker compose logs
+api`). Send from a domain you control, and add the SPF and DKIM records
+your provider gives you, or the emails will land in spam.
+
 **Back up `DATA_ENCRYPTION_KEY` somewhere safe** (a password manager). It
-encrypts players' names, birth dates and phone numbers; without it that data
+encrypts players' names, email addresses, birth dates and phone numbers; without it that data
 can't be read, and changing it makes existing accounts unreadable.
 
 ### 3. HTTPS
@@ -119,7 +133,7 @@ Delete the local `deploy_key` files once the secret is saved.
 On any machine with Docker:
 
 ```sh
-cp .env.example .env        # then fill in the two secrets
+cp .env.example .env        # then fill in the secrets and SITE_URL
 docker compose up -d --build
 curl http://localhost:8080/api/health
 docker compose logs -f api  # follow the game server's log

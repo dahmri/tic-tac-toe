@@ -138,8 +138,9 @@ export default async function liveRoutes(app) {
     }
   }
 
-  // Refuse before the WebSocket handshake: other sites' pages, and anyone
-  // not logged in, never get a connection
+  // Refuse before the WebSocket handshake: other sites' pages, anyone not
+  // logged in, and players who haven't confirmed their email never get a
+  // connection
   async function admit(req, reply) {
     const origin = req.headers.origin;
     const own = `${req.protocol}://${req.host}`;
@@ -148,6 +149,9 @@ export default async function liveRoutes(app) {
     }
     req.profile = req.userId ? await users.publicProfile(req.userId) : null;
     if (!req.profile) return reply.code(401).send({ error: 'Please log in.' });
+    if (!req.profile.verified) {
+      return reply.code(403).send({ error: 'Confirm your email to play online.' });
+    }
   }
 
   app.get('/ws', { websocket: true, preHandler: admit }, async (socket, req) => {

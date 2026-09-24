@@ -19,8 +19,31 @@ export function loadConfig(env = process.env) {
     );
   }
 
+  // Links in emails point here. Never taken from the request in
+  // production: a forged Host header could otherwise aim them elsewhere.
+  const siteUrl = (env.SITE_URL || '').replace(/\/+$/, '');
+  if (production && !/^https?:\/\//.test(siteUrl)) {
+    throw new Error('SITE_URL must be set in production, e.g. https://tictactoe.example.com');
+  }
+  const mailOutbox = env.MAIL_OUTBOX === 'on';
+  if (mailOutbox && env.SMTP_HOST) {
+    throw new Error('MAIL_OUTBOX is for tests only: turn it off when SMTP_HOST is set');
+  }
+
   return {
     production,
+    siteUrl,
+    // Email (see server/mailer.js)
+    smtp: {
+      host: env.SMTP_HOST || '',
+      port: Number(env.SMTP_PORT) || 587,
+      // true for port 465 (TLS from the start); 587 upgrades with STARTTLS
+      secure: env.SMTP_SECURE ? env.SMTP_SECURE === 'true' : Number(env.SMTP_PORT) === 465,
+      user: env.SMTP_USER || '',
+      pass: env.SMTP_PASS || '',
+    },
+    mailFrom: env.MAIL_FROM || 'Pencil Tic-Tac-Toe <no-reply@localhost>',
+    mailOutbox,
     host: env.HOST || '127.0.0.1',
     port: Number(env.PORT) || 8000,
     databaseUrl: env.DATABASE_URL || 'postgres://localhost/tictactoe',

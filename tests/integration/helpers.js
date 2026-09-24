@@ -14,6 +14,7 @@ export async function setup(env = {}) {
     REDIS_URL: process.env.TEST_REDIS_URL || 'redis://127.0.0.1:6379/15',
     LOG_LEVEL: 'silent',
     RATE_LIMITS: 'off', // rate-limit.test.js turns them back on
+    MAIL_OUTBOX: 'on', // emails land in Redis, where tests read them
     ...env,
   });
   const db = createDb(config);
@@ -39,10 +40,12 @@ export async function setup(env = {}) {
 let counter = 0;
 export function newPlayer(overrides = {}) {
   counter++;
+  const username = `player_${process.pid % 10000}_${counter}`;
   return {
     firstName: 'Test',
     lastName: 'Player',
-    username: `player_${process.pid % 10000}_${counter}`,
+    username,
+    email: `${username}@example.com`,
     avatar: 'octopus',
     birthDate: '1990-05-17',
     country: 'FR',
@@ -157,13 +160,19 @@ export async function startMatch(app, x, o) {
   };
 }
 
-// Signs up a new player and returns their API client
-export async function player(app, overrides = {}) {
+// Signs up a new player and returns their API client. Their email is
+// confirmed straight away (most tests play online) unless `confirmed: false`.
+export async function player(app, { confirmed = true, ...overrides } = {}) {
   const c = client(app);
   const details = newPlayer(overrides);
   const res = await c.post('/api/account', details);
   if (res.status !== 201) throw new Error(JSON.stringify(res.body));
-  return Object.assign(c, { user: res.body.user });
+  if (confirmed) {
+    await app.ctx.db.query('UPDATE users SET email_verified_at = now() WHERE id = $1', [
+      res.body.user.id,
+    ]);
+  }
+  return Object.assign(c, { user: res.body.user, details });
 }
 
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
