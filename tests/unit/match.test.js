@@ -141,3 +141,17 @@ test('classic is the default and fills the board', () => {
   const { match } = play(m, [0, 1, 2, 4, 3, 5, 7, 6, 8]);
   assert.equal(match.result, 'D');
 });
+
+test('running out of time gives the round to the other player', async () => {
+  const { timeUp } = await import('../../server/match.js');
+  const m = newMatch({ id: 't1', x: ann, o: bob, turnMs: 30_000, now: 1000 });
+  assert.equal(m.deadline, 31_000);
+  assert.equal(timeUp(m, 30_999).match, m, 'not yet');
+  const { match, finished } = timeUp(m, 31_000);
+  assert.equal(match.result, 'O');
+  assert.equal(match.timeout, true);
+  assert.equal(finished.forfeit, true);
+  const moved = applyMove(m, 1, 4, 5000).match;
+  assert.equal(moved.deadline, 35_000, 'each move restarts the clock');
+  assert.equal(nextRound(match, 1, 40_000).match.deadline, 70_000);
+});

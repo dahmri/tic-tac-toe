@@ -20,6 +20,7 @@ import { initStats, recordCpuGame, signed } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initReplay } from './replay.js';
 import { setSound, sound, soundOn } from './sound.js';
+import { REACTIONS } from './reactions.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
@@ -58,6 +59,8 @@ let match = null;
 // lost in the round that just ended ({ match, round, change: { id: n } })
 const ratings = new Map();
 let lastRound = null;
+// When the player to move runs out of time (local clock), or null
+let turnEndsAt = null;
 
 const online = () => state.mode === 'online';
 // Guests can pick Online, but only see what an account would unlock
@@ -150,6 +153,11 @@ function statusHTML() {
   if (online() && over) {
     const change = roundChange();
     const points = change === null ? '' : ` ${deltaHTML(change)}`;
+    if (match.timeout) {
+      return match.result === mySymbol()
+        ? `<mark>You win!</mark> ${rival} ran out of time.${points}`
+        : `<mark>Out of time.</mark> ${rival} wins the round.${points}`;
+    }
     if (match.forfeit) {
       return match.result === mySymbol()
         ? `<mark>You win!</mark> ${rival} left.${points}`
@@ -269,6 +277,7 @@ function render() {
   setLobby({ visible: online() && !guestLocked() && !$('gameView').hidden, inMatch: inMatch() });
   renderMe();
 
+  renderClock();
   tally($('tX'), state.scores.X);
   tally($('tO'), state.scores.O);
   tally($('tD'), state.scores.D);
@@ -512,6 +521,8 @@ function showMatch(next) {
     save();
   }
   if (newRound) resetBoard();
+  turnEndsAt =
+    next.turnLeft === null || next.turnLeft === undefined ? null : Date.now() + next.turnLeft;
   board = next.board.slice();
   marks = replay(next.moves, next.starter, next.variant ?? 'classic').marks;
   turn = next.turn;
@@ -572,6 +583,9 @@ function onLiveMessage(msg) {
     case 'match':
       onMatch(msg.match);
       return;
+    case 'reaction':
+      if (msg.match === match?.id) showReaction(msg);
+      return;
     case 'ratings': {
       const change = {};
       for (const [id, r] of Object.entries(msg.ratings)) {
@@ -614,6 +628,48 @@ function goOffline() {
   lastRound = null;
   resetLobby();
 }
+
+/* ---------- Turn clock and reactions ---------- */
+
+// Seconds left for the move, shown under the status; the server decides
+// when time is up, this is only the countdown
+function renderClock() {
+  const el = $('turnClock');
+  const running = inMatch() && !over && turnEndsAt !== null && liveStatus === 'online';
+  el.hidden = !running;
+  if (!running) return;
+  const secs = Math.max(0, Math.ceil((turnEndsAt - Date.now()) / 1000));
+  const who = turn === mySymbol() ? 'Your time' : `${opponent().username}'s time`;
+  el.textContent = `⏱ ${who}: ${secs}s`;
+  el.classList.toggle('low', secs <= 10);
+}
+setInterval(() => {
+  if (!$('turnClock').hidden) renderClock();
+}, 250);
+
+function showReaction({ from, emoji }) {
+  const mine = from === me?.id;
+  const bubble = document.createElement('span');
+  bubble.className = `bubble ${mine ? 'mine' : 'theirs'}`;
+  bubble.textContent = emoji;
+  $('reactionFeed').append(bubble);
+  setTimeout(() => bubble.remove(), 2400);
+  $('reactionSaid').textContent = `${mine ? 'You' : opponent()?.username}: ${emoji}`;
+}
+
+$('reactions').replaceChildren(
+  ...REACTIONS.map((emoji) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn ghostbtn react';
+    b.textContent = emoji;
+    b.setAttribute('aria-label', `React ${emoji}`);
+    b.addEventListener('click', () => {
+      if (inMatch()) live.send({ t: 'react', match: match.id, emoji });
+    });
+    return b;
+  }),
+);
 
 /* ---------- Wiring ---------- */
 

@@ -24,6 +24,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
   online.
 - **Replays.** Every game in your Stats history has a **Replay** button:
   watch it play back move by move, or step through it with the controls.
+- **Move clock online.** Each player has 30 seconds per move in an online
+  match, shown as a countdown under the status (red for the last 10).
+  Running out of time loses the round, so nobody can stall a game.
+- **Reactions online.** Send a quick 👍 👏 😂 😮 😱 🔥 🤝 😅 during a match.
+  It floats up over the board for both players. Only these emoji can be
+  sent, and at most one every 1.5 seconds.
 
 ## [1.4.0] - 2026-09-24
 
