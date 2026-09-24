@@ -7,6 +7,9 @@ on:
   push:
     branches: [dev]
   workflow_call:
+  # Started on main by the Deploy workflow after a release, so the checks
+  # show on main's commit for the PR that brings the release into test
+  workflow_dispatch:
 
 permissions:
   contents: read
