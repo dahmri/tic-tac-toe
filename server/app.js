@@ -17,6 +17,7 @@ import { createStats } from './stats.js';
 import { createMatchmaking } from './matchmaking.js';
 import { createMailer } from './mailer.js';
 import { createEmailVerification } from './email-verification.js';
+import { createPasswordReset } from './password-reset.js';
 import { pickLang, translate } from '../js/i18n.js';
 import accountRoutes from './routes/account.js';
 import playersRoutes from './routes/players.js';
@@ -70,6 +71,7 @@ export async function buildApp({ config, db, redis }) {
     users,
     mailer,
     emailVerification: createEmailVerification({ redis, mailer, users }),
+    passwordReset: createPasswordReset({ redis, mailer, users }),
     sessions: createSessions(redis),
     rateLimit: createRateLimiter(redis, config.rateLimits),
     presence,

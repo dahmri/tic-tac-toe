@@ -9,6 +9,9 @@
 //   POST   /api/me/recovery-code  a new recovery code: { password } -> { recoveryCode }
 //   POST   /api/password-reset    forgotten password: { username, recoveryCode,
 //                                  newPassword } -> logs in, { user, recoveryCode }
+//   POST   /api/password-reset/email  email a reset link: { login } (username or email)
+//   POST   /api/password-reset/token  { token, newPassword } from that link -> logs in, { user }
+//   GET    /api/password-reset/token?token=  whether a link still works
 //   GET    /api/me/export    everything stored about you, as a JSON download
 //   DELETE /api/me           delete your account: { password }
 //   POST   /api/me/email/resend   send the confirmation email again
@@ -51,7 +54,7 @@ function taken(reply, err) {
 
 export default async function accountRoutes(app) {
   const { users, sessions, rateLimit, presence, config, stats, matches, matchmaking } = app.ctx;
-  const { emailVerification, mailer } = app.ctx;
+  const { emailVerification, mailer, passwordReset } = app.ctx;
 
   // Where links in emails point: SITE_URL (always set in production), or
   // this server in development and tests
@@ -239,6 +242,57 @@ export default async function accountRoutes(app) {
     await sessions.destroyOthers(found.id, null);
     await startSession(reply, found.id);
     return { user: await users.profile(found.id), recoveryCode };
+  });
+
+  // Always the same answer, whether or not an account matches, so the form
+  // can't be used to find out who plays here
+  app.post('/api/password-reset/email', async (req, reply) => {
+    const login = typeof req.body?.login === 'string' ? req.body.login.trim().toLowerCase() : '';
+    if (!login || login.length > 254) {
+      return reply.code(400).send({ error: 'Enter your username or email address.' });
+    }
+    if (!(await limit(reply, `reset-mail-ip:${req.ip}`, 10, 900))) return;
+    if (!(await limit(reply, `reset-mail:${login}`, 3, 3600))) return;
+    const user = await users.findConfirmed(login);
+    if (user) {
+      try {
+        await passwordReset.send(user, siteUrl(req), req.lang);
+      } catch (err) {
+        req.log.error({ err }, 'Could not send a password reset email');
+      }
+    }
+    return reply.code(204).send();
+  });
+
+  app.get('/api/password-reset/token', async (req) => ({
+    valid: !!(await passwordReset.check(req.query.token)),
+  }));
+
+  app.post('/api/password-reset/token', async (req, reply) => {
+    if (!(await limit(reply, `reset-ip:${req.ip}`, 20, 900))) return;
+    const { token, newPassword } = req.body || {};
+    const id = await passwordReset.check(token);
+    if (!id) {
+      return reply
+        .code(400)
+        .send({ error: 'That reset link has expired or was already used. Ask for a new one.' });
+    }
+    const { username } = await users.profile(id);
+    const problem = passwordError(newPassword, username);
+    if (problem) {
+      return reply
+        .code(400)
+        .send({ error: 'Check the highlighted fields.', fields: { newPassword: problem } });
+    }
+    if (!(await passwordReset.consume(token))) {
+      return reply
+        .code(400)
+        .send({ error: 'That reset link has expired or was already used. Ask for a new one.' });
+    }
+    await users.setPasswordHash(id, await hashPassword(newPassword));
+    await sessions.destroyOthers(id, null);
+    await startSession(reply, id);
+    return { user: await users.profile(id) };
   });
 
   app.get('/api/me/export', { preHandler: app.requireUser }, async (req, reply) => {
