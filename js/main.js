@@ -16,6 +16,7 @@ import {
 } from './lobby.js';
 import { initStats, recordCpuGame, signed } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
+import { setSound, sound, soundOn } from './sound.js';
 
 const STORAGE_KEY = 'pencil-ttt';
 const MODES = ['cpu', 'pvp', 'online'];
@@ -29,6 +30,9 @@ const $ = (id) => document.getElementById(id);
 const boardEl = $('board');
 const statusEl = $('status');
 const winEl = $('winline');
+const confettiEl = $('confetti');
+const STAR = 'M0 -12 L3 -3 L12 -3 L5 3 L8 12 L0 6 L-8 12 L-5 3 L-12 -3 L-3 -3 Z';
+const SPIRAL = 'M0 0 C4 -4 9 1 5 6 C0 11 -9 5 -6 -3 C-2 -12 12 -10 12 1';
 
 const zeroScores = () => ({ X: 0, O: 0, D: 0 });
 
@@ -271,9 +275,16 @@ function place(i, p) {
   // A game counts at the difficulty it started with, from its first move
   if (!round.moves.length) round = { ...round, diff: state.diff, startedAt: Date.now() };
   round.moves.push(i);
+  sound.mark(p);
   const w = winner(board);
   if (w) {
     over = true;
+    if (w.p === 'D') sound.draw();
+    else if (state.mode === 'cpu' && w.p === 'O') sound.lose();
+    else {
+      sound.win();
+      celebrate();
+    }
     if (state.mode === 'cpu' && state.diff === round.diff) {
       recordCpuGame({
         difficulty: round.diff,
@@ -303,6 +314,26 @@ function drawWin(line) {
     d="M${x1 - ex} ${y1 - ey} Q${(x1 + x2) / 2 + bend} ${(y1 + y2) / 2 - bend} ${x2 + ex} ${y2 + ey}"/>`;
   boardEl.classList.add('won');
   line.forEach((i) => cells[i].classList.add('hit'));
+}
+
+// Pencil stars and spirals around the board, for the player's own wins.
+// Built through the DOM: the page's CSP doesn't allow inline style attributes.
+function celebrate() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const shapes = [];
+  for (let k = 0; k < 10; k++) {
+    const angle = (k / 10) * Math.PI * 2 + Math.random() * 0.5;
+    const r = 95 + Math.random() * 45;
+    // Keep them on the board: on a phone it fills the screen's width
+    const at = (v) => Math.min(Math.max(150 + v * r, 16), 284).toFixed(1);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', k % 3 === 2 ? SPIRAL : STAR);
+    path.setAttribute('transform', `translate(${at(Math.cos(angle))} ${at(Math.sin(angle))})`);
+    path.classList.add(`c${k % 3}`);
+    path.style.animationDelay = `${(0.55 + Math.random() * 0.45).toFixed(2)}s`;
+    shapes.push(path);
+  }
+  confettiEl.replaceChildren(...shapes);
 }
 
 function humanMove(i) {
@@ -341,6 +372,7 @@ function resetBoard() {
   over = false;
   busy = false;
   winEl.innerHTML = '';
+  confettiEl.replaceChildren();
   boardEl.classList.remove('won');
   cells.forEach((c) => {
     c.classList.remove('hit');
@@ -395,7 +427,12 @@ function setNetMessage(text) {
 
 // Shows the match exactly as the server sent it
 function showMatch(next) {
-  const newRound = !match || match.id !== next.id || match.round !== next.round;
+  const newMatch = !match || match.id !== next.id;
+  const newRound = newMatch || match.round !== next.round;
+  const wasOver = !newRound && over;
+  // A single new mark is a move played live (a reload redraws them all)
+  const fresh = newRound ? next.moves.length : next.moves.length - match.moves.length;
+  if (newMatch && next.round === 1 && next.moves.length === 0) sound.matchFound();
   match = next;
   if (!online()) {
     state.mode = 'online';
@@ -411,6 +448,14 @@ function showMatch(next) {
     if (v && cells[i].dataset.mark !== v) drawMark(i, v);
   });
   if (next.line && !boardEl.classList.contains('won')) drawWin(next.line);
+  if (fresh === 1) sound.mark(next.board[next.moves.at(-1)]);
+  if (next.over && !wasOver && fresh <= 1) {
+    if (next.result === 'D') sound.draw();
+    else if (next.result === mySymbol()) {
+      sound.win();
+      celebrate();
+    } else sound.lose();
+  }
 }
 
 function onMatch(next) {
@@ -509,6 +554,15 @@ document.querySelectorAll('[data-diff]').forEach((b) =>
   }),
 );
 $('next').addEventListener('click', newRound);
+function renderSound() {
+  $('soundBtn').setAttribute('aria-pressed', String(soundOn()));
+  $('soundBtn').textContent = soundOn() ? '🔊' : '🔇';
+}
+$('soundBtn').addEventListener('click', () => {
+  setSound(!soundOn());
+  renderSound();
+});
+renderSound();
 $('reset').addEventListener('click', resetScores);
 $('leave').addEventListener('click', () => {
   if (inMatch()) live.send({ t: 'leave', match: match.id });
