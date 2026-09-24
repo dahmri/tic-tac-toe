@@ -68,6 +68,17 @@ code the browser downloads is the game's own.
   database. A leaked dump or backup exposes only usernames and countries.
   The username and country stay readable because the game looks players up
   by them.
+- **Email confirmation:** sign-up asks for an email address, and a link
+  is sent to it (`server/email-verification.js`, sent by
+  `server/mailer.js` over any SMTP server). Until it's confirmed, the
+  player can play the computer and on the same screen, but the server
+  refuses the live connection and the lobby (403). The link carries a
+  random token; Redis keeps only its hash, for 24 hours, together with
+  the address it was sent to. The page posts it back, so a mail scanner
+  that opens links confirms nothing. Changing the address means
+  confirming the new one. The address is sealed with the other personal
+  data; `users.email_hash` (an HMAC) keeps addresses unique. Players from
+  before emails existed are asked to add one.
 - **Recovery codes** replace email-based resets (accounts have no email):
   a 20-character code shown once at sign-up, stored only as a SHA-256
   hash (`users.recovery_hash`). Resetting uses it up, logs out every
@@ -214,6 +225,8 @@ result itself. They are counted apart from online games.
 | `POST`   | `/api/password-reset`   | Forgotten password: username + recovery code          |
 | `GET`    | `/api/me/export`        | Everything stored about you, as a JSON download       |
 | `DELETE` | `/api/me`               | Delete your account (needs the password)              |
+| `POST`   | `/api/me/email/resend`  | Send the confirmation email again                     |
+| `POST`   | `/api/email/verify`     | Confirm an address: `{ token }` from the email link   |
 | `GET`    | `/api/players/online`   | Online players: `?country=FR&offset=0&limit=30`       |
 | `GET`    | `/api/me/stats`         | Your totals, streaks and most played opponents        |
 | `GET`    | `/api/me/games`         | Your game history, newest first: `?cursor=&limit=20`  |
