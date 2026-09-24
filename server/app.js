@@ -14,6 +14,7 @@ import { createBus } from './bus.js';
 import { createMatches } from './matches.js';
 import { createInvites } from './invites.js';
 import { createStats } from './stats.js';
+import { createMatchmaking } from './matchmaking.js';
 import accountRoutes from './routes/account.js';
 import playersRoutes from './routes/players.js';
 import liveRoutes from './routes/live.js';
@@ -64,6 +65,7 @@ export async function buildApp({ config, db, redis }) {
     bus,
     matches,
     invites: createInvites(redis, { bus, presence, matches }),
+    matchmaking: createMatchmaking(redis, { presence, matches, stats, bus }),
     stats,
   });
 

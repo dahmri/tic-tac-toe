@@ -6,7 +6,14 @@ import { pickMove } from './ai.js';
 import { currentUser, initAccount } from './account.js';
 import { connectLive } from './live.js';
 import { countryFlag } from './countries.js';
-import { handleLobbyMessage, initLobby, lobbyError, resetLobby, setLobby } from './lobby.js';
+import {
+  handleLobbyMessage,
+  initLobby,
+  lobbyError,
+  resetLobby,
+  setLastOpponent,
+  setLobby,
+} from './lobby.js';
 import { initStats, recordCpuGame, signed } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
 
@@ -118,7 +125,7 @@ function statusHTML() {
 
   if (online() && !inMatch()) {
     if (liveStatus !== 'online') return 'Connecting…';
-    return 'Invite a player, or wait for an invitation.';
+    return 'Find an opponent, or invite a player.';
   }
 
   const w = winner(board);
@@ -421,6 +428,7 @@ function onMatch(next) {
       match = null;
       state.scores = zeroScores();
       resetBoard();
+      setLastOpponent(next.players[next.players.O.id === me.id ? 'X' : 'O']);
     }
   } else {
     if (!match || match.id !== next.id) setNetMessage('');
@@ -456,7 +464,7 @@ function onLiveMessage(msg) {
     case 'error':
       busy = false;
       setNetMessage(msg.message);
-      if (msg.re?.startsWith('invite')) lobbyError();
+      if (msg.re?.startsWith('invite') || msg.re?.startsWith('queue')) lobbyError();
       break;
     default:
       handleLobbyMessage(msg);

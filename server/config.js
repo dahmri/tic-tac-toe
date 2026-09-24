@@ -41,6 +41,10 @@ export function loadConfig(env = process.env) {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
+    // How long a player whose last connection closed (a reload, a network
+    // blip) has to come back before they leave their match and the
+    // quick-match queue. Tests shorten it.
+    leaveGraceMs: Number(env.LEAVE_GRACE_MS) || 20_000,
     // Browser tests sign up many players from one IP, so they turn this off
     rateLimits: env.RATE_LIMITS !== 'off',
     logLevel: env.LOG_LEVEL || (production ? 'info' : 'warn'),
