@@ -14,6 +14,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Monitoring.** A GitHub workflow checks the live site every 15 minutes
+  and fails (so GitHub emails you) when it's down. Errors in players'
+  browsers are reported to the server's log. `/api/health` now includes
+  the running version, and server logs rotate so they can't fill the disk.
 - **Achievements.** 12 badges to earn: First win 🏆, Online winner 🌐,
   On fire 🔥 (3 online wins in a row), Unstoppable ☄️ (10), Hundred club
   💯, Held the line 🛡️ (draw against Unbeatable), Vanishing act 🌫️ (beat

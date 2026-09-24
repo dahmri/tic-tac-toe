@@ -190,5 +190,5 @@ test('same-site requests pass, including on a non-standard port', async () => {
 });
 
 test('the health check reports the database and Redis', async () => {
-  assert.deepEqual((await client(t.app).get('/api/health')).body, { ok: true });
+  assert.equal((await client(t.app).get('/api/health')).body.ok, true);
 });
