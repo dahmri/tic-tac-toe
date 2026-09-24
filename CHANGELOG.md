@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-24
+
 ### Added
 
 - **20 more avatars**, 38 in all: Taco Tuesday 🌮, Donut Worry 🍩, Hug Me
