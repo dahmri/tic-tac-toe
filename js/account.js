@@ -1,5 +1,6 @@
-// Accounts in the browser: log in, sign up, play as a guest, the profile
-// dialog, log out.
+// Accounts in the browser: log in, sign up, play as a guest, reset a
+// forgotten password with a recovery code, the profile dialog (edit,
+// recovery code, download your data, delete the account), log out.
 // Forms are checked with the same rules as the server for instant feedback;
 // the server still has the final say.
 
@@ -7,6 +8,7 @@ import { api } from './api.js';
 import { AVATARS, GUEST_AVATAR, avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
+import { uploadGuestGames } from './stats.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -124,6 +126,7 @@ function setAuthTab(tab) {
     .forEach((b) => b.setAttribute('aria-selected', String(b.dataset.auth === tab)));
   $('loginForm').hidden = tab !== 'login';
   $('signupForm').hidden = tab !== 'signup';
+  $('resetForm').hidden = true;
   const form = tab === 'login' ? $('loginForm') : $('signupForm');
   showErrors(form);
   form.elements[tab === 'login' ? 'username' : 'firstName'].focus();
@@ -172,6 +175,71 @@ function signedOut(tab = 'login') {
 // From guest play to the forms, to make an account or log in
 export const leaveGuest = () => signedOut('signup');
 
+/* ---------- Recovery codes ---------- */
+
+// Shows a new recovery code, which the server never shows again
+function showRecovery(code, note = '') {
+  $('recoveryCode').textContent = code;
+  $('recoveryNote').textContent = note;
+  $('recoveryDialog').showModal();
+}
+
+function showReset() {
+  const form = $('resetForm');
+  form.reset();
+  form.elements.username.value = $('loginForm').elements.username.value;
+  $('loginForm').hidden = true;
+  form.hidden = false;
+  showErrors(form);
+  form.elements[form.elements.username.value ? 'recoveryCode' : 'username'].focus();
+}
+
+async function resetPassword(e) {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const { username, recoveryCode, newPassword } = formData(form);
+  if (!username || !recoveryCode) {
+    return showErrors(form, {}, 'Enter your username and recovery code.');
+  }
+  const problem = passwordError(newPassword, username);
+  if (problem) return showErrors(form, { newPassword: problem });
+  const res = await submit(form, () =>
+    api('POST', '/api/password-reset', { username, recoveryCode, newPassword }),
+  );
+  if (!res) return;
+  signedIn(res.user);
+  showRecovery(
+    res.recoveryCode,
+    'Your password is changed and your old code no longer works. Here is your new one.',
+  );
+}
+
+async function newRecoveryCode(e) {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const { password } = formData(form);
+  if (!password) return showErrors(form, { password: 'Enter your password.' });
+  const res = await submit(form, () => api('POST', '/api/me/recovery-code', { password }));
+  if (!res) return;
+  form.reset();
+  form.elements.username.value = user.username;
+  showErrors(form, {}, 'New code made. Your old one no longer works.');
+  showRecovery(res.recoveryCode);
+}
+
+async function deleteAccount(e) {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const { password } = formData(form);
+  if (!password) return showErrors(form, { password: 'Enter your password.' });
+  if (!window.confirm('Delete your account for good? This cannot be undone.')) return;
+  const res = await submit(form, () => api('DELETE', '/api/me', { password }).then(() => true));
+  if (!res) return;
+  $('profileDialog').close();
+  signedOut();
+  $('loginForm').querySelector('.form-msg').textContent = 'Your account has been deleted.';
+}
+
 /* ---------- Profile dialog ---------- */
 
 function openProfile() {
@@ -187,10 +255,12 @@ function openProfile() {
   ]) {
     form.elements[key].value = user[key] ?? '';
   }
-  $('passwordForm').reset();
-  $('passwordForm').elements.username.value = user.username;
+  for (const id of ['passwordForm', 'recoveryForm', 'deleteForm']) {
+    $(id).reset();
+    $(id).elements.username.value = user.username;
+    showErrors($(id));
+  }
   showErrors(form);
-  showErrors($('passwordForm'));
   $('profileDialog').showModal();
 }
 
@@ -255,10 +325,30 @@ export async function initAccount(callbacks) {
     const { ok, value, errors } = validateRegistration(formData(form));
     if (!ok) return showErrors(form, errors, 'Check the highlighted fields.');
     const res = await submit(form, () => api('POST', '/api/account', value));
-    if (res) signedIn(res.user);
+    if (!res) return;
+    signedIn(res.user);
+    const added = await uploadGuestGames();
+    const note = added
+      ? `We added your ${added} game${added === 1 ? '' : 's'} as a guest to your stats.`
+      : '';
+    showRecovery(res.recoveryCode, note);
   });
 
   $('guestBtn').addEventListener('click', playAsGuest);
+  $('forgotBtn').addEventListener('click', showReset);
+  $('backToLogin').addEventListener('click', () => setAuthTab('login'));
+  $('resetForm').addEventListener('submit', resetPassword);
+  $('recoveryForm').addEventListener('submit', newRecoveryCode);
+  $('deleteForm').addEventListener('submit', deleteAccount);
+  $('copyRecovery').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('recoveryCode').textContent);
+      $('recoveryNote').textContent = 'Copied.';
+    } catch {
+      $('recoveryNote').textContent = 'Copy it by hand: select the code above.';
+    }
+  });
+  $('recoverySaved').addEventListener('click', () => $('recoveryDialog').close());
   $('joinBtn').addEventListener('click', leaveGuest);
   $('profileBtn').addEventListener('click', openProfile);
   $('profileForm').addEventListener('submit', saveProfile);

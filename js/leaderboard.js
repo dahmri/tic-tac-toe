@@ -59,7 +59,9 @@ async function load(more) {
       ? `You are #${res.me.rank} in ${where}, rated ${res.me.rating}.`
       : country && !more
         ? ''
-        : 'Play an online game to get on the leaderboard.';
+        : meId === null
+          ? 'Make a free account and play online to join the leaderboard.'
+          : 'Play an online game to get on the leaderboard.';
   } catch (err) {
     $('lbMsg').textContent = err.message;
   }

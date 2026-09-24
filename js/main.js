@@ -16,7 +16,7 @@ import {
   setLastOpponent,
   setLobby,
 } from './lobby.js';
-import { initStats, recordCpuGame, signed } from './stats.js';
+import { initStats, recordCpuGame, recordGuestGame, signed } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initReplay } from './replay.js';
 import { setSound, sound, soundOn } from './sound.js';
@@ -332,14 +332,17 @@ function place(i, p) {
     }
     // Guests' games aren't recorded: they have no stats
     const unchanged = state.diff === round.diff && state.variant === round.variant;
-    if (state.mode === 'cpu' && unchanged && currentUser()) {
-      recordCpuGame({
+    if (state.mode === 'cpu' && unchanged) {
+      const game = {
         difficulty: round.diff,
         variant: round.variant,
         starter: round.starter,
         moves: round.moves,
         seconds: Math.round((Date.now() - round.startedAt) / 1000),
-      });
+      };
+      // Guests' games are kept in the browser in case they sign up
+      if (currentUser()) recordCpuGame(game);
+      else if (isGuest()) recordGuestGame(game);
     }
     state.scores[w.p]++;
     state.starter = other(state.starter); // alternate who opens the next round

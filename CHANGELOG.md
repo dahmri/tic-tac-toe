@@ -30,6 +30,19 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Reactions online.** Send a quick 👍 👏 😂 😮 😱 🔥 🤝 😅 during a match.
   It floats up over the board for both players. Only these emoji can be
   sent, and at most one every 1.5 seconds.
+- **Forgot your password?** You get a recovery code when you sign up;
+  with it, **Forgot your password?** on the log-in screen sets a new
+  password. Using it logs out your other devices and gives you a fresh
+  code. Make a new code any time in your profile (players who signed up
+  before today can make their first one there).
+- **Download your data** from your profile: your profile, stats and every
+  game, as a JSON file.
+- **Delete your account** from your profile, with your password. Your
+  stats and games against the computer go with it; your online games stay
+  in your opponents' histories as "Deleted player".
+- **Public leaderboard.** Guests can open the leaderboard too.
+- **Guest games carry over.** Games a guest plays against the computer
+  are added to their stats when they create an account.
 
 ## [1.4.0] - 2026-09-24
 
