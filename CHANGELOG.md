@@ -39,6 +39,16 @@ and the project uses [Semantic Versioning](https://semver.org/).
   ratings appear next to names in the lobby and in matches. A new
   Leaderboard ranks players worldwide or by country, and Stats shows your
   rating, rank and best rating.
+- **Quick match:** "Find me an opponent" pairs you with a waiting player
+  near your rating; the rating gap allowed grows the longer you wait, so
+  nobody waits forever. The search survives a page reload.
+- **Invite again:** after a match ends, the lobby offers to invite the same
+  player again.
+
+### Fixed
+
+- A player who reloaded the page, or opened a second tab, at the moment
+  another closed could vanish from the online list while still connected.
 
 ### Changed
 

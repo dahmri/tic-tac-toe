@@ -444,6 +444,51 @@ h1 .o {
   font-size: 0.9rem;
 }
 
+/* Quick match, and "invite again" after a match */
+.quick,
+.rematch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.quick-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.quick.searching .quick-note {
+  color: var(--ink);
+  font-weight: 700;
+}
+.quick .timer {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.rematch {
+  padding: 10px 12px;
+  border: 2px dashed var(--grid);
+  border-radius: 10px;
+}
+.rematch-text {
+  margin-right: auto;
+  min-width: 0;
+}
+/* A pencil going round in circles while we search */
+.scribble {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--ink);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Invitations: notes stuck above the board, in every mode */
 .invites {
   display: grid;
@@ -830,6 +875,9 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .scribble {
+    animation-duration: 3s;
+  }
   .draw {
     animation: none;
     stroke-dashoffset: 0;

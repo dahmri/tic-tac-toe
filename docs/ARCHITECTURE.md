@@ -101,6 +101,16 @@ on other sites.
   seconds in Redis. Accepting, declining and cancelling each start by
   deleting the invitation, and only the request that actually deleted it
   goes on, so an invitation can't be both accepted and cancelled.
+- **Quick match** ([`server/matchmaking.js`](../server/matchmaking.js)):
+  waiting players sit in a Redis sorted set by rating. A newcomer is paired
+  with the closest waiting rating within 100 points, plus 10 points for
+  every second either player has waited; the instance holding a waiting
+  player's connection searches again every 3 seconds. Pairing is one Lua
+  script that looks only at the 25 nearest ratings on each side, so it
+  stays fast however long the queue gets, and two instances can never take
+  the same player. Players who started a game some other way, or whose
+  server stopped reporting them, are dropped; a player reloading the page
+  keeps their place but isn't paired until they're back.
 - **Matches** ([`server/match.js`](../server/match.js) for the rules,
   [`server/matches.js`](../server/matches.js) for storage) are played on
   the server: browsers only send the square they want. The match is stored
@@ -117,7 +127,9 @@ on other sites.
 | browser → server | `invite {to}`, `invite-accept {id}`, `invite-decline {id}`        |
 |                  | `invite-cancel {id}`, `move {match, square}`                      |
 |                  | `next-round {match}`, `leave {match}`, `ping`                     |
-| server → browser | `hello {me, match, invites}` on connect                           |
+|                  | `queue-join`, `queue-leave`                                       |
+| server → browser | `hello {me, match, invites, waiting}` on connect                  |
+|                  | `queue {waiting}` when a quick-match search starts or stops       |
 |                  | `match {match}` after every change, to both players               |
 |                  | `ratings {match, round, ratings}` after each recorded round       |
 |                  | `invite {invite}`, `invite-sent {invite}`                         |
