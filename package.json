@@ -1,6 +1,6 @@
 {
   "name": "pencil-tic-tac-toe",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "A hand-drawn tic-tac-toe game for the browser: play the computer or a friend.",
   "type": "module",
   "private": true,

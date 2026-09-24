@@ -6,8 +6,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-09-24
+
 ### Fixed
 
+- French and Spanish read better: a proofreading pass fixed grammar around
+  country and month names, clearer terms (French "cote" for the rating),
+  and one consistent Spanish.
 - Grey text (on buttons, badges and help text) is a little darker in the
   light theme, so it's readable by everyone (it was just under the WCAG
   contrast minimum).
@@ -25,19 +30,16 @@ and the project uses [Semantic Versioning](https://semver.org/).
   (5 friends), Rising star 📈 (rating 1400) and On the podium 🥇. They're
   in your Stats, with progress towards the ones with a goal, and a toast
   pops up when you earn one. Games you played before count too.
-
 - **Monthly seasons.** The leaderboard now runs by month: on the 1st,
   everyone starts again at 1200, so anyone can reach the top. The
   leaderboard shows the season and how many days are left, and last
   month's podium 🥇🥈🥉. Your Stats show your rating this season and your
   best ever.
-
 - **Daily puzzle.** 🧩 Puzzle, next to the other modes: every day a new
   position where you can win in 2 moves, the same for everyone. Find the
   move that makes two threats at once. Your first try each day counts
   toward your streak (kept on your account, or in your browser as a
   guest); after that you can practise as much as you like.
-
 - **Reset your password by email.** "Forgot your password?" now sends a
   link to your confirmed email address (it works once, for an hour, and
   stops working if your password changes). Recovery codes still work:
