@@ -4,6 +4,7 @@
 import { api } from './api.js';
 import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, countryName, sortedCountries } from './countries.js';
+import { onLangChange, t } from './i18n.js';
 
 const PAGE = 20;
 const FILTER_KEY = 'pencil-ttt-leaderboard-country';
@@ -28,7 +29,7 @@ function row(p) {
   const flag = el('span', 'flag', countryFlag(p.country));
   flag.setAttribute('aria-hidden', 'true');
   const avatar = el('span', 'avatar', avatarEmoji(p.avatar));
-  avatar.title = avatarName(p.avatar);
+  avatar.title = t(avatarName(p.avatar));
   who.append(avatar, flag, el('span', 'name', p.username));
   name.append(who);
   tr.append(name);
@@ -51,19 +52,23 @@ async function load(more) {
     $('lbTable').hidden = shown === 0;
     $('lbEmpty').hidden = shown > 0;
     $('lbEmpty').textContent = country
-      ? `Nobody from ${countryName(country)} has played online yet.`
-      : 'Nobody has played online yet. Be the first!';
+      ? t('Nobody from {country} has played online yet.', { country: countryName(country) })
+      : t('Nobody has played online yet. Be the first!');
     $('lbMore').hidden = shown >= res.total;
-    const where = country ? countryName(country) : 'the world';
+    const where = country ? countryName(country) : t('the world');
     $('lbMe').textContent = res.me
-      ? `You are #${res.me.rank} in ${where}, rated ${res.me.rating}.`
+      ? t('You are #{rank} in {where}, rated {rating}.', {
+          rank: res.me.rank,
+          where,
+          rating: res.me.rating,
+        })
       : country && !more
         ? ''
         : meId === null
-          ? 'Make a free account and play online to join the leaderboard.'
-          : 'Play an online game to get on the leaderboard.';
+          ? t('Make a free account and play online to join the leaderboard.')
+          : t('Play an online game to get on the leaderboard.');
   } catch (err) {
-    $('lbMsg').textContent = err.message;
+    $('lbMsg').textContent = t(err.message);
   }
 }
 
@@ -74,11 +79,23 @@ function open() {
 }
 
 // `me()` returns the signed-in player, to highlight their row
-export function initLeaderboard(me) {
+function fillFilter() {
   const filter = $('lbCountry');
+  const keep = filter.value;
+  filter.replaceChildren(new Option(t('🌍 Whole world'), ''));
   for (const { code, name } of sortedCountries()) {
     filter.add(new Option(`${countryFlag(code)} ${name}`, code));
   }
+  filter.value = keep;
+}
+
+export function initLeaderboard(me) {
+  const filter = $('lbCountry');
+  fillFilter();
+  onLangChange(() => {
+    fillFilter();
+    if ($('leaderboardDialog').open) load(false);
+  });
   try {
     filter.value = localStorage.getItem(FILTER_KEY) || '';
   } catch {

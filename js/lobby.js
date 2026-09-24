@@ -6,6 +6,7 @@ import { api } from './api.js';
 import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, countryName, sortedCountries } from './countries.js';
 import { sound } from './sound.js';
+import { onLangChange, t } from './i18n.js';
 
 const PAGE = 20;
 const REFRESH_MS = 10_000;
@@ -18,7 +19,12 @@ const incoming = new Map();
 const outgoing = new Map();
 
 let actions = { send() {}, message() {}, variant: () => 'classic' };
-const rulesText = (variant) => (variant === 'vanish' ? ' (3 marks)' : '');
+// A translated sentence with an element (a player's name) where {who} is,
+// wherever the language puts it
+function sentence(template, node, vars) {
+  const [before, after = ''] = t(template, vars).split('{who}');
+  return [before, node, after].filter((part) => part !== '');
+}
 let active = false; // lobby on screen: keep the list fresh
 let busy = false; // in a match: invitations wait
 let players = [];
@@ -41,12 +47,12 @@ const el = (tag, cls, text) => {
 function who(p) {
   const span = el('span', 'who-line');
   const avatar = el('span', 'avatar', avatarEmoji(p.avatar));
-  avatar.title = avatarName(p.avatar);
+  avatar.title = t(avatarName(p.avatar));
   span.append(avatar, el('span', 'flag', countryFlag(p.country)), el('strong', 'name', p.username));
   span.querySelector('.flag').setAttribute('aria-hidden', 'true');
   if (p.rating) {
     const chip = el('span', 'rating-chip', String(p.rating));
-    chip.title = 'Rating';
+    chip.title = t('Rating');
     span.append(chip);
   }
   return span;
@@ -90,14 +96,14 @@ function renderPlayers() {
       const li = el('li', 'player');
       li.append(who(p), el('span', 'where', countryName(p.country)));
       if (p.playing) {
-        li.append(el('span', 'tag', 'Playing'));
+        li.append(el('span', 'tag', t('Playing')));
       } else if (invited.has(p.id)) {
-        li.append(el('span', 'tag', 'Invited'));
+        li.append(el('span', 'tag', t('Invited')));
       } else {
-        const b = el('button', 'btn', 'Invite');
+        const b = el('button', 'btn', t('Invite'));
         b.type = 'button';
         b.disabled = busy;
-        b.setAttribute('aria-label', `Invite ${p.username}`);
+        b.setAttribute('aria-label', t('Invite {name}', { name: p.username }));
         b.addEventListener('click', () => {
           b.disabled = true;
           actions.message('');
@@ -112,8 +118,8 @@ function renderPlayers() {
   const empty = $('playersEmpty');
   empty.hidden = players.length > 0;
   empty.textContent = country
-    ? `No one from ${countryName(country)} is online right now.`
-    : 'No one else is online right now. Invite a friend to sign up!';
+    ? t('No one from {country} is online right now.', { country: countryName(country) })
+    : t('No one else is online right now. Invite a friend to sign up!');
   $('morePlayers').hidden = players.length >= total;
 }
 
@@ -127,9 +133,16 @@ function renderInvites() {
       const row = el('div', 'invite');
       row.dataset.id = inv.id;
       const text = el('span', 'invite-text');
-      text.append(who(inv.from), ` invites you to play${rulesText(inv.variant)}`);
-      const accept = el('button', 'btn primary', 'Accept');
-      const decline = el('button', 'btn', 'Decline');
+      text.append(
+        ...sentence(
+          inv.variant === 'vanish'
+            ? '{who} invites you to play (3 marks)'
+            : '{who} invites you to play',
+          who(inv.from),
+        ),
+      );
+      const accept = el('button', 'btn primary', t('Accept'));
+      const decline = el('button', 'btn', t('Decline'));
       accept.type = decline.type = 'button';
       accept.addEventListener('click', () => {
         accept.disabled = decline.disabled = true;
@@ -148,8 +161,13 @@ function renderInvites() {
     const row = el('div', 'invite outgoing');
     row.dataset.id = inv.id;
     const text = el('span', 'invite-text');
-    text.append('Waiting for ', who(inv.to), `${rulesText(inv.variant)}…`);
-    const cancel = el('button', 'btn ghostbtn', 'Cancel');
+    text.append(
+      ...sentence(
+        inv.variant === 'vanish' ? 'Waiting for {who} (3 marks)…' : 'Waiting for {who}…',
+        who(inv.to),
+      ),
+    );
+    const cancel = el('button', 'btn ghostbtn', t('Cancel'));
     cancel.type = 'button';
     cancel.addEventListener('click', () => {
       outgoing.delete(inv.id);
@@ -176,7 +194,7 @@ function tick() {
   for (const [id, inv] of outgoing) {
     if (secondsLeft(inv) === 0) {
       changed = outgoing.delete(id);
-      actions.message(`${inv.to.username} didn't answer.`);
+      actions.message(t("{name} didn't answer.", { name: inv.to.username }));
     }
   }
   if (changed) {
@@ -219,7 +237,7 @@ function renderQuick() {
   rematch.hidden = !lastOpponent || busy;
   if (lastOpponent) {
     const text = $('rematchText');
-    text.replaceChildren('Last game: vs ', who(lastOpponent));
+    text.replaceChildren(...sentence('Last game: vs {who}', who(lastOpponent)));
     const invited = [...outgoing.values()].some((i) => i.to.id === lastOpponent.id);
     $('inviteAgain').disabled = invited;
   }
@@ -248,7 +266,7 @@ export function handleLobbyMessage(msg) {
     case 'invite-declined': {
       const inv = outgoing.get(msg.id);
       outgoing.delete(msg.id);
-      if (inv) actions.message(`${msg.by} declined your invitation.`);
+      if (inv) actions.message(t('{name} declined your invitation.', { name: msg.by }));
       break;
     }
     case 'invite-gone':
@@ -315,12 +333,27 @@ export function resetLobby() {
   renderPlayers();
 }
 
-export function initLobby(callbacks) {
-  actions = { ...actions, ...callbacks };
+// The country filter: "All countries", then every country by name
+function fillFilter() {
   const filter = $('countryFilter');
+  const keep = filter.value;
+  filter.replaceChildren(new Option(t('All countries'), ''));
   for (const { code, name } of sortedCountries()) {
     filter.add(new Option(`${countryFlag(code)} ${name}`, code));
   }
+  filter.value = keep;
+}
+
+export function initLobby(callbacks) {
+  actions = { ...actions, ...callbacks };
+  const filter = $('countryFilter');
+  fillFilter();
+  onLangChange(() => {
+    fillFilter();
+    renderPlayers();
+    renderInvites();
+    renderQuick();
+  });
   try {
     filter.value = localStorage.getItem(FILTER_KEY) || '';
   } catch {

@@ -10,6 +10,7 @@
 // the email was sent makes it worthless (users.confirmEmail checks).
 
 import { hashToken, newToken } from './security.js';
+import { translate } from '../js/i18n.js';
 
 export const VERIFY_TTL = 24 * 3600; // seconds
 
@@ -23,27 +24,27 @@ export function createEmailVerification({ redis, mailer, users }) {
   return {
     // Sends the confirmation email for `user`'s current address.
     // `siteUrl` is where the link points (the site's own address).
-    async send(user, siteUrl) {
+    async send(user, siteUrl, lang = 'en') {
       const token = newToken();
       const data = { id: user.id, emailHash: users.emailHash(user.email) };
       await redis.set(`verify:${hashToken(token)}`, JSON.stringify(data), 'EX', VERIFY_TTL);
       const link = `${siteUrl}/?verify=${encodeURIComponent(token)}`;
+      const tr = (text, vars) => translate(lang, text, vars);
+      const hi = (name) => tr('Hi {name},', { name });
+      const why = tr(
+        'Confirm your email address to play online, get a rating and join the leaderboard:',
+      );
+      const expiry = tr(
+        'The link works for 24 hours. If you didn’t sign up, you can ignore this email.',
+      );
       await mailer.send({
         to: user.email,
-        subject: 'Confirm your email for Pencil Tic-Tac-Toe',
-        text: [
-          `Hi ${user.username},`,
-          '',
-          'Confirm your email address to play online, get a rating and join the leaderboard:',
-          '',
-          link,
-          '',
-          'The link works for 24 hours. If you didn’t sign up, you can ignore this email.',
-        ].join('\n'),
-        html: `<p>Hi ${escapeHtml(user.username)},</p>
-<p>Confirm your email address to play online, get a rating and join the leaderboard:</p>
-<p><a href="${escapeHtml(link)}">Confirm my email</a></p>
-<p>The link works for 24 hours. If you didn’t sign up, you can ignore this email.</p>`,
+        subject: tr('Confirm your email for Pencil Tic-Tac-Toe'),
+        text: [hi(user.username), '', why, '', link, '', expiry].join('\n'),
+        html: `<p>${escapeHtml(hi(user.username))}</p>
+<p>${escapeHtml(why)}</p>
+<p><a href="${escapeHtml(link)}">${escapeHtml(tr('Confirm my email'))}</a></p>
+<p>${escapeHtml(expiry)}</p>`,
       });
     },
 
