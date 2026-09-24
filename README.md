@@ -137,7 +137,11 @@ js/validation.js      Account rules, shared by browser and server
 js/avatars.js         The avatars players pick from, and the guest's
 js/countries.js       Country codes, names and flags
 js/api.js             Calls to the game server
-js/main.js            UI: rendering, input, scoring, online matches
+js/main.js            The game page: local play, status line, wiring
+js/board.js           Drawing the board: marks, win line, celebration, tallies
+js/game.js            The position on the board and the saved settings
+js/online.js          Online matches: live connection, clock, reactions
+js/i18n.js            Translations (js/locales/) and the current language
 server/               Game server: API, live connection, presence, matches
 server/migrations/    Database schema changes, in order
 tests/unit/           Unit tests (node --test)

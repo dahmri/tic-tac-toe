@@ -75,6 +75,7 @@ test.describe('signed out', () => {
     await page.getByRole('button', { name: 'Log out' }).click();
     await login.getByLabel('Username').fill(p.username);
     await page.getByRole('button', { name: 'Forgot your password?' }).click();
+    await page.getByRole('button', { name: 'Use a recovery code instead' }).click();
     const reset = page.locator('#resetForm');
     await reset.getByLabel('Recovery code').fill(code.toLowerCase());
     await reset.getByLabel('New password').fill('a totally new password');
@@ -229,4 +230,29 @@ test('players from before emails are asked to add one', async ({ page, player })
   await expect(page.locator('#guestLocked')).toContainText('Add your email to play online');
   await page.locator('#emailNotice').getByRole('button', { name: 'Add my email' }).click();
   await expect(page.locator('#profileForm').getByLabel('Email')).toBeFocused();
+});
+
+test('forgot the password: a link by email sets a new one', async ({ page, player }) => {
+  await page.context().clearCookies();
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Forgot your password?' }).click();
+  const ask = page.locator('#resetMailForm');
+  await ask.getByLabel('Username or email').fill(player.email);
+  await ask.getByRole('button', { name: 'Email me a link' }).click();
+  await expect(ask.getByRole('status')).toContainText("we've sent it a link");
+
+  await page.goto(`/?reset=${await emailToken(page, player.email, 'reset')}`);
+  const form = page.locator('#newPasswordForm');
+  await expect(page).toHaveURL(/\/$/);
+  await form.getByLabel('New password').fill('my brand new password');
+  await form.getByRole('button', { name: 'Save my new password' }).click();
+  await expect(page.locator('#meName')).toHaveText(player.username);
+  await expect(page.locator('#emailNoticeText')).toHaveText(
+    'Your new password is saved. Other devices have been logged out.',
+  );
+
+  // The link is used up
+  await page.context().clearCookies();
+  await page.goto(`/?reset=${await emailToken(page, player.email, 'reset')}`);
+  await expect(page.locator('#loginForm .form-msg')).toContainText('expired or was already used');
 });

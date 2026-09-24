@@ -98,11 +98,12 @@ Example: `fix(online): keep the guest's board locked until the host replies`
 
 ## Tests
 
-| Command            | What it runs                                                        |
-| ------------------ | ------------------------------------------------------------------- |
-| `npm test`         | Unit tests (`tests/unit/`): rules, AI, room codes, message checks   |
-| `npm run test:e2e` | Browser tests (`tests/e2e/`) with Playwright against the built site |
-| `npm run check`    | Lint + formatting + unit tests, the quick pre-push check            |
+| Command            | What it runs                                                              |
+| ------------------ | ------------------------------------------------------------------------- |
+| `npm test`         | Unit tests (`tests/unit/`): rules, AI, room codes, message checks         |
+| `npm run test:e2e` | Browser tests (`tests/e2e/`) with Playwright against the built site       |
+|                    | Includes an accessibility check (axe) of the main screens, light and dark |
+| `npm run check`    | Lint + formatting + unit tests, the quick pre-push check                  |
 
 - New logic goes in a pure module (no DOM) with unit tests.
 - New user-facing behaviour gets a browser test.

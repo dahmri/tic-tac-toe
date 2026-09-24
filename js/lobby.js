@@ -7,6 +7,7 @@ import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag, countryName, sortedCountries } from './countries.js';
 import { sound } from './sound.js';
 import { onLangChange, t } from './i18n.js';
+import { checkAchievements } from './achievements-ui.js';
 
 const PAGE = 20;
 const REFRESH_MS = 10_000;
@@ -36,6 +37,9 @@ let loading = null;
 let searchingSince = 0;
 let searchTimer = null;
 let lastOpponent = null; // offered again after a match ends
+// Friends: players this player saved, with whether they're online now
+let friends = [];
+let friendIds = new Set();
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -87,30 +91,63 @@ async function load({ more = false } = {}) {
   return loading;
 }
 
+// "Playing", "Invited", or an Invite button
+function inviteControl(p) {
+  if (p.playing) return el('span', 'tag', t('Playing'));
+  if ([...outgoing.values()].some((i) => i.to.id === p.id)) return el('span', 'tag', t('Invited'));
+  const b = el('button', 'btn', t('Invite'));
+  b.type = 'button';
+  b.disabled = busy;
+  b.setAttribute('aria-label', t('Invite {name}', { name: p.username }));
+  b.addEventListener('click', () => {
+    b.disabled = true;
+    actions.message('');
+    actions.send({ t: 'invite', to: p.id, variant: actions.variant() });
+  });
+  return b;
+}
+
+// ☆ adds a player to friends, ★ removes them
+function starButton(p) {
+  const on = friendIds.has(p.id);
+  const b = el('button', 'btn ghostbtn star', on ? '★' : '☆');
+  b.type = 'button';
+  b.setAttribute('aria-pressed', String(on));
+  b.setAttribute(
+    'aria-label',
+    on
+      ? t('Remove {name} from friends', { name: p.username })
+      : t('Add {name} to friends', { name: p.username }),
+  );
+  b.addEventListener('click', async () => {
+    b.disabled = true;
+    try {
+      if (on) await api('DELETE', `/api/friends/${p.id}`);
+      else {
+        await api('POST', '/api/friends', { id: p.id });
+        checkAchievements();
+      }
+      await loadFriends();
+    } catch (err) {
+      actions.message(err.message);
+      b.disabled = false;
+    }
+  });
+  return b;
+}
+
 function renderPlayers() {
   const list = $('playerList');
   const country = $('countryFilter').value;
-  const invited = new Set([...outgoing.values()].map((i) => i.to.id));
   list.replaceChildren(
     ...players.map((p) => {
       const li = el('li', 'player');
-      li.append(who(p), el('span', 'where', countryName(p.country)));
-      if (p.playing) {
-        li.append(el('span', 'tag', t('Playing')));
-      } else if (invited.has(p.id)) {
-        li.append(el('span', 'tag', t('Invited')));
-      } else {
-        const b = el('button', 'btn', t('Invite'));
-        b.type = 'button';
-        b.disabled = busy;
-        b.setAttribute('aria-label', t('Invite {name}', { name: p.username }));
-        b.addEventListener('click', () => {
-          b.disabled = true;
-          actions.message('');
-          actions.send({ t: 'invite', to: p.id, variant: actions.variant() });
-        });
-        li.append(b);
-      }
+      li.append(
+        who(p),
+        el('span', 'where', countryName(p.country)),
+        starButton(p),
+        inviteControl(p),
+      );
       return li;
     }),
   );
@@ -121,6 +158,51 @@ function renderPlayers() {
     ? t('No one from {country} is online right now.', { country: countryName(country) })
     : t('No one else is online right now. Invite a friend to sign up!');
   $('morePlayers').hidden = players.length >= total;
+}
+
+/* ---------- Friends ---------- */
+
+export async function loadFriends() {
+  try {
+    ({ friends } = await api('GET', '/api/friends'));
+    friendIds = new Set(friends.map((f) => f.id));
+  } catch {
+    return; // the lobby shows its own errors
+  }
+  renderFriends();
+  renderPlayers();
+  renderQuick();
+}
+
+function renderFriends() {
+  $('friendList').replaceChildren(
+    ...friends.map((f) => {
+      const li = el('li', `player friend ${f.online ? 'is-online' : 'is-offline'}`);
+      const status = f.playing ? t('Playing') : f.online ? t('Online') : t('Offline');
+      li.append(who(f), el('span', 'where', status), starButton(f));
+      if (f.online) li.append(inviteControl(f));
+      return li;
+    }),
+  );
+  const online = friends.filter((f) => f.online).length;
+  $('friendsCount').textContent = friends.length ? `(${online}/${friends.length})` : '';
+  $('friendsEmpty').hidden = friends.length > 0;
+}
+
+async function addFriend(e) {
+  e.preventDefault();
+  const input = $('friendName');
+  const username = input.value.trim();
+  if (!username) return;
+  $('friendMsg').textContent = '';
+  try {
+    await api('POST', '/api/friends', { username });
+    checkAchievements();
+    input.value = '';
+    await loadFriends();
+  } catch (err) {
+    $('friendMsg').textContent = t(err.message);
+  }
 }
 
 /* ---------- Invitations ---------- */
@@ -237,7 +319,11 @@ function renderQuick() {
   rematch.hidden = !lastOpponent || busy;
   if (lastOpponent) {
     const text = $('rematchText');
-    text.replaceChildren(...sentence('Last game: vs {who}', who(lastOpponent)));
+    text.replaceChildren(
+      ...sentence('Last game: vs {who}', who(lastOpponent)),
+      ' ',
+      starButton(lastOpponent),
+    );
     const invited = [...outgoing.values()].some((i) => i.to.id === lastOpponent.id);
     $('inviteAgain').disabled = invited;
   }
@@ -314,8 +400,11 @@ export function setLobby({ visible, inMatch }) {
   clearInterval(refreshTimer);
   if (active) {
     load();
+    loadFriends();
     refreshTimer = setInterval(() => {
-      if (!document.hidden) load();
+      if (document.hidden) return;
+      load();
+      loadFriends();
     }, REFRESH_MS);
   }
 }
@@ -324,6 +413,9 @@ export function resetLobby() {
   incoming.clear();
   outgoing.clear();
   players = [];
+  friends = [];
+  friendIds = new Set();
+  renderFriends();
   total = 0;
   searchingSince = 0;
   lastOpponent = null;
@@ -350,6 +442,7 @@ export function initLobby(callbacks) {
   fillFilter();
   onLangChange(() => {
     fillFilter();
+    renderFriends();
     renderPlayers();
     renderInvites();
     renderQuick();
@@ -369,6 +462,7 @@ export function initLobby(callbacks) {
     load();
   });
   $('morePlayers').addEventListener('click', () => load({ more: true }));
+  $('addFriendForm').addEventListener('submit', addFriend);
   $('findMatch').addEventListener('click', () => {
     $('findMatch').disabled = true;
     actions.message('');

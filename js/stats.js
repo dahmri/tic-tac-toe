@@ -7,6 +7,7 @@ import { avatarEmoji, avatarName } from './avatars.js';
 import { countryFlag } from './countries.js';
 import { openReplay } from './replay.js';
 import { lang, onLangChange, t } from './i18n.js';
+import { checkAchievements, renderBadges } from './achievements-ui.js';
 
 const $ = (id) => document.getElementById(id);
 let nextCursor = null;
@@ -64,9 +65,9 @@ function playerName(p) {
 
 function renderSummary({ stats, opponents }) {
   tiles($('ratingTiles'), [
-    ['Rating', stats.rating],
+    ['This season', stats.rating],
     ['Rank', stats.rank ? `#${stats.rank}` : '—'],
-    ['Best', stats.peakRating],
+    ['Best ever', stats.peakRating],
   ]);
   const o = stats.online;
   tiles($('onlineTiles'), [
@@ -172,8 +173,13 @@ async function open() {
   $('statsBody').hidden = true;
   dialog.showModal();
   try {
-    const [summary] = await Promise.all([api('GET', '/api/me/stats'), loadHistory(false)]);
+    const [summary, { achievements }] = await Promise.all([
+      api('GET', '/api/me/stats'),
+      api('GET', '/api/me/achievements'),
+      loadHistory(false),
+    ]);
     renderSummary(summary);
+    renderBadges(achievements);
     $('statsBody').hidden = false;
   } catch (err) {
     $('statsMsg').textContent = t(err.message);
@@ -183,7 +189,7 @@ async function open() {
 // A finished game against the computer. Fire and forget: the game itself
 // never waits for this.
 export function recordCpuGame(game) {
-  api('POST', '/api/games/cpu', game).catch(() => {});
+  api('POST', '/api/games/cpu', game).then(checkAchievements, () => {});
 }
 
 // Guests' games wait in this browser, and join their stats if they sign up
