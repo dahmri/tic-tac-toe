@@ -1581,3 +1581,46 @@ body.spectating .cell {
 .usage-table .bar-cell {
   background: linear-gradient(to right, var(--chip) var(--bar), transparent var(--bar));
 }
+/* How-to-play guides: a practice board and the steps */
+.dialog.guide {
+  width: min(440px, calc(100vw - 32px));
+}
+.guide-btn {
+  justify-self: start;
+}
+.guide-step {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.guide-text {
+  min-height: 3em;
+}
+.guide-board {
+  width: min(240px, 70vw);
+  margin: 0 auto;
+}
+.guide-board .cell {
+  border-color: var(--ink);
+  border-style: solid;
+  border-width: 0;
+  border-radius: 0;
+}
+.guide-board .cell:nth-child(-n + 6) {
+  border-bottom-width: 3px;
+}
+.guide-board .cell:not(:nth-child(3n)) {
+  border-right-width: 3px;
+}
+.guide-board .cell.won {
+  background: var(--chip);
+}
+.guide-uboard {
+  width: min(360px, 80vw);
+  margin: 0 auto;
+}
+.guide-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}

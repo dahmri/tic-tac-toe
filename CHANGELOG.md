@@ -32,6 +32,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   have their own rating, monthly seasons, leaderboard and podium. Quick
   match pairs you by your rating in the rules you chose, and your Stats
   show all three. Ratings so far become the classic ones.
+- **How to play, step by step.** Choosing 3 marks or Ultimate shows a "How
+  to play" button: a short guide on a practice board where you make the
+  key moves yourself (a mark vanishing, being sent to another board, a
+  free move).
 
 ## [1.9.0] - 2026-09-25
 

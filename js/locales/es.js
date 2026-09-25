@@ -24,6 +24,8 @@ export default {
   '<mark>{mark} wins!</mark>': '<mark>¡Gana {mark}!</mark>',
   '<mark>{name} wins.</mark>': '<mark>Gana {name}.</mark>',
   '<mark>{name} wins.</mark> Go again?': '<mark>Gana {name}.</mark> ¿Otra vez?',
+  'A full small board with no line belongs to nobody.':
+    'Un tablero pequeño lleno sin línea no es de nadie.',
   'A hand-drawn tic-tac-toe game: play the computer, a friend, or players online.':
     'Un tres en raya dibujado a mano: juega contra la computadora, un amigo o jugadores en línea.',
   'A new address has to be confirmed again before you play online.':
@@ -137,6 +139,7 @@ export default {
   'Deleted player': 'Jugador eliminado',
   Difficulty: 'Dificultad',
   Dismiss: 'Descartar',
+  Done: 'Listo',
   'Donut Worry': 'Dónut te preocupes',
   'Download everything we keep about you: your profile, stats and every game, as a JSON file.':
     'Descarga todo lo que guardamos sobre ti: tu perfil, tus estadísticas y todas tus partidas, en un archivo JSON.',
@@ -194,6 +197,9 @@ export default {
   'Hold Unbeatable to a draw.': 'Empata contra Imbatible.',
   'Hot Diggity Dog': 'Hot dog loco',
   'How long': 'Durante cuánto tiempo',
+  'How to play': 'Cómo se juega',
+  'How to play: 3 marks': 'Cómo se juega: 3 marcas',
+  'How to play: Ultimate': 'Cómo se juega: Ultimate',
   'Hug Me Cactus': 'Cactus abrazable',
   'Hundred club': 'Club de los cien',
   "I've saved it": 'Ya lo guardé',
@@ -205,6 +211,8 @@ export default {
   'If you forget your password, a recovery code lets you set a new one. Making a new code replaces your old one.':
     'Si olvidas tu contraseña, un código de recuperación te permite elegir una nueva. Crear un código nuevo reemplaza el anterior.',
   'Illegal move.': 'Jugada no válida.',
+  'In 3 marks, each player keeps only their last three marks on the board.':
+    'Con 3 marcas, cada jugador conserva solo sus tres últimas marcas en el tablero.',
   'Invalid message.': 'Mensaje no válido.',
   'Invalid request.': 'Solicitud no válida.',
   Invite: 'Invitar',
@@ -263,6 +271,8 @@ export default {
   'New username for {name} (empty: Player{id})': 'Nuevo nombre para {name} (vacío: Player{id})',
   Next: 'Siguiente',
   'Night Owl': 'Búho nocturno',
+  'Nine small boards make one big board. Win three small boards in a row to win the game.':
+    'Nueve tableros pequeños forman uno grande. Gana tres tableros pequeños en línea para ganar la partida.',
   'No account needed: play the computer or a friend on this screen. Online games and stats need a free account; sign up later and your games come with you.':
     'No necesitas cuenta: juega contra la computadora o un amigo en esta pantalla. Las partidas en línea y las estadísticas necesitan una cuenta gratis; regístrate más tarde y tus partidas vienen contigo.',
   'No bots, scripts or other tricks to win games or climb the leaderboard.':
@@ -288,7 +298,18 @@ export default {
   'Not a move the computer makes.': 'La computadora no hace esa jugada.',
   'Not a square.': 'No es una casilla.',
   'Not found.': 'No encontrado.',
+  'Not that one: look for the highlighted square.': 'Esa no: busca la casilla resaltada.',
   'Nothing yet.': 'Nada todavía.',
+  'Now win three small boards in a row. Good luck!':
+    'Ahora gana tres tableros pequeños en línea. ¡Suerte!',
+  'O played the top-left square of the centre board, so you are sent to the top-left board. Tap its top-right corner.':
+    'O jugó la casilla de arriba a la izquierda del tablero central, así que te toca el tablero de arriba a la izquierda. Toca su esquina de arriba a la derecha.',
+  'O played there and sent you back. Finish your diagonal: tap the bottom-left corner of the top-left board.':
+    'O jugó allí y te devolvió. Completa tu diagonal: toca la esquina de abajo a la izquierda del tablero de arriba a la izquierda.',
+  'O played too. The faded X is your oldest mark: it vanishes when you play again.':
+    'O también jugó. La X desvaída es tu marca más antigua: desaparece cuando vuelvas a jugar.',
+  'O sent you back to the board you won. It is decided, so you may play in any open board: tap any square.':
+    'O te mandó al tablero que ganaste. Ya está decidido, así que puedes jugar en cualquier tablero abierto: toca una casilla.',
   'Octo-Hugger': 'Pulpo abrazador',
   Offline: 'Desconectado',
   'On fire': 'En racha',
@@ -341,6 +362,7 @@ export default {
   'Please log in.': 'Inicia sesión, por favor.',
   'Pocket Wizard': 'Mago de bolsillo',
   'Practice again': 'Practicar otra vez',
+  'Practice board': 'Tablero de práctica',
   "Practice: only the day's first try counts. New puzzle tomorrow!":
     'Práctica: solo cuenta el primer intento del día. ¡Nuevo reto mañana!',
   Privacy: 'Privacidad',
@@ -409,6 +431,7 @@ export default {
   'Spiky Hugger': 'Erizo abrazador',
   'Start: {mark} moves first': 'Inicio: {mark} juega primero',
   Stats: 'Estadísticas',
+  'Step {n} of {total}': 'Paso {n} de {total}',
   'Stone Face': 'Cara de piedra',
   'Stop watching': 'Dejar de mirar',
   'Suspend {name}': 'Suspender a {name}',
@@ -417,6 +440,8 @@ export default {
   'Suspend…': 'Suspender…',
   'Suspension lifted.': 'Suspensión levantada.',
   'Taco Tuesday': 'Martes de tacos',
+  'Tap the bottom-middle square. Your oldest mark vanishes, but you make a line!':
+    'Toca la casilla central de abajo. Tu marca más antigua desaparece, ¡pero haces una línea!',
   Terms: 'Condiciones',
   'Terms of use': 'Condiciones de uso',
   'Thanks: your report has been sent.': 'Gracias: tu denuncia se ha enviado.',
@@ -435,6 +460,7 @@ export default {
   'That player no longer exists.': 'Ese jugador ya no existe.',
   'That reset link has expired or was already used. Ask for a new one.':
     'Ese enlace para restablecer caducó o ya se usó. Pide uno nuevo.',
+  'That sends O to the top-right board.': 'Eso manda a O al tablero de arriba a la derecha.',
   'That square is taken.': 'Esa casilla ya está ocupada.',
   'That username and recovery code don’t match.':
     'Ese nombre de usuario y ese código de recuperación no coinciden.',
@@ -446,12 +472,16 @@ export default {
     'Ese nombre de usuario no está permitido. Prueba con otro.',
   "That's you!": '¡Eres tú!',
   'The GOAT': 'El GOAT',
+  'The board never fills up, so a game goes on until someone makes a line. After 60 moves it is a draw.':
+    'El tablero nunca se llena, así que la partida sigue hasta que alguien haga una línea. Tras 60 jugadas es empate.',
   'The game': 'El juego',
   'The game is busy. Try again.': 'La partida está ocupada. Inténtalo de nuevo.',
   'The link works for 1 hour. If you didn’t ask for this, ignore this email: your password stays the same.':
     'El enlace funciona durante 1 hora. Si no lo pediste, ignora este correo: tu contraseña no cambia.',
   'The link works for 24 hours. If you didn’t sign up, you can ignore this email.':
     'El enlace funciona durante 24 horas. Si no te registraste, puedes ignorar este correo.',
+  'The square you pick sends your opponent to the matching board: a centre square sends O to the centre board.':
+    'La casilla que eliges manda a tu rival al tablero correspondiente: una casilla central manda a O al tablero central.',
   'These terms are governed by the law of [country]. Questions: [contact email].':
     'Estas condiciones se rigen por la ley de [country]. Preguntas: [contact email].',
   'This account is suspended until {date}.': 'Esta cuenta está suspendida hasta el {date}.',
@@ -463,6 +493,11 @@ export default {
   'This round is over.': 'Esta ronda ha terminado.',
   "Three in a row wins. Nobody wins? That's a cat's game.":
     'Tres en línea gana. ¿Nadie gana? Es un empate.',
+  'Three in a row: the top-left board is yours!':
+    'Tres en línea: ¡el tablero de arriba a la izquierda es tuyo!',
+  'Three in a row: you win!': 'Tres en línea: ¡ganas!',
+  'Three marks: from now on, each new one wipes out your oldest.':
+    'Tres marcas: desde ahora, cada nueva borra la más antigua.',
   'Tiny Dragon': 'Dragoncito',
   'Tiny T-Rex': 'Mini T-Rex',
   'Tip: press <kbd>1</kbd>–<kbd>9</kbd> to play a square (keypad layout, <kbd>7</kbd> is top-left), <kbd>N</kbd> for a new round, <kbd>H</kbd> for a hint.':
@@ -568,6 +603,8 @@ export default {
   'You can have up to 200 friends.': 'Puedes tener hasta 200 amigos.',
   "You can see and download your data (Profile, Download my data), correct it (Profile), delete it (Profile, Delete account) and object to how it's used. Write to [contact email] for anything else. You can also complain to your data protection authority (in France, the CNIL).":
     'Puedes ver y descargar tus datos (Perfil, Descargar mis datos), corregirlos (Perfil), eliminarlos (Perfil, Eliminar la cuenta) y oponerte a su uso. Escribe a [contact email] para cualquier otra cosa. También puedes reclamar ante tu autoridad de protección de datos (en España, la AEPD).',
+  'You have two marks. Place your third one: tap the bottom-left corner.':
+    'Tienes dos marcas. Pon la tercera: toca la esquina de abajo a la izquierda.',
   "You haven't blocked anyone.": 'No has bloqueado a nadie.',
   'You keep only your last 3 marks: the faded one vanishes when you play again.':
     'Solo conservas tus 3 últimas marcas: la más tenue desaparece cuando vuelves a jugar.',
@@ -592,6 +629,8 @@ export default {
     'Tu cuenta: nombre y apellido, nombre de usuario, correo, fecha de nacimiento, país, avatar y tu teléfono si lo das. Tu nombre, tu correo, tu fecha de nacimiento y tu teléfono se guardan cifrados.',
   'Your data': 'Tus datos',
   'Your email is already confirmed.': 'Tu correo ya está confirmado.',
+  'Your first move can go anywhere. Tap the centre square of the top-left board.':
+    'Tu primera jugada puede ir en cualquier sitio. Toca la casilla central del tablero de arriba a la izquierda.',
   'Your games, ratings, statistics, friends and daily puzzle results.':
     'Tus partidas, puntuaciones, estadísticas, amigos y resultados del reto del día.',
   'Your last game': 'Tu última partida',

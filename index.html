@@ -316,6 +316,9 @@
           <p class="rule-note" id="ruleNote" hidden>
             You keep only your last 3 marks: the faded one vanishes when you play again.
           </p>
+          <button type="button" class="btn ghostbtn guide-btn" id="guideBtn" hidden>
+            How to play
+          </button>
         </div>
 
         <section class="guest-locked" id="guestLocked" aria-label="Online game" hidden>
@@ -670,6 +673,22 @@
       <section data-admin-panel="log" hidden>
         <ul class="admin-log" id="adminLog"></ul>
       </section>
+    </dialog>
+
+    <dialog class="dialog guide" id="guideDialog" aria-labelledby="guideTitle">
+      <div class="dialog-head">
+        <h2 id="guideTitle">How to play</h2>
+        <button type="button" class="btn ghostbtn" data-close>Close</button>
+      </div>
+      <p class="guide-step" id="guideStep"></p>
+      <p class="guide-text" id="guideText" aria-live="polite"></p>
+      <div class="board guide-board" id="guideBoard" aria-label="Practice board"></div>
+      <div class="guide-uboard" id="guideUboard" aria-label="Practice board" hidden></div>
+      <p class="form-msg" id="guideMsg" role="alert"></p>
+      <div class="guide-nav">
+        <button type="button" class="btn ghostbtn" id="guideBack">Back</button>
+        <button type="button" class="btn primary" id="guideNext">Next</button>
+      </div>
     </dialog>
 
     <dialog class="dialog stats" id="statsDialog" aria-labelledby="statsTitle">

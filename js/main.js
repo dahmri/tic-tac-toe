@@ -14,6 +14,7 @@ import { createUltimateBoard } from './ultimate-board.js';
 import { canPlayOnline, currentUser, initAccount, isGuest, leaveGuest } from './account.js';
 import { initLobby } from './lobby.js';
 import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
+import { initGuide } from './guide.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initReplay, openReplay } from './replay.js';
 import { checkAchievements } from './achievements-ui.js';
@@ -160,6 +161,7 @@ function render() {
   const puzzle = settings.mode === 'puzzle';
   $('rulesRow').hidden = inMatch() || watching() || onlineLocked() || puzzle;
   $('ruleNote').hidden = variant() === 'classic';
+  $('guideBtn').hidden = variant() === 'classic';
   $('ruleNote').textContent =
     variant() === 'vanish'
       ? t('You keep only your last 3 marks: the faded one vanishes when you play again.')
@@ -444,6 +446,7 @@ document.addEventListener('keydown', (e) => {
 initStats();
 // Admins only, so its code loads when first opened
 $('adminBtn').addEventListener('click', () => import('./admin.js').then((m) => m.openAdmin()));
+initGuide(() => variant());
 initReplay();
 initLegal();
 initPlayerMenu();
