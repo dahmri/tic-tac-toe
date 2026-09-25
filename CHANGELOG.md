@@ -36,6 +36,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   to play" button: a short guide on a practice board where you make the
   key moves yourself (a mark vanishing, being sent to another board, a
   free move).
+- **Notifications.** Turn them on in your profile, per device, to hear
+  about an invitation or your turn in an online game while the game isn't
+  on screen, including the installed app. Nothing is sent while the game
+  is in front of you. Needs the server's VAPID keys (see
+  docs/DEPLOYMENT.md).
 
 ## [1.9.0] - 2026-09-25
 

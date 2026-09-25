@@ -214,11 +214,14 @@ export default {
     'Avec 3 marques, chaque joueur ne garde que ses trois dernières marques sur la grille.',
   'Invalid message.': 'Message invalide.',
   'Invalid request.': 'Requête invalide.',
+  "Invitations and your turn in online games, when the game isn't on screen.":
+    "Les invitations et ton tour dans les parties en ligne, quand le jeu n'est pas à l'écran.",
   Invite: 'Inviter',
   'Invite again': 'Réinviter',
   'Invite {name}': 'Inviter {name}',
   Invited: 'Invitation envoyée',
   "It's not your turn.": "Ce n'est pas ton tour.",
+  "It's your turn against {name}.": "C'est ton tour contre {name}.",
   'Joined {date}': 'Inscrit le {date}',
   'Keep your first name under 50 characters.': 'Ton prénom doit faire moins de 50 caractères.',
   'Keep your last name under 50 characters.': 'Ton nom doit faire moins de 50 caractères.',
@@ -300,6 +303,14 @@ export default {
   'Not that one: look for the highlighted square.':
     'Pas celle-là : cherche la case en surbrillance.',
   'Nothing yet.': "Rien pour l'instant.",
+  Notifications: 'Notifications',
+  "Notifications are blocked for this site in your browser's settings.":
+    'Les notifications sont bloquées pour ce site dans les réglages de ton navigateur.',
+  'Notifications are off.': 'Notifications désactivées.',
+  "Notifications are on: we'll tell you about invitations and your turn.":
+    'Notifications activées : on te préviendra des invitations et de ton tour.',
+  "Notifications aren't available on this device.":
+    'Les notifications ne sont pas disponibles sur cet appareil.',
   'Now win three small boards in a row. Good luck!':
     'À toi de gagner trois petites grilles alignées. Bonne chance !',
   'O played the top-left square of the centre board, so you are sent to the top-left board. Tap its top-right corner.':
@@ -514,6 +525,8 @@ export default {
   'Try board {b}, square {c}.': 'Essaie grille {b}, case {c}.',
   'Try row {row}, column {col}.': 'Essaie ligne {row}, colonne {col}.',
   'Turbo Snail': 'Escargot turbo',
+  'Turn off notifications': 'Désactiver les notifications',
+  'Turn on notifications': 'Activer les notifications',
   'Tuxedo Penguin': 'Pingouin en smoking',
   Ultimate: 'Ultimate',
   'Ultimate rules.': 'Règles Ultimate.',
@@ -661,6 +674,7 @@ export default {
   '{mark} to play': 'Au tour de {mark}',
   '{name} declined your invitation.': '{name} a refusé ton invitation.',
   "{name} didn't answer.": "{name} n'a pas répondu.",
+  '{name} invites you to play.': "{name} t'invite à jouer.",
   '{name} is already playing.': '{name} est déjà en partie.',
   '{name} is suspended and logged out.': '{name} est suspendu et déconnecté.',
   '{name} is thinking…': '{name} réfléchit…',

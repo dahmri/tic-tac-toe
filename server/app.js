@@ -34,13 +34,16 @@ import safetyRoutes from './routes/safety.js';
 import puzzleRoutes from './routes/puzzles.js';
 import adminRoutes from './routes/admin.js';
 import { createAdmin } from './admin.js';
+import pushRoutes from './routes/push.js';
+import { createPush } from './push.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const { version: VERSION } = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 );
 
-export async function buildApp({ config, db, redis }) {
+// pushSender: a stand-in for web push, in tests
+export async function buildApp({ config, db, redis, pushSender = null }) {
   const app = Fastify({
     trustProxy: config.trustProxy,
     bodyLimit: 16 * 1024,
@@ -112,6 +115,7 @@ export async function buildApp({ config, db, redis }) {
     invites: createInvites(redis, { bus, presence, matches, safety }),
     matchmaking: createMatchmaking(redis, { presence, matches, stats, bus }),
     stats,
+    push: createPush({ db, redis, config, log: app.log, sender: pushSender }),
   });
   app.ctx.admin = createAdmin(app.ctx);
 
@@ -246,6 +250,7 @@ export async function buildApp({ config, db, redis }) {
   await app.register(safetyRoutes);
   await app.register(puzzleRoutes);
   await app.register(adminRoutes);
+  await app.register(pushRoutes);
 
   app.setNotFoundHandler((req, reply) => reply.code(404).send({ error: 'Not found.' }));
 

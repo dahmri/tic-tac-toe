@@ -22,7 +22,14 @@ export function connectLive({ onMessage, onStatus }) {
     onStatus(retries ? 'offline' : 'connecting');
 
     ws.addEventListener('open', () => {
-      pingTimer = setInterval(() => send({ t: 'ping' }), PING_MS);
+      // Whether the page is on screen goes with every ping: no notifications
+      // while it is (server/push.js)
+      const beat = () => send({ t: 'visible', on: document.visibilityState === 'visible' });
+      beat();
+      pingTimer = setInterval(() => {
+        send({ t: 'ping' });
+        beat();
+      }, PING_MS);
     });
     ws.addEventListener('message', (e) => {
       let msg;
@@ -55,12 +62,17 @@ export function connectLive({ onMessage, onStatus }) {
     return true;
   }
 
+  // Hidden or back on screen: said at once, not at the next ping
+  const onVisibility = () => send({ t: 'visible', on: document.visibilityState === 'visible' });
+  document.addEventListener('visibilitychange', onVisibility);
+
   open();
 
   return {
     send,
     close() {
       stopped = true;
+      document.removeEventListener('visibilitychange', onVisibility);
       clearTimeout(retryTimer);
       clearInterval(pingTimer);
       ws?.close();

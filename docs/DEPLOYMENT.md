@@ -64,6 +64,11 @@ SMTP_USER=your-smtp-user
 SMTP_PASS=your-smtp-password
 MAIL_FROM="Pencil Tic-Tac-Toe <no-reply@tictactoe.example.com>"
 EOF
+# Notifications: a key pair made once (prints VAPID_PUBLIC_KEY and
+# VAPID_PRIVATE_KEY lines), added to the same file
+docker run --rm node:25-alpine npx -y web-push@3.6.7 generate-vapid-keys |
+  awk '/Public Key/{getline; print "VAPID_PUBLIC_KEY=" $1}
+       /Private Key/{getline; print "VAPID_PRIVATE_KEY=" $1}' >> /srv/tic-tac-toe/.env
 chmod 600 /srv/tic-tac-toe/.env
 ```
 
@@ -79,6 +84,12 @@ Sign-ups carry a small puzzle the browser solves while the form is filled
 in (no CAPTCHA service). `SIGNUP_CHALLENGE_BITS` sets how hard it is:
 18, the default, takes about a second on a phone; each extra bit doubles
 it. Raise it if bots get through, lower it if players complain.
+
+`VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` let the site send notifications
+(an invitation, or your turn, while the game isn't on screen); players turn
+them on in their profile. Keep the pair: a new one stops every existing
+subscription, and players have to turn notifications on again. Without the
+keys, the profile says notifications aren't available.
 
 **Back up `DATA_ENCRYPTION_KEY` somewhere safe** (a password manager). It
 encrypts players' names, email addresses, birth dates and phone numbers; without it that data
