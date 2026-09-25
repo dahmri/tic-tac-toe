@@ -4,13 +4,15 @@ test('the theme switch goes automatic, light, dark, and is remembered', async ({
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/');
   const button = page.locator('#themeBtn');
-  const theme = () => page.evaluate(() => document.documentElement.dataset.theme ?? 'auto');
+  const theme = () =>
+    page.evaluate(() => globalThis.document.documentElement.dataset.theme ?? 'auto');
   await expect(button).toHaveAccessibleName('Theme: automatic');
   expect(await theme()).toBe('auto');
   await button.click();
   await expect(button).toHaveAccessibleName('Theme: light');
   expect(await theme()).toBe('light');
-  const paper = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const paper = () =>
+    page.evaluate(() => globalThis.getComputedStyle(globalThis.document.body).backgroundColor);
   expect(await paper()).toBe('rgb(246, 247, 242)'); // light, though the system is dark
   await button.click();
   expect(await theme()).toBe('dark');
