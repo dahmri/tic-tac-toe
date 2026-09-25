@@ -66,6 +66,7 @@ export default {
   "Blocked players can't invite you or be matched with you, and you won't see each other online.":
     "Les joueurs bloqués ne peuvent pas t'inviter ni être mis en face de toi, et vous ne vous voyez plus en ligne.",
   'Blocked.': 'Bloqué.',
+  'Board {b}, square {c}: {value}': 'Grille {b}, case {c} : {value}',
   'By creating an account you accept the <a href="#terms">terms of use</a> and the <a href="#privacy">privacy policy</a>. You must be at least 16.':
     'En créant un compte, tu acceptes les <a href="#terms">conditions d\'utilisation</a> et la <a href="#privacy">politique de confidentialité</a>. Tu dois avoir au moins 16 ans.',
   "Can't reach the server. Check your connection.":
@@ -295,6 +296,7 @@ export default {
     'Joue une partie en ligne pour entrer au classement.',
   'Play as a guest 👻': 'Jouer en invité 👻',
   'Play fair and be kind': 'Joue loyalement et sois sympa',
+  'Play in the highlighted board.': 'Joue dans la grille en surbrillance.',
   Played: 'Jouées',
   Player: 'Joueur',
   'Player {mark}': 'Joueur {mark}',
@@ -425,9 +427,12 @@ export default {
   'Top Banana': 'Banane en chef',
   'Trash Panda': 'Raton poubelle',
   'Try Unbeatable: nobody has ever beaten it.': "Essaie Imbattable : personne ne l'a jamais battu.",
+  'Try board {b}, square {c}.': 'Essaie grille {b}, case {c}.',
   'Try row {row}, column {col}.': 'Essaie ligne {row}, colonne {col}.',
   'Turbo Snail': 'Escargot turbo',
   'Tuxedo Penguin': 'Pingouin en smoking',
+  Ultimate: 'Ultimate',
+  'Ultimate rules.': 'Règles Ultimate.',
   Unbeatable: 'Imbattable',
   Unblock: 'Débloquer',
   'Unblock {name}': 'Débloquer {name}',
@@ -454,6 +459,7 @@ export default {
   'Usernames are 3 to 20 characters.': "Les noms d'utilisateur font de 3 à 20 caractères.",
   'Vanishing act': 'Tour de disparition',
   'Waiting for {who} (3 marks)…': 'En attente de {who} (3 marques)…',
+  'Waiting for {who} (Ultimate)…': 'En attente de {who} (Ultimate)…',
   'Waiting for {who}…': 'En attente de {who}…',
   Watch: 'Regarder',
   'Watch {name} play': 'Regarder {name} jouer',
@@ -486,6 +492,8 @@ export default {
   'Win rate as O': 'Taux de victoire en O',
   'Win rate as X': 'Taux de victoire en X',
   'Win streak': 'Série de victoires',
+  'Win three small boards in a row. The square you play sends your opponent to that board.':
+    'Gagne trois petites grilles alignées. La case où tu joues envoie ton adversaire dans la grille correspondante.',
   'Wipe scores': 'Effacer les scores',
   'With an account you can play people around the world, get a rating, climb the leaderboard, keep your stats, and pick a funny avatar.':
     'Avec un compte, tu peux jouer contre des gens du monde entier, obtenir une cote, grimper au classement, garder tes statistiques et choisir un avatar rigolo.',
@@ -571,6 +579,7 @@ export default {
   '{rate} of {n}': '{rate} sur {n}',
   '{who} invites you to play': "{who} t'invite à jouer",
   '{who} invites you to play (3 marks)': "{who} t'invite à jouer (3 marques)",
+  '{who} invites you to play (Ultimate)': "{who} t'invite à jouer (Ultimate)",
   '{x} vs {o}': '{x} contre {o}',
   '⏱ Your time: {secs}s': '⏱ Ton temps : {secs} s',
   "⏱ {name}'s time: {secs}s": '⏱ Temps de {name} : {secs} s',

@@ -240,7 +240,9 @@ function renderInvites() {
         ...sentence(
           inv.variant === 'vanish'
             ? '{who} invites you to play (3 marks)'
-            : '{who} invites you to play',
+            : inv.variant === 'ultimate'
+              ? '{who} invites you to play (Ultimate)'
+              : '{who} invites you to play',
           who(inv.from),
         ),
       );
@@ -266,7 +268,11 @@ function renderInvites() {
     const text = el('span', 'invite-text');
     text.append(
       ...sentence(
-        inv.variant === 'vanish' ? 'Waiting for {who} (3 marks)…' : 'Waiting for {who}…',
+        inv.variant === 'vanish'
+          ? 'Waiting for {who} (3 marks)…'
+          : inv.variant === 'ultimate'
+            ? 'Waiting for {who} (Ultimate)…'
+            : 'Waiting for {who}…',
         who(inv.to),
       ),
     );

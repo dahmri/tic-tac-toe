@@ -38,6 +38,10 @@ for (const scheme of ['light', 'dark']) {
       await page.getByRole('button', { name: /Play as a guest/ }).click();
       await expect(page.locator('#board')).toBeVisible();
       await audit(page, 'guest game');
+      await page.getByRole('button', { name: 'Ultimate' }).click();
+      await page.locator('#uboard .usq').nth(40).click();
+      await audit(page, 'ultimate');
+      await page.getByRole('button', { name: 'Classic' }).click();
       await page.getByRole('button', { name: 'Online', exact: true }).click();
       await audit(page, 'online, locked');
       await page.getByRole('button', { name: '🧩 Puzzle' }).click();

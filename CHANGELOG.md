@@ -8,6 +8,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Ultimate tic-tac-toe.** A third set of rules, next to Classic and 3
+  marks: nine small boards in a big one. The square you play sends your
+  opponent to the matching small board; win three small boards in a row
+  to win. Play it against the computer (Casual, Medium or Hard), on the
+  same screen, or online (invitations and quick match), with hints,
+  replays and stats. The board you must play in is highlighted, and the
+  number keys play in it.
 - **Watch live games.** Players in a game have a Watch button in the
   lobby (and in your friends list): you see their board move by move, with
   their reactions, until you stop or the game ends. The players see how

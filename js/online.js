@@ -4,6 +4,7 @@
 // page; this module tells it when.
 
 import { other, replay } from './rules.js';
+import { replayUltimate } from './ultimate.js';
 import { connectLive } from './live.js';
 import { avatarEmoji } from './avatars.js';
 import { countryFlag } from './countries.js';
@@ -50,6 +51,7 @@ export const isConnected = () => liveStatus === 'online';
 export const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X');
 export const opponent = () => (match ? match.players[other(mySymbol())] : null);
 export const matchMoves = () => onBoard()?.moves.length ?? 0;
+export const onBoardMoves = () => onBoard()?.moves ?? [];
 const ratingOf = (p) => ratings.get(p.id) ?? p.rating;
 // The rules on the board: an online match's own, otherwise the player's choice
 // (the daily puzzle is always classic)
@@ -201,7 +203,8 @@ export function renderOnline() {
       $('opponentMore').replaceChildren(menuButton(rival));
     }
     const role = mySymbol() === 'X' ? t('You are X and open the first round.') : t('You are O.');
-    $('roomRole').textContent = variant() === 'vanish' ? `${role} ${t('3-mark rules.')}` : role;
+    const rules = { vanish: t('3-mark rules.'), ultimate: t('Ultimate rules.') }[variant()];
+    $('roomRole').textContent = rules ? `${role} ${rules}` : role;
   }
   // The lobby refreshes its list only while it's on screen
   setLobby({
@@ -261,14 +264,23 @@ function drawMatch(before, next) {
   if (newRound) hooks.resetBoard();
   turnEndsAt =
     next.turnLeft === null || next.turnLeft === undefined ? null : Date.now() + next.turnLeft;
-  game.board = next.board.slice();
-  game.marks = replay(next.moves, next.starter, next.variant ?? 'classic').marks;
+  if (next.variant === 'ultimate') {
+    game.upos = replayUltimate(next.moves, next.starter);
+    game.board = game.upos.cells;
+    game.marks = { X: [], O: [] };
+  } else {
+    game.upos = null;
+    game.board = next.board.slice();
+    game.marks = replay(next.moves, next.starter, next.variant ?? 'classic').marks;
+  }
   game.turn = next.turn;
   game.over = next.over;
   game.busy = false;
   settings.scores = { ...next.score };
-  syncMarks(game.board);
-  if (next.line && !isWon()) drawWin(next.line);
+  if (next.variant !== 'ultimate') {
+    syncMarks(game.board);
+    if (next.line && !isWon()) drawWin(next.line);
+  }
   if (fresh === 1) sound.mark(next.board[next.moves.at(-1)]);
   return fresh;
 }

@@ -45,7 +45,9 @@ export function other(player) {
 // 'classic': the usual game. 'vanish': each player keeps only their last
 // three marks; a fourth makes their oldest one vanish, so the board never
 // fills up and someone usually wins.
-export const VARIANTS = ['classic', 'vanish'];
+// 'ultimate': nine boards in one (js/ultimate.js), 81 squares
+export const VARIANTS = ['classic', 'vanish', 'ultimate'];
+export const boardSize = (variant) => (variant === 'ultimate' ? 81 : 9);
 export const VANISH_KEEP = 3;
 // A vanish game this long is called a draw (both sides defending forever)
 export const VANISH_MAX_MOVES = 60;

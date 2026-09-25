@@ -17,6 +17,9 @@ export const game = {
   turn: 'X',
   over: false,
   busy: false,
+  // Under the Ultimate rules: the whole position (ultimate.js); `board`
+  // then holds its 81 squares
+  upos: null,
 };
 
 export const settings = load();
