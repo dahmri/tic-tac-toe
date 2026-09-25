@@ -33,11 +33,17 @@ x-api: &api
     SMTP_SECURE: ${SMTP_SECURE:-}
     SMTP_USER: ${SMTP_USER:-}
     SMTP_PASS: ${SMTP_PASS:-}
+    VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+    VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+    VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     MAIL_FROM: ${MAIL_FROM:-}
     # Only the CI stack changes these three; keep the defaults in production
     COOKIE_SECURE: ${COOKIE_SECURE:-true}
     RATE_LIMITS: ${RATE_LIMITS:-on}
     MAIL_OUTBOX: ${MAIL_OUTBOX:-off}
+    SIGNUP_CHALLENGE_BITS: ${SIGNUP_CHALLENGE_BITS:-18}
+    SIGNUP_CHALLENGE_MIN_MS: ${SIGNUP_CHALLENGE_MIN_MS:-1000}
+    ARENA_ALWAYS: ${ARENA_ALWAYS:-}
 
 services:
   web:

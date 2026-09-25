@@ -6,6 +6,49 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-09-25
+
+### Added
+
+- **Where you're logged in.** Your profile lists the devices you're logged
+  in on ("Firefox on Windows", last active...), so you can log one out, or
+  everywhere else at once. No IP addresses are kept.
+- **A sign-up check without a CAPTCHA.** While you fill in the sign-up
+  form, your browser quietly solves a small puzzle (about a second of
+  work); bots signing up by the thousand pay that each time. Nothing is
+  sent to another company and there are no pictures to click.
+- **Backup restore drill.** `scripts/restore-drill.sh` restores the newest
+  backup into a scratch database and checks it can really be used
+  (migrations, tables, personal data opens with the server's key). See
+  docs/DEPLOYMENT.md.
+- **Admin page.** For whoever runs the site: open reports, renaming
+  players with offensive names, suspending (1, 7 or 30 days, or until
+  further notice) or deleting accounts, and a log of every admin action.
+  A suspended player is logged out at once. Make someone an admin with
+  `npm run make-admin -- <username>`.
+- **Usage numbers.** In the admin page: players active each day, sign-ups,
+  and games by kind over the last 30 days. Counts only: which players were
+  active isn't kept (Redis HyperLogLog), and nothing goes to an analytics
+  company.
+- **A rating for each set of rules.** Classic, 3 marks and Ultimate each
+  have their own rating, monthly seasons, leaderboard and podium. Quick
+  match pairs you by your rating in the rules you chose, and your Stats
+  show all three. Ratings so far become the classic ones.
+- **How to play, step by step.** Choosing 3 marks or Ultimate shows a "How
+  to play" button: a short guide on a practice board where you make the
+  key moves yourself (a mark vanishing, being sent to another board, a
+  free move).
+- **Notifications.** Turn them on in your profile, per device, to hear
+  about an invitation or your turn in an online game while the game isn't
+  on screen, including the installed app. Nothing is sent while the game
+  is in front of you. Needs the server's VAPID keys (see
+  docs/DEPLOYMENT.md).
+- **Weekend arena.** Every Saturday, 18:00 to 20:00 UTC, join the arena
+  from the online lobby and you're paired again and again with players
+  close to your score, one classic game at a time: 2 points for a win, 1
+  for a draw. Pause whenever you like; the standings show the top players
+  and last week's podium.
+
 ## [1.9.0] - 2026-09-25
 
 ### Added

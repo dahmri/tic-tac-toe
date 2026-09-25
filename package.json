@@ -1,6 +1,6 @@
 {
   "name": "pencil-tic-tac-toe",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "A hand-drawn tic-tac-toe game for the browser: play the computer or a friend.",
   "type": "module",
   "private": true,
@@ -11,6 +11,7 @@
     "start": "node server/index.js",
     "dev": "STATIC_DIR=. node --watch-path=server --watch-path=js server/index.js",
     "migrate": "node server/migrate.js",
+    "make-admin": "node server/make-admin.js",
     "build": "node scripts/build.mjs",
     "preview": "npm run build && STATIC_DIR=dist node server/index.js",
     "lint": "eslint .",
@@ -41,6 +42,7 @@
     "fastify": "5.12.5",
     "ioredis": "6.0.0",
     "nodemailer": "10.0.10",
-    "pg": "8.23.0"
+    "pg": "8.23.0",
+    "web-push": "3.6.7"
   }
 }

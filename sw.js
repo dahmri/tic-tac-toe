@@ -5,6 +5,9 @@
 // deploy shows up at once; the cached copy is only used when the network
 // fails. The API and the live connection are never cached. The build
 // (scripts/build.mjs) fills in the version and the files to cache up front.
+//
+// It also shows notifications (server/push.js): an invitation, or your turn,
+// while the game isn't on screen. A click brings the game forward.
 
 const VERSION = 'dev';
 const PRECACHE = ['./'];
@@ -52,4 +55,34 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname === '/version.json') return;
     event.respondWith(networkFirst(request));
   }
+});
+
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data?.json() ?? {};
+  } catch {
+    /* not ours: show the default below */
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Pencil Tic-Tac-Toe', {
+      body: data.body || '',
+      tag: data.tag, // a newer one of the same kind replaces the last
+      renotify: !!data.tag,
+      icon: 'icons/icon-192.png',
+      data: { url: data.url || './' },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    (async () => {
+      const pages = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const page = pages.find((c) => new URL(c.url).origin === self.location.origin);
+      if (page) return page.focus();
+      return self.clients.openWindow(event.notification.data?.url || './');
+    })(),
+  );
 });

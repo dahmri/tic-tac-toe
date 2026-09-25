@@ -55,7 +55,15 @@ function sourceFiles(dir) {
 function codeKeys() {
   const keys = new Set();
   const files = [...sourceFiles('js/'), ...sourceFiles('server/')].filter(
-    (f) => !['server/config.js', 'server/migrate.js', 'server/index.js'].includes(f),
+    // Command-line tools, which talk to whoever runs the server
+    (f) =>
+      ![
+        'server/config.js',
+        'server/migrate.js',
+        'server/index.js',
+        'server/restore-check.js',
+        'server/make-admin.js',
+      ].includes(f),
   );
   for (const file of files) {
     // Comments out first: their apostrophes would pair up with real quotes

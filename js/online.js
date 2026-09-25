@@ -10,6 +10,7 @@ import { avatarEmoji } from './avatars.js';
 import { countryFlag } from './countries.js';
 import { canPlayOnline, currentUser } from './account.js';
 import { handleLobbyMessage, lobbyError, resetLobby, setLastOpponent, setLobby } from './lobby.js';
+import { refreshArena } from './arena-ui.js';
 import { signed } from './stats.js';
 import { sound } from './sound.js';
 import { REACTIONS } from './reactions.js';
@@ -26,7 +27,8 @@ let live = null;
 let liveStatus = 'offline'; // 'connecting' | 'online' | 'offline'
 let me = null;
 let match = null;
-// Latest known ratings, by player id, and the points each player won or
+// Latest known ratings, by "rules:player id" (each set of rules has its
+// own), and the points each player won or
 // lost in the round that just ended ({ match, round, change: { id: n } })
 const ratings = new Map();
 let lastRound = null;
@@ -52,7 +54,9 @@ export const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X
 export const opponent = () => (match ? match.players[other(mySymbol())] : null);
 export const matchMoves = () => onBoard()?.moves.length ?? 0;
 export const onBoardMoves = () => onBoard()?.moves ?? [];
-const ratingOf = (p) => ratings.get(p.id) ?? p.rating;
+// A player's rating in some rules: the latest heard, or the one the match
+// (or hello) came with
+const ratingOf = (p, rules = 'classic') => ratings.get(`${rules}:${p.id}`) ?? p.rating;
 // The rules on the board: an online match's own, otherwise the player's choice
 // (the daily puzzle is always classic)
 export const variant = () =>
@@ -81,7 +85,8 @@ export function sendMove(square) {
 }
 
 export function askNextRound() {
-  if (inMatch() && game.over) live.send({ t: 'next-round', match: match.id });
+  // In the arena, the next game comes with a new opponent
+  if (inMatch() && game.over && !match.arena) live.send({ t: 'next-round', match: match.id });
 }
 
 export function leaveMatch() {
@@ -195,7 +200,7 @@ export function renderOnline() {
     const chip = document.createElement('span');
     chip.className = 'rating-chip';
     chip.title = t('Rating');
-    chip.textContent = String(ratingOf(rival));
+    chip.textContent = String(ratingOf(rival, match.variant ?? 'classic'));
     $('opponentName').append(' ', chip);
     // Rebuilt only for a new opponent, so it doesn't lose focus
     if ($('opponentMore').dataset.id !== String(rival.id)) {
@@ -204,15 +209,24 @@ export function renderOnline() {
     }
     const role = mySymbol() === 'X' ? t('You are X and open the first round.') : t('You are O.');
     const rules = { vanish: t('3-mark rules.'), ultimate: t('Ultimate rules.') }[variant()];
-    $('roomRole').textContent = rules ? `${role} ${rules}` : role;
+    const arena = match.arena ? t('Arena game: one round, then a new opponent.') : '';
+    $('roomRole').textContent = [role, rules, arena].filter(Boolean).join(' ');
   }
   // The lobby refreshes its list only while it's on screen
   setLobby({
     visible: online() && !onlineLocked() && !watching() && !$('gameView').hidden,
     inMatch: inMatch(),
   });
+  // In a match, the rating for its rules; otherwise the classic one, shown
+  // only while the classic rules are chosen
   const chip = $('meRating');
-  const rating = me ? ratingOf(me) : null;
+  const rating = !me
+    ? null
+    : inMatch()
+      ? ratingOf(match.players[mySymbol()], match.variant ?? 'classic')
+      : variant() === 'classic'
+        ? ratingOf(me)
+        : null;
   chip.hidden = !rating;
   chip.textContent = rating ? String(rating) : '';
   renderClock();
@@ -328,9 +342,11 @@ function onMatch(next) {
       setNetMessage(
         next.leftBy === mine
           ? ''
-          : next.forfeit
-            ? t('{name} left the game. You win the round.', { name: rival })
-            : t('{name} left the game.', { name: rival }),
+          : next.arena && !next.leftBy
+            ? t('Arena game over. Your next opponent is on the way.')
+            : next.forfeit
+              ? t('{name} left the game. You win the round.', { name: rival })
+              : t('{name} left the game.', { name: rival }),
       );
       match = null;
       settings.scores = zeroScores();
@@ -350,7 +366,7 @@ function onLiveMessage(msg) {
       // After a reconnect the server has forgotten what this page watched
       if (watched) live.send({ t: 'watch', user: watched.players.X.id });
       me = msg.me;
-      ratings.set(me.id, me.rating);
+      ratings.set(`classic:${me.id}`, me.rating);
       if (msg.match && !msg.match.ended) showMatch(msg.match);
       else if (match) {
         match = null; // it ended while we were away
@@ -376,10 +392,14 @@ function onLiveMessage(msg) {
     case 'watchers':
       if (msg.match === match?.id) spectators = msg.count;
       break;
+    case 'arena':
+      refreshArena();
+      break;
     case 'ratings': {
       const change = {};
+      const rules = (msg.match === match?.id && match.variant) || 'classic';
       for (const [id, r] of Object.entries(msg.ratings)) {
-        ratings.set(Number(id), r.rating);
+        ratings.set(`${rules}:${id}`, r.rating);
         change[id] = r.change;
       }
       lastRound = { match: msg.match, round: msg.round, change };

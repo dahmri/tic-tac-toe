@@ -43,6 +43,13 @@ test('a win moves both ratings and puts the players on the leaderboard', async (
   await expect(rowOf(ann.player.username)).toHaveClass(/me/);
   await expect(dialog.locator('#lbMe')).toContainText('in Iceland, rated 1216');
 
+  // The 3-mark rules have their own leaderboard, where Ann hasn't played
+  await dialog.getByRole('button', { name: '3 marks' }).click();
+  await expect(rowOf(ann.player.username)).toHaveCount(0);
+  await expect(dialog.locator('#lbMe')).toHaveText('');
+  await dialog.getByRole('button', { name: 'Classic' }).click();
+  await expect(rowOf(ann.player.username)).toContainText('1216');
+
   await dialog.getByLabel('Leaderboard for').selectOption('NZ');
   await expect(rowOf(bob.player.username)).toContainText('1184');
   await expect(rowOf(ann.player.username)).toHaveCount(0);
@@ -51,9 +58,9 @@ test('a win moves both ratings and puts the players on the leaderboard', async (
   // The round shows in the history with its points
   await bob.page.getByRole('button', { name: 'Stats' }).click();
   const stats = bob.page.getByRole('dialog', { name: 'Your stats' });
-  await expect(stats.locator('#ratingTiles .tile', { hasText: 'This season' })).toContainText(
-    '1184',
-  );
+  // One rating per set of rules: only the classic one moved
+  await expect(stats.locator('#ratingTiles .tile', { hasText: 'Classic' })).toContainText('1184');
+  await expect(stats.locator('#ratingTiles .tile', { hasText: '3 marks' })).toContainText('1200');
   await expect(stats.locator('#historyList .history-item').first()).toContainText('−16');
   await closePlayers(ann, bob);
 });

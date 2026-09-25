@@ -31,10 +31,21 @@ function play(match, square, p) {
 
 export const TURN_MS = 30_000;
 
-export function newMatch({ id, x, o, variant = 'classic', turnMs = TURN_MS, now = Date.now() }) {
+// arena: the weekly arena this game is part of (one round, then the arena
+// finds each player a new opponent), or null
+export function newMatch({
+  id,
+  x,
+  o,
+  variant = 'classic',
+  turnMs = TURN_MS,
+  arena = null,
+  now = Date.now(),
+}) {
   return {
     id,
     variant,
+    arena,
     turnMs,
     deadline: now + turnMs,
     players: { X: x, O: o }, // { id, username, country, avatar, rating }
@@ -73,6 +84,7 @@ function roundRecord(match, now) {
     moves: match.moves.slice(),
     variant: match.variant,
     starter: match.starter,
+    arena: match.arena ?? null,
     startedAt: match.roundStartedAt,
     endedAt: now,
   };
@@ -118,6 +130,7 @@ export function nextRound(match, userId, now = Date.now()) {
   if (!symbolOf(match, userId)) return fail('You are not in this game.');
   if (match.ended) return fail('This game has ended.');
   if (!match.over) return fail('Finish this round first.');
+  if (match.arena) return fail('In the arena, your next opponent is found for you.');
   const starter = other(match.starter);
   return {
     match: {
@@ -173,4 +186,12 @@ export function leave(match, userId, now = Date.now()) {
   next.forfeit = true;
   next.score = { ...match.score, [w]: match.score[w] + 1 };
   return { match: next, finished: roundRecord(next, now) };
+}
+
+// Ends a match whose last round is over (an arena game, after a moment to
+// see the result). Nobody left: `leftBy` stays unset.
+export function close(match) {
+  if (match.ended) return { match };
+  if (!match.over) return fail('Finish this round first.');
+  return { match: { ...match, ended: true, deadline: null, version: match.version + 1 } };
 }

@@ -64,6 +64,11 @@ SMTP_USER=your-smtp-user
 SMTP_PASS=your-smtp-password
 MAIL_FROM="Pencil Tic-Tac-Toe <no-reply@tictactoe.example.com>"
 EOF
+# Notifications: a key pair made once (prints VAPID_PUBLIC_KEY and
+# VAPID_PRIVATE_KEY lines), added to the same file
+docker run --rm node:25-alpine npx -y web-push@3.6.7 generate-vapid-keys |
+  awk '/Public Key/{getline; print "VAPID_PUBLIC_KEY=" $1}
+       /Private Key/{getline; print "VAPID_PRIVATE_KEY=" $1}' >> /srv/tic-tac-toe/.env
 chmod 600 /srv/tic-tac-toe/.env
 ```
 
@@ -74,6 +79,17 @@ must confirm their email to play online, so without SMTP settings nobody
 can. Emails are then only written to the api's log (`docker compose logs
 api`). Send from a domain you control, and add the SPF and DKIM records
 your provider gives you, or the emails will land in spam.
+
+Sign-ups carry a small puzzle the browser solves while the form is filled
+in (no CAPTCHA service). `SIGNUP_CHALLENGE_BITS` sets how hard it is:
+18, the default, takes about a second on a phone; each extra bit doubles
+it. Raise it if bots get through, lower it if players complain.
+
+`VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` let the site send notifications
+(an invitation, or your turn, while the game isn't on screen); players turn
+them on in their profile. Keep the pair: a new one stops every existing
+subscription, and players have to turn notifications on again. Without the
+keys, the profile says notifications aren't available.
 
 **Back up `DATA_ENCRYPTION_KEY` somewhere safe** (a password manager). It
 encrypts players' names, email addresses, birth dates and phone numbers; without it that data
@@ -155,13 +171,15 @@ online matches (invitations, moves every ~0.3 s, new rounds) while their
 lobbies poll the player list, then reports how quickly moves are answered:
 
 ```sh
-# a test server: no rate limits, and emails readable by the script
-RATE_LIMITS=off MAIL_OUTBOX=on PORT=4280 node server/index.js
+# a test server: no rate limits, emails readable by the script, an easy
+# sign-up puzzle
+RATE_LIMITS=off MAIL_OUTBOX=on SIGNUP_CHALLENGE_BITS=4 SIGNUP_CHALLENGE_MIN_MS=0 \
+  PORT=4280 node server/index.js
 npm run load-test -- --url http://127.0.0.1:4280 --players 1000 --seconds 60
 ```
 
 Never point it at production: it creates accounts. On staging, start the
-api with `RATE_LIMITS=off MAIL_OUTBOX=on` for the test only.
+api with those settings for the test only.
 
 Measured on 25 September 2026, on a laptop (Apple Silicon) running one
 game server, PostgreSQL, Redis and the load test itself:
@@ -178,7 +196,22 @@ players. A small VPS is slower than this laptop: run the test on staging
 before a launch. Beyond one server, run more game servers behind nginx
 (`API_REPLICAS=4`): they share everything through Redis.
 
-## Monitoring
+## Admins
+
+Make yourself an admin once you have an account on the site:
+
+```sh
+cd /srv/tic-tac-toe/current && docker compose exec api node server/make-admin.js <username>
+# and to take it back:
+cd /srv/tic-tac-toe/current && docker compose exec api node server/make-admin.js <username> --remove
+```
+
+Admins get an **Admin** button: open reports (dismiss them, or rename,
+suspend or delete the player), a player search, and the usage numbers
+(players active each day, sign-ups, games by kind, for the last 30 days).
+The numbers are counts only; which players were active isn't stored. Every
+admin action is written to a log, visible in the same dialog. Admins can't
+change other admins.
 
 - **Is it up?** The Uptime workflow (`.github/workflows/uptime.yml`)
   checks `SITE_URL` every 15 minutes: the page, and `/api/health`, which
@@ -209,6 +242,20 @@ docker compose exec -T db pg_dump -U tictactoe -Fc tictactoe > /backups/ttt-$(da
 
 Restore with `pg_restore -U tictactoe -d tictactoe --clean`. Keep backups
 off the server, and keep `DATA_ENCRYPTION_KEY` apart from them.
+
+A backup nobody has restored is a hope, not a backup. Once a month, run
+the restore drill: it restores the newest backup into a scratch database
+beside the live one, checks that every migration is there, that the
+tables read, and that players' personal data opens with the server's
+`DATA_ENCRYPTION_KEY`, then drops the copy. It exits non-zero if the
+backup isn't usable.
+
+```sh
+cd /srv/tic-tac-toe/current && scripts/restore-drill.sh            # newest /backups/ttt-*.dump
+cd /srv/tic-tac-toe/current && scripts/restore-drill.sh old.dump   # a given one
+# monthly, mailing any failure (cron sends output to MAILTO):
+0 5 1 * * cd /srv/tic-tac-toe/current && scripts/restore-drill.sh >/dev/null
+```
 
 ## Rollback
 

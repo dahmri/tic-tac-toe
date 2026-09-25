@@ -9,6 +9,7 @@ export class ApiError extends Error {
     super(body?.error || 'Something went wrong. Try again.'); // translated where shown
     this.status = status;
     this.fields = body?.fields || {};
+    this.body = body || {};
   }
 }
 

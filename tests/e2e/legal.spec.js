@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.js';
+import { test, expect, answerChallenge } from './fixtures.js';
 
 test.use({ signedIn: false });
 
@@ -53,6 +53,7 @@ test('sign-up needs you to be 16', async ({ page }) => {
       birthDate: `${new Date().getFullYear() - 15}-01-01`,
       country: 'FR',
       password: 'a good long password',
+      ...(await answerChallenge(page)),
     },
   });
   expect(res.status()).toBe(400);

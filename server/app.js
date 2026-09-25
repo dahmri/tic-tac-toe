@@ -17,6 +17,7 @@ import { createInvites } from './invites.js';
 import { createStats } from './stats.js';
 import { createMatchmaking } from './matchmaking.js';
 import { createSafety } from './safety.js';
+import { createChallenges } from './challenge.js';
 import { createMailer } from './mailer.js';
 import { createEmailVerification } from './email-verification.js';
 import { createPasswordReset } from './password-reset.js';
@@ -31,13 +32,20 @@ import statsRoutes from './routes/stats.js';
 import friendsRoutes from './routes/friends.js';
 import safetyRoutes from './routes/safety.js';
 import puzzleRoutes from './routes/puzzles.js';
+import arenaRoutes from './routes/arena.js';
+import { createArena } from './arena.js';
+import adminRoutes from './routes/admin.js';
+import { createAdmin } from './admin.js';
+import pushRoutes from './routes/push.js';
+import { createPush } from './push.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const { version: VERSION } = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 );
 
-export async function buildApp({ config, db, redis }) {
+// pushSender: a stand-in for web push, in tests
+export async function buildApp({ config, db, redis, pushSender = null }) {
   const app = Fastify({
     trustProxy: config.trustProxy,
     bodyLimit: 16 * 1024,
@@ -53,6 +61,11 @@ export async function buildApp({ config, db, redis }) {
   // Every finished online round goes into the history and statistics, and
   // both players hear how their ratings moved
   async function roundFinished(finished) {
+    if (finished.arena) {
+      await app.ctx.arena
+        .scored(finished)
+        .catch((err) => app.log.error({ err }, 'Could not score an arena game'));
+    }
     const saved = await stats.recordRound(finished);
     if (!saved) return;
     try {
@@ -60,7 +73,10 @@ export async function buildApp({ config, db, redis }) {
       const msg = { t: 'ratings', match: finished.matchId, round: finished.round, ratings };
       await Promise.all(
         Object.entries(ratings).map(async ([id, { rating }]) => {
-          await presence.setRating(Number(id), rating);
+          // The lobby shows the classic rating
+          if ((finished.variant ?? 'classic') === 'classic') {
+            await presence.setRating(Number(id), rating);
+          }
           await bus.send(Number(id), msg);
         }),
       );
@@ -70,6 +86,8 @@ export async function buildApp({ config, db, redis }) {
   }
   const matches = createMatches(redis, {
     bus,
+    // Players show the rating for the match's rules
+    ratingOf: (id, variant) => stats.rating(id, variant),
     onRoundFinished: roundFinished,
     turnMs: config.turnMs,
   });
@@ -95,10 +113,19 @@ export async function buildApp({ config, db, redis }) {
     bus,
     matches,
     safety,
+    challenges: createChallenges({
+      key: config.dataKey,
+      redis,
+      bits: config.challengeBits,
+      minAgeMs: config.challengeMinMs,
+    }),
     invites: createInvites(redis, { bus, presence, matches, safety }),
     matchmaking: createMatchmaking(redis, { presence, matches, stats, bus }),
     stats,
+    push: createPush({ db, redis, config, log: app.log, sender: pushSender }),
   });
+  app.ctx.arena = createArena({ ...app.ctx, log: app.log });
+  app.ctx.admin = createAdmin(app.ctx);
 
   // Save rounds that couldn't be recorded earlier (database briefly down)
   const retry = setInterval(() => {
@@ -110,9 +137,17 @@ export async function buildApp({ config, db, redis }) {
     matches.sweep().catch((err) => app.log.error({ err }, 'Turn clock sweep failed'));
   }, 1000);
   turnClock.unref();
+  // The arena: close finished games, pair the players waiting
+  const arenaClock =
+    config.arenaSweepMs > 0 &&
+    setInterval(() => {
+      app.ctx.arena.sweep().catch((err) => app.log.error({ err }, 'Arena sweep failed'));
+    }, config.arenaSweepMs);
+  if (arenaClock) arenaClock.unref();
   app.addHook('onClose', () => {
     clearInterval(retry);
     clearInterval(turnClock);
+    if (arenaClock) clearInterval(arenaClock);
     return bus.close();
   });
 
@@ -230,6 +265,9 @@ export async function buildApp({ config, db, redis }) {
   await app.register(friendsRoutes);
   await app.register(safetyRoutes);
   await app.register(puzzleRoutes);
+  await app.register(arenaRoutes);
+  await app.register(adminRoutes);
+  await app.register(pushRoutes);
 
   app.setNotFoundHandler((req, reply) => reply.code(404).send({ error: 'Not found.' }));
 

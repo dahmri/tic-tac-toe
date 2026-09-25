@@ -8,12 +8,13 @@ before(async () => {
 });
 after(() => t.close());
 
-// Gives a player a rating, as if they had played online
-async function rate(p, rating) {
+// Gives a player a rating in some rules, as if they had played online
+async function rate(p, rating, variant = 'classic') {
   await t.db.query(
-    `INSERT INTO player_stats (user_id, rating, played) VALUES ($1, $2, 1)
-     ON CONFLICT (user_id) DO UPDATE SET rating = $2`,
-    [p.user.id, rating],
+    `INSERT INTO player_ratings (user_id, variant, rating, season, season_played)
+     VALUES ($1, $3, $2, to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM'), 1)
+     ON CONFLICT (user_id, variant) DO UPDATE SET rating = $2`,
+    [p.user.id, rating, variant],
   );
 }
 

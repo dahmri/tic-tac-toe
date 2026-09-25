@@ -1481,3 +1481,166 @@ fieldset.field {
 body.spectating .cell {
   cursor: default;
 }
+
+/* Where you're logged in */
+.sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.session {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--grid);
+}
+.session-what {
+  display: grid;
+  flex: 1;
+}
+.session-what small {
+  color: var(--muted);
+}
+
+/* The sign-up form's field for bots: out of sight, out of reach */
+.trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Admin dialog: reports and players with their actions, usage numbers */
+.dialog.admin {
+  width: min(720px, calc(100vw - 32px));
+}
+.dialog.admin .seg {
+  margin-bottom: 12px;
+}
+.admin-list,
+.admin-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.admin-item {
+  padding: 10px 12px;
+  background: var(--chip);
+  border-radius: 10px;
+}
+.admin-head,
+.admin-meta {
+  margin: 0;
+}
+.admin-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.admin-details {
+  margin: 6px 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.admin-actions select {
+  font: inherit;
+}
+.btn.danger {
+  color: var(--danger, #b3261e);
+}
+.admin-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.admin-search input {
+  flex: 1 1 160px;
+}
+.admin-log {
+  gap: 6px;
+  font-size: 0.9rem;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+.usage-table .bar-cell {
+  background: linear-gradient(to right, var(--chip) var(--bar), transparent var(--bar));
+}
+/* How-to-play guides: a practice board and the steps */
+.dialog.guide {
+  width: min(440px, calc(100vw - 32px));
+}
+.guide-btn {
+  justify-self: start;
+}
+.guide-step {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.guide-text {
+  min-height: 3em;
+}
+.guide-board {
+  width: min(240px, 70vw);
+  margin: 0 auto;
+}
+.guide-board .cell {
+  border-color: var(--ink);
+  border-style: solid;
+  border-width: 0;
+  border-radius: 0;
+}
+.guide-board .cell:nth-child(-n + 6) {
+  border-bottom-width: 3px;
+}
+.guide-board .cell:not(:nth-child(3n)) {
+  border-right-width: 3px;
+}
+.guide-board .cell.won {
+  background: var(--chip);
+}
+.guide-uboard {
+  width: min(360px, 80vw);
+  margin: 0 auto;
+}
+.guide-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+/* The weekly arena in the lobby */
+.arena {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 2px dashed var(--muted);
+  border-radius: 12px;
+}
+.arena p {
+  margin: 0;
+}
+.arena-me:empty {
+  display: none;
+}
+.arena-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

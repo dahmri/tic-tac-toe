@@ -6,10 +6,12 @@
 
 import { api } from './api.js';
 import { AVATARS, GUEST_AVATAR, avatarEmoji, avatarName } from './avatars.js';
-import { onLangChange, t } from './i18n.js';
+import { lang, onLangChange, t } from './i18n.js';
 import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
 import { uploadGuestGames } from './stats.js';
+import { checkAnswer, prepareCheck } from './bot-check.js';
+import { initNotifications, refreshNotifications } from './notify.js';
 
 // Any element by id, typed loosely: the pages hold forms, dialogs and inputs
 const $ = (id) => /** @type {any} */ (document.getElementById(id));
@@ -136,6 +138,7 @@ function setAuthTab(tab) {
     );
   $('loginForm').hidden = tab !== 'login';
   $('signupForm').hidden = tab !== 'signup';
+  if (tab === 'signup') prepareCheck().catch(() => {});
   for (const id of ['resetForm', 'resetMailForm', 'newPasswordForm']) $(id).hidden = true;
   const form = tab === 'login' ? $('loginForm') : $('signupForm');
   showErrors(form);
@@ -154,6 +157,7 @@ function renderMe() {
   document
     .querySelectorAll('[data-guest]')
     .forEach((/** @type {HTMLElement} */ b) => (b.hidden = !guest));
+  $('adminBtn').hidden = guest || !user?.admin;
   renderEmailNotice();
 }
 
@@ -420,6 +424,67 @@ async function deleteAccount(e) {
   $('loginForm').querySelector('.form-msg').textContent = t('Your account has been deleted.');
 }
 
+/* ---------- Sessions, in the profile ---------- */
+
+const sessionTime = () =>
+  new Intl.DateTimeFormat(document.documentElement.lang, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+async function loadSessions() {
+  let list;
+  try {
+    ({ sessions: list } = await api('GET', '/api/me/sessions'));
+  } catch {
+    return;
+  }
+  $('logoutOthers').hidden = list.length < 2;
+  $('sessionList').replaceChildren(
+    ...list.map((s) => {
+      const li = document.createElement('li');
+      li.className = 'session';
+      const what = document.createElement('span');
+      what.className = 'session-what';
+      const device = document.createElement('strong');
+      device.textContent = s.device;
+      const when = document.createElement('small');
+      when.textContent = s.current
+        ? t('This device')
+        : t('Last active {when}', { when: sessionTime().format(new Date(s.seen)) });
+      what.append(device, when);
+      li.append(what);
+      if (!s.current) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn ghostbtn';
+        b.textContent = t('Log out');
+        b.setAttribute('aria-label', t('Log out {device}', { device: s.device }));
+        b.addEventListener('click', async () => {
+          b.disabled = true;
+          await api('DELETE', `/api/me/sessions/${s.id}`).catch(() => {});
+          loadSessions();
+        });
+        li.append(b);
+      }
+      return li;
+    }),
+  );
+}
+
+async function logoutOthers() {
+  $('logoutOthers').disabled = true;
+  try {
+    await api('DELETE', '/api/me/sessions');
+    $('sessionMsg').textContent = t('Logged out everywhere else.');
+    loadSessions();
+  } catch (err) {
+    $('sessionMsg').textContent = t(err.message);
+  } finally {
+    $('logoutOthers').disabled = false;
+  }
+}
+
 /* ---------- Blocked players, in the profile ---------- */
 
 async function loadBlocked() {
@@ -476,6 +541,9 @@ function openProfile() {
   }
   showErrors(form);
   loadBlocked();
+  $('sessionMsg').textContent = '';
+  loadSessions();
+  refreshNotifications();
   $('profileDialog').showModal();
 }
 
@@ -554,7 +622,19 @@ export async function initAccount(callbacks) {
     const form = e.currentTarget;
     const { username, password } = formData(form);
     if (!username || !password) return showErrors(form, {}, 'Enter your username and password.');
-    const res = await submit(form, () => api('POST', '/api/session', { username, password }));
+    const res = await submit(form, () =>
+      api('POST', '/api/session', { username, password }).catch((err) => {
+        // Suspended for a while: say until when
+        if (err.body?.until) {
+          const date = new Intl.DateTimeFormat(lang(), { dateStyle: 'long' }).format(
+            new Date(err.body.until),
+          );
+          const message = t('This account is suspended until {date}.', { date });
+          throw Object.assign(new Error(message), { fields: {} });
+        }
+        throw err;
+      }),
+    );
     if (res) signedIn(res.user);
   });
 
@@ -563,7 +643,17 @@ export async function initAccount(callbacks) {
     const form = e.currentTarget;
     const { ok, value, errors } = validateRegistration(formData(form));
     if (!ok) return showErrors(form, errors, 'Check the highlighted fields.');
-    const res = await submit(form, () => api('POST', '/api/account', value));
+    const res = await submit(form, async () => {
+      const answer = await checkAnswer().catch(() => {
+        throw new Error("Couldn't check you're not a robot. Try again.");
+      });
+      const website = form.elements.website.value;
+      try {
+        return await api('POST', '/api/account', { ...value, ...answer, website });
+      } finally {
+        prepareCheck().catch(() => {}); // a new one, in case they try again
+      }
+    });
     if (!res) return;
     signedIn(res.user);
     const added = await uploadGuestGames();
@@ -576,6 +666,7 @@ export async function initAccount(callbacks) {
   });
 
   $('guestBtn').addEventListener('click', playAsGuest);
+  $('logoutOthers').addEventListener('click', logoutOthers);
   $('emailAction').addEventListener('click', emailAction);
   window.addEventListener('focus', refreshIfPending);
   document.addEventListener('visibilitychange', () => {
@@ -602,6 +693,7 @@ export async function initAccount(callbacks) {
   $('recoverySaved').addEventListener('click', () => $('recoveryDialog').close());
   $('joinBtn').addEventListener('click', leaveGuest);
   $('profileBtn').addEventListener('click', openProfile);
+  initNotifications();
   $('profileForm').addEventListener('submit', saveProfile);
   $('passwordForm').addEventListener('submit', changePassword);
   $('profileDialog')
