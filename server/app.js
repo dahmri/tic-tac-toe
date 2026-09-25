@@ -32,6 +32,8 @@ import statsRoutes from './routes/stats.js';
 import friendsRoutes from './routes/friends.js';
 import safetyRoutes from './routes/safety.js';
 import puzzleRoutes from './routes/puzzles.js';
+import adminRoutes from './routes/admin.js';
+import { createAdmin } from './admin.js';
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const { version: VERSION } = JSON.parse(
@@ -106,6 +108,7 @@ export async function buildApp({ config, db, redis }) {
     matchmaking: createMatchmaking(redis, { presence, matches, stats, bus }),
     stats,
   });
+  app.ctx.admin = createAdmin(app.ctx);
 
   // Save rounds that couldn't be recorded earlier (database briefly down)
   const retry = setInterval(() => {
@@ -237,6 +240,7 @@ export async function buildApp({ config, db, redis }) {
   await app.register(friendsRoutes);
   await app.register(safetyRoutes);
   await app.register(puzzleRoutes);
+  await app.register(adminRoutes);
 
   app.setNotFoundHandler((req, reply) => reply.code(404).send({ error: 'Not found.' }));
 

@@ -11,6 +11,7 @@
     "start": "node server/index.js",
     "dev": "STATIC_DIR=. node --watch-path=server --watch-path=js server/index.js",
     "migrate": "node server/migrate.js",
+    "make-admin": "node server/make-admin.js",
     "build": "node scripts/build.mjs",
     "preview": "npm run build && STATIC_DIR=dist node server/index.js",
     "lint": "eslint .",
