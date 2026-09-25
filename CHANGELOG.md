@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-09-25
+
 ### Added
 
 - **A wider layout on computers.** On wide screens the game choices and the
