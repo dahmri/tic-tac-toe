@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-09-25
+
 ### Added
 
 - **Where you're logged in.** Your profile lists the devices you're logged
