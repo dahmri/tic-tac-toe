@@ -347,6 +347,18 @@
               >
               <button id="cancelSearch" type="button" class="btn ghostbtn">Cancel</button>
             </div>
+            <div class="arena" id="arenaBox">
+              <h2 class="panel-title">Weekend arena</h2>
+              <p class="arena-when" id="arenaWhen"></p>
+              <p class="arena-me" id="arenaMe" role="status"></p>
+              <div class="arena-actions">
+                <button id="arenaJoin" type="button" class="btn primary" hidden>
+                  Join the arena
+                </button>
+                <button id="arenaPause" type="button" class="btn ghostbtn" hidden>Pause</button>
+                <button id="arenaStandingsBtn" type="button" class="btn ghostbtn">Standings</button>
+              </div>
+            </div>
             <div class="friends" id="friendsBox">
               <h2 class="panel-title">Friends <span class="count" id="friendsCount"></span></h2>
               <ul class="players" id="friendList" aria-label="Friends"></ul>
@@ -696,6 +708,33 @@
         <button type="button" class="btn ghostbtn" id="guideBack">Back</button>
         <button type="button" class="btn primary" id="guideNext">Next</button>
       </div>
+    </dialog>
+
+    <dialog class="dialog stats" id="arenaDialog" aria-labelledby="arenaTitle">
+      <div class="dialog-head">
+        <h2 id="arenaTitle">Arena standings</h2>
+        <button type="button" class="btn ghostbtn" data-close>Close</button>
+      </div>
+      <p class="lb-season" id="arenaDay"></p>
+      <p class="lb-podium" id="arenaPodium" hidden></p>
+      <table class="table" id="arenaTable" hidden>
+        <thead>
+          <tr>
+            <th scope="col" class="num">#</th>
+            <th scope="col">Player</th>
+            <th scope="col" class="num">Points</th>
+            <th scope="col" class="num">Won</th>
+            <th scope="col" class="num">Played</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="empty" id="arenaEmpty" hidden>Nobody has played in this arena yet.</p>
+      <p class="note">
+        Every Saturday for two hours. Join and you're paired automatically, one classic game at a
+        time, with players close to your score. A win is worth 2 points and a draw 1. Pause whenever
+        you like: your points stay.
+      </p>
     </dialog>
 
     <dialog class="dialog stats" id="statsDialog" aria-labelledby="statsTitle">

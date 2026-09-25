@@ -32,6 +32,8 @@ import statsRoutes from './routes/stats.js';
 import friendsRoutes from './routes/friends.js';
 import safetyRoutes from './routes/safety.js';
 import puzzleRoutes from './routes/puzzles.js';
+import arenaRoutes from './routes/arena.js';
+import { createArena } from './arena.js';
 import adminRoutes from './routes/admin.js';
 import { createAdmin } from './admin.js';
 import pushRoutes from './routes/push.js';
@@ -59,6 +61,11 @@ export async function buildApp({ config, db, redis, pushSender = null }) {
   // Every finished online round goes into the history and statistics, and
   // both players hear how their ratings moved
   async function roundFinished(finished) {
+    if (finished.arena) {
+      await app.ctx.arena
+        .scored(finished)
+        .catch((err) => app.log.error({ err }, 'Could not score an arena game'));
+    }
     const saved = await stats.recordRound(finished);
     if (!saved) return;
     try {
@@ -117,6 +124,7 @@ export async function buildApp({ config, db, redis, pushSender = null }) {
     stats,
     push: createPush({ db, redis, config, log: app.log, sender: pushSender }),
   });
+  app.ctx.arena = createArena({ ...app.ctx, log: app.log });
   app.ctx.admin = createAdmin(app.ctx);
 
   // Save rounds that couldn't be recorded earlier (database briefly down)
@@ -129,9 +137,17 @@ export async function buildApp({ config, db, redis, pushSender = null }) {
     matches.sweep().catch((err) => app.log.error({ err }, 'Turn clock sweep failed'));
   }, 1000);
   turnClock.unref();
+  // The arena: close finished games, pair the players waiting
+  const arenaClock =
+    config.arenaSweepMs > 0 &&
+    setInterval(() => {
+      app.ctx.arena.sweep().catch((err) => app.log.error({ err }, 'Arena sweep failed'));
+    }, config.arenaSweepMs);
+  if (arenaClock) arenaClock.unref();
   app.addHook('onClose', () => {
     clearInterval(retry);
     clearInterval(turnClock);
+    if (arenaClock) clearInterval(arenaClock);
     return bus.close();
   });
 
@@ -249,6 +265,7 @@ export async function buildApp({ config, db, redis, pushSender = null }) {
   await app.register(friendsRoutes);
   await app.register(safetyRoutes);
   await app.register(puzzleRoutes);
+  await app.register(arenaRoutes);
   await app.register(adminRoutes);
   await app.register(pushRoutes);
 

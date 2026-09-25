@@ -77,6 +77,13 @@ export function loadConfig(env = process.env) {
     // blip) has to come back before they leave their match and the
     // quick-match queue. Tests shorten it.
     leaveGraceMs: Number(env.LEAVE_GRACE_MS) || 20_000,
+    // Tests only: the weekly arena (js/arena.js) runs all day, every day
+    arenaAlways: env.ARENA_ALWAYS === 'on',
+    // The breather between arena games (ms); tests shorten it
+    arenaRestMs: env.ARENA_REST_MS ? Number(env.ARENA_REST_MS) : 5000,
+    // How often the arena pairs players (ms); 0 stops it (API tests run it
+    // by hand)
+    arenaSweepMs: env.ARENA_SWEEP_MS ? Number(env.ARENA_SWEEP_MS) : 2000,
     // The sign-up check (server/challenge.js): how hard the puzzle is, and
     // how soon after it's issued an answer is believable. Tests lower both.
     challengeBits: Number(env.SIGNUP_CHALLENGE_BITS) || 18,

@@ -99,6 +99,8 @@ jobs:
             # No real email: the tests read confirmation links from the outbox
             echo "SITE_URL=http://127.0.0.1:8080"
             echo "MAIL_OUTBOX=on"
+            # The weekly arena runs all day, so its test can play
+            echo "ARENA_ALWAYS=on"
             # An easy sign-up puzzle: the tests sign up many players
             echo "SIGNUP_CHALLENGE_BITS=4"
             echo "SIGNUP_CHALLENGE_MIN_MS=0"

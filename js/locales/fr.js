@@ -51,6 +51,11 @@ export default {
   'Also block this player': 'Bloquer aussi ce joueur',
   'An offensive username': "Un nom d'utilisateur offensant",
   'Anything to add?': 'Quelque chose à ajouter ?',
+  'Arena game over. Your next opponent is on the way.':
+    "Partie d'arène terminée. Ton prochain adversaire arrive.",
+  'Arena game: one round, then a new opponent.':
+    "Partie d'arène : une manche, puis un nouvel adversaire.",
+  'Arena standings': "Classement de l'arène",
   "As far as the law allows, we aren't responsible for lost games, ratings or data, or for the site being unavailable.":
     "Dans la mesure permise par la loi, nous ne sommes pas responsables des parties, cotes ou données perdues, ni de l'indisponibilité du site.",
   'As long as you have an account. When you delete it in your profile, your data is deleted at once; your online games stay in your opponents\' histories as "Deleted player". Backups are kept for up to [30] days.':
@@ -170,6 +175,10 @@ export default {
     "Saisis ton nom d'utilisateur ou ton e-mail. Si ton e-mail est confirmé, nous t'enverrons un lien pour choisir un nouveau mot de passe.",
   'Error reports from your browser: the error and the page, nothing personal.':
     "Les rapports d'erreur de ton navigateur : l'erreur et la page, rien de personnel.",
+  "Every Saturday for two hours. Join and you're paired automatically, one classic game at a time, with players close to your score. A win is worth 2 points and a draw 1. Pause whenever you like: your points stay.":
+    'Chaque samedi pendant deux heures. Rejoins-la et tu es apparié automatiquement, une partie classique à la fois, avec des joueurs proches de ton score. Une victoire vaut 2 points et un match nul 1. Fais une pause quand tu veux : tes points restent.',
+  'Every Saturday. Next: {day}, {start} to {end}.':
+    'Chaque samedi. Prochaine : {day}, de {start} à {end}.',
   'Fancy Flamingo': 'Flamant chic',
   'Fastest win': 'Victoire la plus rapide',
   'Find a player': 'Trouver un joueur',
@@ -212,6 +221,8 @@ export default {
   'Illegal move.': 'Coup interdit.',
   'In 3 marks, each player keeps only their last three marks on the board.':
     'Avec 3 marques, chaque joueur ne garde que ses trois dernières marques sur la grille.',
+  'In the arena, your next opponent is found for you.':
+    "Dans l'arène, ton prochain adversaire est trouvé pour toi.",
   'Invalid message.': 'Message invalide.',
   'Invalid request.': 'Requête invalide.',
   "Invitations and your turn in online games, when the game isn't on screen.":
@@ -222,11 +233,13 @@ export default {
   Invited: 'Invitation envoyée',
   "It's not your turn.": "Ce n'est pas ton tour.",
   "It's your turn against {name}.": "C'est ton tour contre {name}.",
+  'Join the arena': "Rejoindre l'arène",
   'Joined {date}': 'Inscrit le {date}',
   'Keep your first name under 50 characters.': 'Ton prénom doit faire moins de 50 caractères.',
   'Keep your last name under 50 characters.': 'Ton nom doit faire moins de 50 caractères.',
   Language: 'Langue',
   'Last active {when}': 'Actif pour la dernière fois le {when}',
+  'Last arena:': 'Dernière arène :',
   'Last game: vs {who}': 'Dernière partie : contre {who}',
   'Last move': 'Dernier coup',
   'Last name': 'Nom',
@@ -271,6 +284,7 @@ export default {
   'New round': 'Nouvelle manche',
   'New username for {name} (empty: Player{id})': 'Nouveau nom pour {name} (vide : Player{id})',
   Next: 'Suivant',
+  'Next: {day}, {start}': 'Prochaine : {day}, {start}',
   'Night Owl': 'Oiseau de nuit',
   'Nine small boards make one big board. Win three small boards in a row to win the game.':
     'Neuf petites grilles forment une grande grille. Gagne trois petites grilles alignées pour gagner la partie.',
@@ -294,6 +308,7 @@ export default {
   'No reports to look at.': 'Aucun signalement à examiner.',
   'Nobody from {country} has played online yet.':
     "Aucun joueur n'a encore joué en ligne ({country}).",
+  'Nobody has played in this arena yet.': "Personne n'a encore joué dans cette arène.",
   'Nobody has played online yet. Be the first!':
     "Personne n'a encore joué en ligne. Sois le premier !",
   'Not a finished game.': 'Partie non terminée.',
@@ -324,6 +339,8 @@ export default {
   'Octo-Hugger': 'Poulpe câlin',
   Offline: 'Hors ligne',
   'On fire': 'En feu',
+  'On now, until {time}. Each game: 2 points for a win, 1 for a draw.':
+    "En cours jusqu'à {time}. Chaque partie : 2 points pour une victoire, 1 pour un nul.",
   'On the podium': 'Sur le podium',
   "One cookie keeps you logged in; the site can't work without it. Your browser also keeps your settings (language, sound, game mode) and, if you play as a guest, your games. Nothing is used to follow you around.":
     'Un cookie te garde connecté ; le site ne peut pas fonctionner sans. Ton navigateur garde aussi tes réglages (langue, son, mode de jeu) et, si tu joues en invité, tes parties. Rien ne sert à te suivre.',
@@ -344,6 +361,7 @@ export default {
   'Password changed. Other devices have been logged out.':
     'Mot de passe changé. Tes autres appareils ont été déconnectés.',
   Pause: 'Pause',
+  'Paused.': 'En pause.',
   'Pencil Tic-Tac-Toe': 'Morpion au crayon',
   'Pencil Tic-Tac-Toe is free. We do our best to keep it running, but it comes as it is, without any guarantee.':
     "Morpion au crayon est gratuit. Nous faisons de notre mieux pour qu'il fonctionne, mais il est fourni tel quel, sans aucune garantie.",
@@ -372,6 +390,7 @@ export default {
   'Playing since': 'Joue depuis',
   'Please log in.': "Connecte-toi, s'il te plaît.",
   'Pocket Wizard': 'Sorcier de poche',
+  Points: 'Points',
   'Practice again': "S'entraîner encore",
   'Practice board': "Grille d'entraînement",
   "Practice: only the day's first try counts. New puzzle tomorrow!":
@@ -440,6 +459,7 @@ export default {
   'Sparkle Unicorn': 'Licorne pailletée',
   'Speedy Sloth': 'Paresseux rapide',
   'Spiky Hugger': 'Hérisson câlin',
+  Standings: 'Classement',
   'Start: {mark} moves first': 'Début : {mark} commence',
   Stats: 'Statistiques',
   'Step {n} of {total}': 'Étape {n} sur {total}',
@@ -484,6 +504,7 @@ export default {
     "Ce nom d'utilisateur n'est pas autorisé. Essaie-en un autre.",
   "That's you!": "C'est toi !",
   'The GOAT': 'Le GOAT',
+  'The arena is closed right now.': "L'arène est fermée pour le moment.",
   'The board never fills up, so a game goes on until someone makes a line. After 60 moves it is a draw.':
     "La grille ne se remplit jamais : la partie continue jusqu'à ce que quelqu'un fasse une ligne. Après 60 coups, c'est un match nul.",
   'The game': 'Le jeu',
@@ -516,6 +537,7 @@ export default {
     'Astuce : appuie sur <kbd>1</kbd>–<kbd>9</kbd> pour jouer une case (disposition du pavé numérique, <kbd>7</kbd> en haut à gauche), <kbd>N</kbd> pour une nouvelle manche, <kbd>H</kbd> pour un indice.',
   "To run your account and the game (our agreement with you), and to keep the site secure and working (our legitimate interest). We don't sell your data, show ads or use trackers, and the site loads nothing from other companies.":
     "Pour faire fonctionner ton compte et le jeu (notre accord avec toi), et pour garder le site sûr et en état de marche (notre intérêt légitime). Nous ne vendons pas tes données, n'affichons pas de publicité et n'utilisons pas de traceurs, et le site ne charge rien depuis d'autres entreprises.",
+  'Today, until {time}': "Aujourd'hui, jusqu'à {time}",
   'Too many attempts. Wait a few minutes and try again.':
     'Trop de tentatives. Attends quelques minutes et réessaie.',
   'Too many games. Take a break!': 'Trop de parties. Fais une pause !',
@@ -557,6 +579,7 @@ export default {
   'Username or email': "Nom d'utilisateur ou e-mail",
   'Usernames are 3 to 20 characters.': "Les noms d'utilisateur font de 3 à 20 caractères.",
   'Vanishing act': 'Tour de disparition',
+  'Waiting for your next opponent…': 'En attente de ton prochain adversaire…',
   'Waiting for {who} (3 marks)…': 'En attente de {who} (3 marques)…',
   'Waiting for {who} (Ultimate)…': 'En attente de {who} (Ultimate)…',
   'Waiting for {who}…': 'En attente de {who}…',
@@ -577,6 +600,7 @@ export default {
     "Nous t'enverrons un lien pour la confirmer. Les autres joueurs ne la voient jamais.",
   Website: 'Site web',
   'Week of puzzles': 'Semaine de défis',
+  'Weekend arena': 'Arène du week-end',
   'What other players see. Letters, numbers and _.':
     'Ce que voient les autres joueurs. Lettres, chiffres et _.',
   'What we keep': 'Ce que nous gardons',
@@ -684,6 +708,7 @@ export default {
   '{now} now · best {best}': '{now} en cours · record {best}',
   '{n} moves': '{n} coups',
   '{n} open reports': '{n} signalements ouverts',
+  '{points} points, #{rank} of {total}': '{points} points, {rank}e sur {total}',
   '{rate} of {n}': '{rate} sur {n}',
   '{who} invites you to play': "{who} t'invite à jouer",
   '{who} invites you to play (3 marks)': "{who} t'invite à jouer (3 marques)",

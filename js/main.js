@@ -13,6 +13,7 @@ import {
 import { createUltimateBoard } from './ultimate-board.js';
 import { canPlayOnline, currentUser, initAccount, isGuest, leaveGuest } from './account.js';
 import { initLobby } from './lobby.js';
+import { initArena } from './arena-ui.js';
 import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
 import { initGuide } from './guide.js';
 import { initLeaderboard } from './leaderboard.js';
@@ -457,6 +458,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 initLeaderboard(currentUser);
+initArena({ send: sendToLobby, message: setNetMessage, inMatch });
 initLobby({
   send: sendToLobby,
   variant: () => settings.variant,
