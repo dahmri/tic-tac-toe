@@ -63,10 +63,13 @@ test('usernames: 3 to 20 letters, numbers or _', () => {
   }
 });
 
-test('birth dates must be real, and players at least 13', () => {
+test('birth dates must be real, and new players at least 16', () => {
   const err = (birthDate) => validateRegistration({ ...valid, birthDate }, TODAY).errors.birthDate;
-  assert.equal(err('2013-06-15'), undefined); // 13 today
-  assert.match(err('2013-06-16'), /at least 13/); // 13 tomorrow
+  assert.equal(err('2010-06-15'), undefined); // 16 today
+  assert.match(err('2010-06-16'), /at least 16/); // 16 tomorrow
+  // A profile edit doesn't re-check the age: younger accounts from before keep working
+  assert.equal(validateProfile({ birthDate: '2012-01-01' }, TODAY).ok, true);
+  assert.equal(validateProfile({ birthDate: '2020-01-01' }, TODAY).ok, false, 'not believable');
   assert.match(err('2023-02-29'), /does not exist/);
   assert.ok(err('1899-12-31'));
   assert.ok(err('2027-01-01'));
