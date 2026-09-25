@@ -43,6 +43,15 @@ export function loadConfig(env = process.env) {
       pass: env.SMTP_PASS || '',
     },
     mailFrom: env.MAIL_FROM || 'Pencil Tic-Tac-Toe <no-reply@localhost>',
+    // Web push (server/push.js): the VAPID key pair (npx web-push
+    // generate-vapid-keys) and a contact for push services. Without the
+    // keys, notifications are off.
+    vapid: {
+      publicKey: env.VAPID_PUBLIC_KEY || '',
+      privateKey: env.VAPID_PRIVATE_KEY || '',
+      subject:
+        env.VAPID_SUBJECT || (siteUrl.startsWith('https:') ? siteUrl : 'mailto:admin@localhost'),
+    },
     mailOutbox,
     host: env.HOST || '127.0.0.1',
     port: Number(env.PORT) || 8000,

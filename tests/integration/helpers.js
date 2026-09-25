@@ -9,7 +9,7 @@ import { migrate } from '../../server/migrate.js';
 import { buildApp } from '../../server/app.js';
 import { solves } from '../../server/challenge.js';
 
-export async function setup(env = {}) {
+export async function setup(env = {}, { pushSender = null } = {}) {
   const config = loadConfig({
     DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgres://localhost/tictactoe_test',
     REDIS_URL: process.env.TEST_REDIS_URL || 'redis://127.0.0.1:6379/15',
@@ -25,7 +25,7 @@ export async function setup(env = {}) {
   await migrate(db, () => {});
   await db.query('TRUNCATE users, games RESTART IDENTITY CASCADE');
   await redis.flushdb();
-  const app = await buildApp({ config, db, redis });
+  const app = await buildApp({ config, db, redis, pushSender });
   await app.ready(); // app.inject() does this itself, app.injectWS() doesn't
 
   return {

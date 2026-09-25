@@ -215,11 +215,14 @@ export default {
     'Con 3 marcas, cada jugador conserva solo sus tres últimas marcas en el tablero.',
   'Invalid message.': 'Mensaje no válido.',
   'Invalid request.': 'Solicitud no válida.',
+  "Invitations and your turn in online games, when the game isn't on screen.":
+    'Las invitaciones y tu turno en las partidas en línea, cuando el juego no está en pantalla.',
   Invite: 'Invitar',
   'Invite again': 'Invitar de nuevo',
   'Invite {name}': 'Invitar a {name}',
   Invited: 'Invitación enviada',
   "It's not your turn.": 'No es tu turno.',
+  "It's your turn against {name}.": 'Te toca jugar contra {name}.',
   'Joined {date}': 'Registrado el {date}',
   'Keep your first name under 50 characters.': 'Tu nombre debe tener menos de 50 caracteres.',
   'Keep your last name under 50 characters.': 'Tu apellido debe tener menos de 50 caracteres.',
@@ -300,6 +303,14 @@ export default {
   'Not found.': 'No encontrado.',
   'Not that one: look for the highlighted square.': 'Esa no: busca la casilla resaltada.',
   'Nothing yet.': 'Nada todavía.',
+  Notifications: 'Notificaciones',
+  "Notifications are blocked for this site in your browser's settings.":
+    'Las notificaciones están bloqueadas para este sitio en los ajustes de tu navegador.',
+  'Notifications are off.': 'Notificaciones desactivadas.',
+  "Notifications are on: we'll tell you about invitations and your turn.":
+    'Notificaciones activadas: te avisaremos de las invitaciones y de tu turno.',
+  "Notifications aren't available on this device.":
+    'Las notificaciones no están disponibles en este dispositivo.',
   'Now win three small boards in a row. Good luck!':
     'Ahora gana tres tableros pequeños en línea. ¡Suerte!',
   'O played the top-left square of the centre board, so you are sent to the top-left board. Tap its top-right corner.':
@@ -513,6 +524,8 @@ export default {
   'Try board {b}, square {c}.': 'Prueba el tablero {b}, casilla {c}.',
   'Try row {row}, column {col}.': 'Prueba la fila {row}, columna {col}.',
   'Turbo Snail': 'Caracol turbo',
+  'Turn off notifications': 'Desactivar notificaciones',
+  'Turn on notifications': 'Activar notificaciones',
   'Tuxedo Penguin': 'Pingüino de esmoquin',
   Ultimate: 'Ultimate',
   'Ultimate rules.': 'Reglas Ultimate.',
@@ -662,6 +675,7 @@ export default {
   '{mark} to play': 'Le toca a {mark}',
   '{name} declined your invitation.': '{name} rechazó tu invitación.',
   "{name} didn't answer.": '{name} no respondió.',
+  '{name} invites you to play.': '{name} te invita a jugar.',
   '{name} is already playing.': '{name} ya está jugando.',
   '{name} is suspended and logged out.': '{name} está suspendido y desconectado.',
   '{name} is thinking…': '{name} está pensando…',

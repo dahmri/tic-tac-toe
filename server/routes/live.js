@@ -6,6 +6,7 @@
 //   | { t: 'move', match, square } | { t: 'next-round', match }
 //   | { t: 'leave', match } | { t: 'queue-join', variant? } | { t: 'queue-leave' }
 //   | { t: 'react', match, emoji } | { t: 'watch', user } | { t: 'unwatch' } | { t: 'ping' }
+//   | { t: 'visible', on } (the page is on screen or not: see server/push.js)
 // Server -> browser: { t: 'hello', me, match, invites, waiting } | { t: 'match', match }
 //   | { t: 'queue', waiting } | { t: 'ratings', match, round, ratings }
 //   | { t: 'invite', invite } | { t: 'invite-sent', invite }
@@ -27,7 +28,10 @@ const QUEUE_RETRY_MS = 3_000; // waiting players look again this often
 const REACTION_GAP_MS = 1_500; // one reaction per player this often, at most
 
 export default async function liveRoutes(app) {
-  const { presence, bus, invites, matches, matchmaking, users, config } = app.ctx;
+  const { presence, bus, invites, matches, matchmaking, users, config, push } = app.ctx;
+
+  // Notifications never hold up the game
+  const quietly = (p) => p.catch((err) => app.log.warn({ err }, 'Notification failed'));
 
   // Players connected to this instance: id -> { user, sockets, waiting }
   const local = new Map();
@@ -161,8 +165,14 @@ export default async function liveRoutes(app) {
     switch (msg.t) {
       case 'ping':
         return { t: 'pong' };
-      case 'invite':
-        return invites.send(me, msg.to, msg.variant ?? 'classic');
+      case 'visible':
+        await push.seen(me.id, msg.on === true);
+        return null;
+      case 'invite': {
+        const sent = await invites.send(me, msg.to, msg.variant ?? 'classic');
+        quietly(push.invited(msg.to, me));
+        return sent;
+      }
       case 'invite-accept': {
         // A game started by invitation ends any search for a quick match
         const match = await invites.accept(me, msg.id);
@@ -173,8 +183,13 @@ export default async function liveRoutes(app) {
         return invites.decline(me, msg.id);
       case 'invite-cancel':
         return invites.cancel(me, msg.id);
-      case 'move':
-        return matches.move(String(msg.match), me.id, msg.square);
+      case 'move': {
+        const match = await matches.move(String(msg.match), me.id, msg.square);
+        // The other player's turn now: tell them if they aren't looking
+        const next = match && !match.over && !match.ended && match.players[match.turn];
+        if (next && next.id !== me.id) quietly(push.yourTurn(next.id, me));
+        return match;
+      }
       case 'next-round':
         return matches.nextRound(String(msg.match), me.id);
       case 'leave':
@@ -257,7 +272,11 @@ export default async function liveRoutes(app) {
       closed = true;
       unwatch(conn).catch((err) => app.log.error(err));
       entry.sockets.delete(socket);
-      if (entry.sockets.size === 0 && local.get(me.id) === entry) local.delete(me.id);
+      if (entry.sockets.size === 0 && local.get(me.id) === entry) {
+        local.delete(me.id);
+        // No page left here: notifications may go out again
+        quietly(push.seen(me.id, false));
+      }
       try {
         const stop = await stopListening;
         await stop();

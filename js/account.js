@@ -11,6 +11,7 @@ import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
 import { uploadGuestGames } from './stats.js';
 import { checkAnswer, prepareCheck } from './bot-check.js';
+import { initNotifications, refreshNotifications } from './notify.js';
 
 // Any element by id, typed loosely: the pages hold forms, dialogs and inputs
 const $ = (id) => /** @type {any} */ (document.getElementById(id));
@@ -542,6 +543,7 @@ function openProfile() {
   loadBlocked();
   $('sessionMsg').textContent = '';
   loadSessions();
+  refreshNotifications();
   $('profileDialog').showModal();
 }
 
@@ -691,6 +693,7 @@ export async function initAccount(callbacks) {
   $('recoverySaved').addEventListener('click', () => $('recoveryDialog').close());
   $('joinBtn').addEventListener('click', leaveGuest);
   $('profileBtn').addEventListener('click', openProfile);
+  initNotifications();
   $('profileForm').addEventListener('submit', saveProfile);
   $('passwordForm').addEventListener('submit', changePassword);
   $('profileDialog')
