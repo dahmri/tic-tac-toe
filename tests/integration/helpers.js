@@ -7,14 +7,17 @@ import { createDb } from '../../server/db.js';
 import { createRedis } from '../../server/redis.js';
 import { migrate } from '../../server/migrate.js';
 import { buildApp } from '../../server/app.js';
+import { solves } from '../../server/challenge.js';
 
-export async function setup(env = {}) {
+export async function setup(env = {}, { pushSender = null } = {}) {
   const config = loadConfig({
     DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgres://localhost/tictactoe_test',
     REDIS_URL: process.env.TEST_REDIS_URL || 'redis://127.0.0.1:6379/15',
     LOG_LEVEL: 'silent',
     RATE_LIMITS: 'off', // rate-limit.test.js turns them back on
     MAIL_OUTBOX: 'on', // emails land in Redis, where tests read them
+    SIGNUP_CHALLENGE_BITS: '4', // an easy sign-up puzzle (solved below)
+    SIGNUP_CHALLENGE_MIN_MS: '0',
     ...env,
   });
   const db = createDb(config);
@@ -22,7 +25,7 @@ export async function setup(env = {}) {
   await migrate(db, () => {});
   await db.query('TRUNCATE users, games RESTART IDENTITY CASCADE');
   await redis.flushdb();
-  const app = await buildApp({ config, db, redis });
+  const app = await buildApp({ config, db, redis, pushSender });
   await app.ready(); // app.inject() does this itself, app.injectWS() doesn't
 
   return {
@@ -55,10 +58,22 @@ export function newPlayer(overrides = {}) {
   };
 }
 
+// The sign-up check's puzzle, fetched and solved (tests make it easy)
+export async function answerChallenge(app) {
+  const { challenge, bits } = (await app.inject({ method: 'GET', url: '/api/challenge' })).json();
+  let nonce = 0;
+  while (!solves(challenge, String(nonce), bits)) nonce++;
+  return { challenge, nonce: String(nonce) };
+}
+
 // A tiny client that keeps the session cookie between requests, like a browser
 export function client(app) {
   let cookie = '';
   const request = async (method, url, payload, headers = {}) => {
+    // Sign-ups answer the sign-up check first, like the page does
+    if (method === 'POST' && url === '/api/account' && payload && !('challenge' in payload)) {
+      payload = { ...payload, ...(await answerChallenge(app)) };
+    }
     const res = await app.inject({
       method,
       url,
@@ -121,12 +136,12 @@ export async function live(app, c) {
   };
 }
 
-// Starts a match: `x` invites `o`. play(squares) plays them in order, each
+// Starts a match: `x` invites `o`, to play by `variant`. play(squares) plays them in order, each
 // by whoever's turn it is.
-export async function startMatch(app, x, o) {
+export async function startMatch(app, x, o, variant = 'classic') {
   const a = await live(app, x);
   const b = await live(app, o);
-  a.send({ t: 'invite', to: o.user.id });
+  a.send({ t: 'invite', to: o.user.id, variant });
   const { invite } = await b.next('invite');
   b.send({ t: 'invite-accept', id: invite.id });
   const [{ match: m }] = await Promise.all([a.next('match'), b.next('match')]);

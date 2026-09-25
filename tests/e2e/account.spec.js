@@ -129,6 +129,13 @@ test('edit your profile and change your password', async ({ page, player }) => {
   const dialog = page.getByRole('dialog', { name: 'Your profile' });
   const profile = dialog.locator('#profileForm');
   await expect(profile.getByLabel('First name')).toHaveValue(player.firstName);
+  await expect(dialog.locator('#sessionList .session')).toHaveCount(1);
+  await expect(dialog.locator('#sessionList')).toContainText('This device');
+  // The test servers have no push keys
+  await expect(dialog.locator('#notifyMsg')).toHaveText(
+    "Notifications aren't available on this device.",
+  );
+  await expect(dialog.locator('#notifyBtn')).toBeHidden();
   await expect(profile.getByLabel('Date of birth')).toHaveValue(player.birthDate);
 
   await profile.getByLabel('Last name').fill('Renamed');

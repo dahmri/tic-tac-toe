@@ -11,11 +11,14 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 
 const PAGE = 20;
 const FILTER_KEY = 'pencil-ttt-leaderboard-country';
+const RULES_KEY = 'pencil-ttt-leaderboard-rules';
+const RULES = ['classic', 'vanish', 'ultimate'];
 
 // Any element by id, typed loosely: the pages hold forms, dialogs and inputs
 const $ = (id) => /** @type {any} */ (document.getElementById(id));
 let shown = 0;
 let meId = null;
+let rules = 'classic';
 
 const el = (tag, cls, text) => {
   const e = document.createElement(tag);
@@ -43,12 +46,14 @@ function row(p) {
 
 async function load(more) {
   const country = $('lbCountry').value;
+  const asked = rules;
   const query = new URLSearchParams({ offset: String(more ? shown : 0), limit: String(PAGE) });
   if (country) query.set('country', country);
+  if (rules !== 'classic') query.set('variant', rules);
   $('lbMsg').textContent = '';
   try {
     const res = await api('GET', `/api/leaderboard?${query}`);
-    if ($('lbCountry').value !== country) return; // the choice changed meanwhile
+    if ($('lbCountry').value !== country || rules !== asked) return; // the choice changed meanwhile
     const body = $('lbTable').tBodies[0];
     if (!more) body.replaceChildren();
     body.append(...res.players.map(row));
@@ -123,8 +128,33 @@ function fillFilter() {
   filter.value = keep;
 }
 
+// Shows the leaderboard of one set of rules
+function pickRules(next) {
+  rules = RULES.includes(next) ? next : 'classic';
+  for (const b of $('lbRules').querySelectorAll('button')) {
+    b.setAttribute('aria-pressed', String(b.dataset.lbVariant === rules));
+  }
+}
+
 export function initLeaderboard(me) {
   const filter = $('lbCountry');
+  try {
+    pickRules(localStorage.getItem(RULES_KEY));
+  } catch {
+    /* storage unavailable */
+  }
+  $('lbRules').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    pickRules(b.dataset.lbVariant);
+    try {
+      localStorage.setItem(RULES_KEY, rules);
+    } catch {
+      /* ignore */
+    }
+    shown = 0;
+    load(false);
+  });
   fillFilter();
   onLangChange(() => {
     fillFilter();

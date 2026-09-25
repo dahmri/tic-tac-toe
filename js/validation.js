@@ -53,7 +53,7 @@ function checkName(value, which) {
   return [v, null];
 }
 
-function checkUsername(value) {
+export function checkUsername(value) {
   const v = text(value);
   if (v.length < USERNAME_MIN || v.length > USERNAME_MAX) {
     return [v, 'Usernames are 3 to 20 characters.'];

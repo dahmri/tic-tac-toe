@@ -64,11 +64,21 @@ function playerName(p) {
   return span;
 }
 
+// The rules' names, as on the rules buttons
+export const RULES = { classic: 'Classic', vanish: '3 marks', ultimate: 'Ultimate' };
+
 function renderSummary({ stats, opponents }) {
-  tiles($('ratingTiles'), [
-    ['This season', stats.rating],
-    ['Rank', stats.rank ? `#${stats.rank}` : '—'],
-    ['Best ever', stats.peakRating],
+  // This season's rating in each set of rules
+  tiles(
+    $('ratingTiles'),
+    stats.ratings.map((r) => [RULES[r.variant], r.rating]),
+  );
+  facts($('ratingFacts'), [
+    [
+      'Rank this season',
+      stats.ratings.map((r) => `${t(RULES[r.variant])} ${r.rank ? `#${r.rank}` : '—'}`).join(' · '),
+    ],
+    ['Best ever', String(stats.peakRating)],
   ]);
   const o = stats.online;
   tiles($('onlineTiles'), [

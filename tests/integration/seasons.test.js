@@ -33,7 +33,7 @@ test('a new month starts everyone at 1200, and keeps last month’s podium', asy
 
   // Last month: Ann beat Bob. (Played now, then moved back a month.)
   await xWins(ann, bob);
-  await t.db.query('UPDATE player_stats SET season = $1 WHERE user_id = ANY($2)', [
+  await t.db.query('UPDATE player_ratings SET season = $1 WHERE user_id = ANY($2)', [
     last,
     [ann.user.id, bob.user.id],
   ]);
@@ -61,12 +61,14 @@ test('a new month starts everyone at 1200, and keeps last month’s podium', asy
     ann.user.id,
   ]);
   assert.deepEqual(
-    rows.map((r) => [r.season, r.rating, r.played, r.won]),
-    [[last, 1216, 1, 1]],
+    rows.map((r) => [r.season, r.variant, r.rating, r.played, r.won]),
+    [[last, 'classic', 1216, 1, 1]],
   );
   const summary = await stats.summary(ann.user.id);
-  assert.equal(summary.rating, 1216);
-  assert.equal(summary.peakRating, 1216, 'the best ever stays');
+  assert.equal(summary.ratings[0].variant, 'classic');
+  assert.equal(summary.ratings[0].rating, 1216);
+  assert.equal(summary.ratings[0].peakRating, 1216, 'the best ever stays');
+  assert.equal(summary.peakRating, 1216);
   assert.equal(summary.online.played, 2, 'lifetime totals keep counting');
 
   // Bob hasn't played since: his row still holds last month, and counts in its podium
@@ -76,5 +78,7 @@ test('a new month starts everyone at 1200, and keeps last month’s podium', asy
     [ann.user.username, bob.user.username],
   );
   const medals = await stats.medals(ann.user.id);
-  assert.ok(medals.some((m) => m.season === last && m.rank >= 1 && m.rank <= 3));
+  assert.ok(
+    medals.some((m) => m.season === last && m.variant === 'classic' && m.rank >= 1 && m.rank <= 3),
+  );
 });

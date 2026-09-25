@@ -1,4 +1,6 @@
 import { test as base, expect } from '@playwright/test';
+import { solves } from '../../server/challenge.js';
+import { execFileSync } from 'node:child_process';
 
 // Collects uncaught errors and Content-Security-Policy violations, so a
 // test fails if the page breaks in ways the assertions might not notice.
@@ -48,12 +50,22 @@ export async function emailToken(page, email, param = 'verify') {
   return link.searchParams.get(param);
 }
 
+// The sign-up check's puzzle, solved here (the test server makes it easy)
+export async function answerChallenge(page) {
+  const { challenge, bits } = await (await page.request.get('/api/challenge')).json();
+  let nonce = 0;
+  while (!solves(challenge, String(nonce), bits)) nonce++;
+  return { challenge, nonce: String(nonce) };
+}
+
 // Creates an account through the API; the session cookie lands in the
 // page's browser context, so the next page load is logged in. The email is
 // confirmed too, unless `confirmed: false`.
 export async function signUp(page, { confirmed = true, ...overrides } = {}) {
   const player = newPlayer(overrides);
-  const res = await page.request.post('/api/account', { data: player });
+  const res = await page.request.post('/api/account', {
+    data: { ...player, ...(await answerChallenge(page)) },
+  });
   expect(res.status(), await res.text()).toBe(201);
   if (confirmed) {
     const token = await emailToken(page, player.email);
@@ -61,6 +73,30 @@ export async function signUp(page, { confirmed = true, ...overrides } = {}) {
     expect(ok.status()).toBe(200);
   }
   return player;
+}
+
+// Makes a player an admin with the command whoever runs the site uses:
+// inside the api container when testing the Docker stack, otherwise
+// against the test server's database
+export function makeAdmin(username) {
+  if (process.env.E2E_BASE_URL) {
+    execFileSync('docker', [
+      'compose',
+      'exec',
+      '-T',
+      'api',
+      'node',
+      'server/make-admin.js',
+      username,
+    ]);
+  } else {
+    execFileSync('node', ['server/make-admin.js', username], {
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.E2E_DATABASE_URL || 'postgres://localhost/tictactoe_e2e',
+      },
+    });
+  }
 }
 
 export const test = base.extend({

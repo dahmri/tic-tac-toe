@@ -1,6 +1,8 @@
 // Accounts: sign up, log in and out, read and edit your profile, change password.
 //
-//   POST   /api/account      create an account and log in
+//   GET    /api/challenge    the sign-up check's puzzle: { challenge, bits }
+//   POST   /api/account      create an account and log in (with the puzzle's
+//                            answer: challenge and nonce)
 //   POST   /api/session      log in
 //   DELETE /api/session      log out
 //   GET    /api/me           your profile
@@ -14,6 +16,9 @@
 //   GET    /api/password-reset/token?token=  whether a link still works
 //   GET    /api/me/export    everything stored about you, as a JSON download
 //   DELETE /api/me           delete your account: { password }
+//   GET    /api/me/sessions  where you're logged in: [{ id, device, created, seen, current }]
+//   DELETE /api/me/sessions/:id   log out that one
+//   DELETE /api/me/sessions  log out everywhere else
 //   POST   /api/me/email/resend   send the confirmation email again
 //   POST   /api/email/verify      confirm an address: { token } from the emailed link
 //   GET    /api/test/outbox       browser tests only (MAIL_OUTBOX=on): ?to=address
@@ -35,7 +40,7 @@ import {
   verifyPassword,
 } from '../security.js';
 import { EmailTakenError, UsernameTakenError } from '../users.js';
-import { MatchError } from '../matches.js';
+import { endAccount } from '../admin.js';
 import { COOKIE, SESSION_TTL } from '../sessions.js';
 
 const TAKEN = { username: 'That username is taken. Try another.' };
@@ -53,7 +58,7 @@ function taken(reply, err) {
 }
 
 export default async function accountRoutes(app) {
-  const { users, sessions, rateLimit, presence, config, stats, matches, matchmaking } = app.ctx;
+  const { users, sessions, rateLimit, presence, config, stats } = app.ctx;
   const { emailVerification, mailer, passwordReset } = app.ctx;
 
   // Where links in emails point: SITE_URL (always set in production), or
@@ -81,7 +86,8 @@ export default async function accountRoutes(app) {
   };
 
   async function startSession(reply, userId) {
-    reply.setCookie(COOKIE, await sessions.create(userId), cookieOptions);
+    const token = await sessions.create(userId, reply.request.headers['user-agent']);
+    reply.setCookie(COOKIE, token, cookieOptions);
   }
 
   async function limit(reply, key, max, windowSeconds) {
@@ -94,8 +100,23 @@ export default async function accountRoutes(app) {
     return false;
   }
 
+  // The sign-up check: a puzzle for the browser (server/challenge.js)
+  app.get('/api/challenge', async (req, reply) => {
+    if (!(await limit(reply, `challenge:${req.ip}`, 60, 3600))) return;
+    return app.ctx.challenges.issue();
+  });
+
   app.post('/api/account', async (req, reply) => {
     if (!(await limit(reply, `signup:${req.ip}`, 10, 3600))) return;
+    // A form field people never see (bots fill everything in), and the
+    // puzzle's answer
+    const notRobot = "Couldn't check you're not a robot. Try again.";
+    if (req.body?.website) return reply.code(400).send({ error: notRobot });
+    const problem = await app.ctx.challenges.verify(req.body?.challenge, req.body?.nonce);
+    if (problem) {
+      req.log.info({ problem }, 'Sign-up check failed');
+      return reply.code(400).send({ error: notRobot, check: problem });
+    }
     const { ok, value, errors } = validateRegistration(req.body);
     if (!ok)
       return reply.code(400).send({ error: 'Check the highlighted fields.', fields: errors });
@@ -126,6 +147,13 @@ export default async function accountRoutes(app) {
       ? await verifyPassword(password, found.password_hash)
       : (await burnPasswordCheck(password), false);
     if (!valid) return reply.code(401).send({ error: 'Wrong username or password.' });
+    // Only once the password is right: nobody learns who is suspended
+    if (found.suspended_until > new Date()) {
+      return reply.code(403).send({
+        error: 'This account is suspended.',
+        until: found.suspended_until.getFullYear() < 9999 ? found.suspended_until : null,
+      });
+    }
 
     if (needsRehash(found.password_hash)) {
       await users.setPasswordHash(found.id, await hashPassword(password));
@@ -354,21 +382,25 @@ export default async function accountRoutes(app) {
     }));
   }
 
+  // Where the player is logged in, and logging out other devices
+  app.get('/api/me/sessions', { preHandler: app.requireUser }, async (req) => ({
+    sessions: await sessions.list(req.userId, req.cookies[COOKIE]),
+  }));
+
+  app.delete('/api/me/sessions/:id', { preHandler: app.requireUser }, async (req, reply) => {
+    await sessions.destroyById(req.userId, String(req.params.id).slice(0, 20));
+    return reply.code(204).send();
+  });
+
+  app.delete('/api/me/sessions', { preHandler: app.requireUser }, async (req, reply) => {
+    await sessions.destroyOthers(req.userId, req.cookies[COOKIE]);
+    return reply.code(204).send();
+  });
+
   app.delete('/api/me', { preHandler: app.requireUser }, async (req, reply) => {
     if (!(await limit(reply, `password:${req.userId}`, 10, 900))) return;
     if (!(await confirmPassword(req, reply))) return;
-    const id = req.userId;
-    // Out of any game or queue first, as if they had left
-    await matchmaking.leave(id);
-    const match = await matches.current(id);
-    try {
-      if (match && !match.ended) await matches.leave(match.id, id);
-    } catch (err) {
-      if (!(err instanceof MatchError)) throw err; // it ended meanwhile: fine
-    }
-    await users.remove(id);
-    await sessions.destroyOthers(id, null);
-    await presence.forget(id);
+    await endAccount(app.ctx, req.userId, { kick: false });
     reply.clearCookie(COOKIE, { path: '/' });
     return reply.code(204).send();
   });

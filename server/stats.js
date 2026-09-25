@@ -5,6 +5,9 @@
 import { START_RATING, ratingChange } from './rating.js';
 import { previousSeason, seasonEnd, seasonOf } from '../js/seasons.js';
 
+// Each set of rules has its own ratings (migration 014)
+export const RATED = ['classic', 'vanish', 'ultimate'];
+
 const RETRY_KEY = 'stats:retry';
 
 const outcomeFor = (symbol, result) => (result === 'D' ? 'D' : result === symbol ? 'W' : 'L');
@@ -44,10 +47,9 @@ const UPSERT_STATS = `
   INSERT INTO player_stats (user_id, played, won, lost, drawn, won_as_x, played_as_x,
     won_as_o, played_as_o, wins_by_forfeit, losses_by_forfeit, current_streak, best_streak,
     fastest_win, cpu_played, cpu_won, cpu_lost, cpu_drawn, hard_played, hard_drawn,
-    first_played_at, last_played_at, rating, peak_rating, season_played, season_won)
+    first_played_at, last_played_at, peak_rating)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
-    $19, $20, $21, $21, ${START_RATING} + $22, GREATEST(${START_RATING}, ${START_RATING} + $22),
-    $2, $3)
+    $19, $20, $21, $21, GREATEST(${START_RATING}, coalesce($22, ${START_RATING})))
   ON CONFLICT (user_id) DO UPDATE SET
     played = player_stats.played + EXCLUDED.played,
     won = player_stats.won + EXCLUDED.won,
@@ -75,10 +77,18 @@ const UPSERT_STATS = `
     hard_drawn = player_stats.hard_drawn + EXCLUDED.hard_drawn,
     first_played_at = LEAST(player_stats.first_played_at, EXCLUDED.first_played_at),
     last_played_at = GREATEST(player_stats.last_played_at, EXCLUDED.last_played_at),
-    rating = player_stats.rating + $22,
-    peak_rating = GREATEST(player_stats.peak_rating, player_stats.rating + $22),
-    season_played = player_stats.season_played + EXCLUDED.played,
-    season_won = player_stats.season_won + EXCLUDED.won
+    -- the best rating in any rules
+    peak_rating = GREATEST(player_stats.peak_rating, coalesce($22, 0))`;
+
+// One online round in one set of rules: the new rating, the best ever and
+// the season's totals
+const UPDATE_RATING = `
+  UPDATE player_ratings SET
+    rating = rating + $3,
+    peak_rating = GREATEST(peak_rating, rating + $3),
+    season_played = season_played + 1,
+    season_won = season_won + $4
+  WHERE user_id = $1 AND variant = $2
   RETURNING rating`;
 
 // A player's first rated game of a new season: last season's result is
@@ -86,16 +96,17 @@ const UPSERT_STATS = `
 // saved late (retried) never reopens an old season.
 const NEW_SEASON = `
   WITH old AS (
-    SELECT user_id, season, rating, season_played, season_won FROM player_stats
-    WHERE user_id = ANY($1) AND season < $2
+    SELECT user_id, season, rating, season_played, season_won FROM player_ratings
+    WHERE user_id = ANY($1) AND variant = $3 AND season < $2
   ), archived AS (
-    INSERT INTO season_results (season, user_id, rating, played, won)
-    SELECT season, user_id, rating, season_played, season_won FROM old WHERE season_played > 0
+    INSERT INTO season_results (season, variant, user_id, rating, played, won)
+    SELECT season, $3, user_id, rating, season_played, season_won FROM old
+    WHERE season_played > 0
     ON CONFLICT DO NOTHING
   )
-  UPDATE player_stats s
+  UPDATE player_ratings r
   SET season = $2, rating = ${START_RATING}, season_played = 0, season_won = 0
-  FROM old WHERE s.user_id = old.user_id`;
+  FROM old WHERE r.user_id = old.user_id AND r.variant = $3`;
 
 const UPSERT_H2H = `
   INSERT INTO head_to_head (user_id, opponent_id, played, won, lost, drawn, last_played_at)
@@ -164,22 +175,26 @@ export function createStats(db, redis, log = console) {
       // Online rounds move both ratings: read them first, locked, so two
       // rounds finishing at once can't both start from the same rating
       const change = new Map(players.map((p) => [p.id, 0]));
+      const variant = game.variant ?? 'classic';
       if (online) {
         const ids = players.map((p) => p.id);
+        const season = seasonOf(endedAt);
         await client.query(
-          `INSERT INTO player_stats (user_id) SELECT unnest($1::bigint[]) ORDER BY 1
+          `INSERT INTO player_ratings (user_id, variant, season)
+           SELECT unnest($1::bigint[]), $2, $3 ORDER BY 1
            ON CONFLICT DO NOTHING`,
-          [ids],
+          [ids, variant, season],
         );
         // Locked first, then moved into this game's season if they're behind
         await client.query(
-          'SELECT user_id FROM player_stats WHERE user_id = ANY($1) ORDER BY user_id FOR UPDATE',
-          [ids],
+          `SELECT user_id FROM player_ratings WHERE user_id = ANY($1) AND variant = $2
+           ORDER BY user_id FOR UPDATE`,
+          [ids, variant],
         );
-        await client.query(NEW_SEASON, [ids, seasonOf(endedAt)]);
+        await client.query(NEW_SEASON, [ids, season, variant]);
         const { rows: current } = await client.query(
-          'SELECT user_id, rating FROM player_stats WHERE user_id = ANY($1)',
-          [ids],
+          'SELECT user_id, rating FROM player_ratings WHERE user_id = ANY($1) AND variant = $2',
+          [ids, variant],
         );
         const rating = new Map(current.map((r) => [r.user_id, r.rating]));
         const score = game.result === 'D' ? 0.5 : game.result === 'X' ? 1 : 0;
@@ -215,13 +230,18 @@ export function createStats(db, redis, log = console) {
           difficulty: game.difficulty,
           variant: game.variant,
         });
-        const { rows: saved } = await client.query(UPSERT_STATS, [
-          p.id,
-          ...d,
-          endedAt,
-          change.get(p.id),
-        ]);
-        result.players[p.id] = { rating: saved[0].rating, change: change.get(p.id) };
+        let rating = null;
+        if (online) {
+          const { rows: saved } = await client.query(UPDATE_RATING, [
+            p.id,
+            variant,
+            change.get(p.id),
+            outcome === 'W' ? 1 : 0,
+          ]);
+          rating = saved[0].rating;
+        }
+        await client.query(UPSERT_STATS, [p.id, ...d, endedAt, rating]);
+        result.players[p.id] = { rating, change: change.get(p.id) };
         if (online) {
           await client.query(UPSERT_H2H, [
             p.id,
@@ -281,31 +301,32 @@ export function createStats(db, redis, log = console) {
   // Position on the leaderboard (1 = top), ties broken the way the
   // leaderboard orders them. Null for players who haven't played online.
   // In the season: players who played in it, best rating first
-  async function rankOf(userId, rating, season, country = null) {
+  async function rankOf(userId, rating, season, variant, country = null) {
     const { rows } = await db.query(
       `SELECT count(*)::int + 1 AS rank
-       FROM player_stats s ${country ? 'JOIN users u ON u.id = s.user_id' : ''}
-       WHERE s.season = $3 AND s.season_played > 0
+       FROM player_ratings s ${country ? 'JOIN users u ON u.id = s.user_id' : ''}
+       WHERE s.season = $3 AND s.variant = $4 AND s.season_played > 0
          AND (s.rating > $1 OR (s.rating = $1 AND s.user_id < $2))
-       ${country ? 'AND u.country = $4' : ''}`,
-      country ? [rating, userId, season, country] : [rating, userId, season],
+       ${country ? 'AND u.country = $5' : ''}`,
+      country ? [rating, userId, season, variant, country] : [rating, userId, season, variant],
     );
     return rows[0].rank;
   }
 
   // The top three of a finished season: archived results, plus players who
   // haven't played since (their row still holds that season)
-  async function podium(season) {
+  async function podium(season, variant = 'classic') {
     const { rows } = await db.query(
       `SELECT r.user_id, u.username, u.country, u.avatar, r.rating
        FROM (
-         SELECT user_id, rating FROM season_results WHERE season = $1
+         SELECT user_id, rating FROM season_results WHERE season = $1 AND variant = $2
          UNION ALL
-         SELECT user_id, rating FROM player_stats WHERE season = $1 AND season_played > 0
+         SELECT user_id, rating FROM player_ratings
+         WHERE season = $1 AND variant = $2 AND season_played > 0
        ) r JOIN users u ON u.id = r.user_id
        ORDER BY r.rating DESC, r.user_id
        LIMIT 3`,
-      [season],
+      [season, variant],
     );
     return rows.map((r, i) => ({
       rank: i + 1,
@@ -317,34 +338,51 @@ export function createStats(db, redis, log = console) {
     }));
   }
 
-  // Every finished season where the player made the top three
+  // Every finished season, in any rules, where the player made the top
+  // three: [{ season, variant, rank }]
   async function medals(userId, now = new Date()) {
     const { rows } = await db.query(
-      `SELECT season FROM season_results WHERE user_id = $1 AND season < $2
+      `SELECT season, variant FROM season_results WHERE user_id = $1 AND season < $2
        UNION
-       SELECT season FROM player_stats WHERE user_id = $1 AND season_played > 0 AND season < $2
-       ORDER BY season`,
+       SELECT season, variant FROM player_ratings
+       WHERE user_id = $1 AND season_played > 0 AND season < $2
+       ORDER BY season, variant`,
       [userId, seasonOf(now)],
     );
     const out = [];
-    for (const { season } of rows) {
-      const mine = (await podium(season)).find((p) => p.id === Number(userId));
-      if (mine) out.push({ season, rank: mine.rank });
+    for (const { season, variant } of rows) {
+      const mine = (await podium(season, variant)).find((p) => p.id === Number(userId));
+      if (mine) out.push({ season, variant, rank: mine.rank });
     }
     return out;
   }
 
   async function summary(userId, now = new Date()) {
-    const { rows } = await db.query('SELECT * FROM player_stats WHERE user_id = $1', [userId]);
+    const [{ rows }, { rows: rated }] = await Promise.all([
+      db.query('SELECT * FROM player_stats WHERE user_id = $1', [userId]),
+      db.query('SELECT * FROM player_ratings WHERE user_id = $1', [userId]),
+    ]);
     const s = rows[0];
     const z = (k) => s?.[k] ?? 0;
     const season = seasonOf(now);
-    const inSeason = s?.season === season && s.season_played > 0;
+    // For each set of rules: this season's rating and rank, and the best ever
+    const ratings = await Promise.all(
+      RATED.map(async (variant) => {
+        const r = rated.find((x) => x.variant === variant);
+        const inSeason = r?.season === season && r.season_played > 0;
+        return {
+          variant,
+          rating: inSeason ? r.rating : START_RATING,
+          peakRating: r?.peak_rating ?? START_RATING,
+          rank: inSeason ? await rankOf(userId, r.rating, season, variant) : null,
+          played: inSeason ? r.season_played : 0,
+        };
+      }),
+    );
     return {
       season,
-      rating: inSeason ? s.rating : START_RATING,
+      ratings,
       peakRating: s?.peak_rating ?? START_RATING,
-      rank: inSeason ? await rankOf(userId, s.rating, season) : null,
       online: {
         played: z('played'),
         won: z('won'),
@@ -462,33 +500,40 @@ export function createStats(db, redis, log = console) {
 
   // One page of the leaderboard, best first, for the world or one country,
   // and where `userId` stands on it
-  async function leaderboard({ userId, country = null, offset = 0, limit = 20, now = new Date() }) {
+  async function leaderboard({
+    userId,
+    variant = 'classic',
+    country = null,
+    offset = 0,
+    limit = 20,
+    now = new Date(),
+  }) {
     const season = seasonOf(now);
-    const filter = country ? 'AND u.country = $2' : '';
-    const params = country ? [season, country] : [season];
+    const filter = country ? 'AND u.country = $3' : '';
+    const params = country ? [season, variant, country] : [season, variant];
     const n = params.length;
     const [page, count, mine, last] = await Promise.all([
       db.query(
         `SELECT s.user_id, u.username, u.country, u.avatar, s.rating,
                 s.season_played AS played, s.season_won AS won
-         FROM player_stats s JOIN users u ON u.id = s.user_id
-         WHERE s.season = $1 AND s.season_played > 0 ${filter}
+         FROM player_ratings s JOIN users u ON u.id = s.user_id
+         WHERE s.season = $1 AND s.variant = $2 AND s.season_played > 0 ${filter}
          ORDER BY s.rating DESC, s.user_id
          LIMIT $${n + 1} OFFSET $${n + 2}`,
         [...params, limit, offset],
       ),
       db.query(
-        `SELECT count(*)::int AS n FROM player_stats s JOIN users u ON u.id = s.user_id
-         WHERE s.season = $1 AND s.season_played > 0 ${filter}`,
+        `SELECT count(*)::int AS n FROM player_ratings s JOIN users u ON u.id = s.user_id
+         WHERE s.season = $1 AND s.variant = $2 AND s.season_played > 0 ${filter}`,
         params,
       ),
       db.query(
         `SELECT s.rating, s.season_played AS played, s.season_won AS won, u.country
-         FROM player_stats s JOIN users u ON u.id = s.user_id
-         WHERE s.user_id = $1 AND s.season = $2`,
-        [userId, season],
+         FROM player_ratings s JOIN users u ON u.id = s.user_id
+         WHERE s.user_id = $1 AND s.season = $2 AND s.variant = $3`,
+        [userId, season, variant],
       ),
-      podium(previousSeason(season)),
+      podium(previousSeason(season), variant),
     ]);
     const self = mine.rows[0];
     const ranked = self && self.played > 0 && (!country || self.country === country);
@@ -506,23 +551,25 @@ export function createStats(db, redis, log = console) {
       })),
       me: ranked
         ? {
-            rank: await rankOf(userId, self.rating, season, country),
+            rank: await rankOf(userId, self.rating, season, variant, country),
             rating: self.rating,
             played: self.played,
             won: self.won,
           }
         : null,
+      variant,
       // The season on show, when it ends, and the last one's top three
       season: { id: season, endsAt: seasonEnd(season).toISOString() },
       lastSeason: { id: previousSeason(season), podium: last },
     };
   }
 
-  // The rating in the current season (1200 until the player's first game in it)
-  async function rating(userId, now = new Date()) {
+  // The rating in some rules in the current season (1200 until the
+  // player's first game in it)
+  async function rating(userId, variant = 'classic', now = new Date()) {
     const { rows } = await db.query(
-      'SELECT rating FROM player_stats WHERE user_id = $1 AND season = $2',
-      [userId, seasonOf(now)],
+      'SELECT rating FROM player_ratings WHERE user_id = $1 AND variant = $2 AND season = $3',
+      [userId, variant, seasonOf(now)],
     );
     return rows[0]?.rating ?? START_RATING;
   }

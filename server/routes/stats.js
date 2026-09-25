@@ -5,12 +5,13 @@
 //   GET  /api/me/achievements  [{ id, earned, count? }] (see js/achievements.js)
 //   POST /api/games/cpu  a finished game vs the computer:
 //                        { difficulty, starter, moves, seconds, variant?, endedAt? }
-//   GET  /api/leaderboard  best ratings: ?country=FR&offset=0&limit=20
+//   GET  /api/leaderboard  best ratings: ?variant=classic&country=FR&offset=0&limit=20
 //                        -> { total, players: [{ rank, id, username, country,
 //                             avatar, rating, played, won }], me: { rank, rating, ... } | null }
 
 import { checkCpuGame } from '../cpu-game.js';
 import { isCountryCode } from '../../js/countries.js';
+import { RATED } from '../stats.js';
 
 const MAX_OFFSET = 10_000;
 
@@ -40,9 +41,11 @@ export default async function statsRoutes(app) {
     if (country && !isCountryCode(country)) {
       return reply.code(400).send({ error: 'Unknown country.' });
     }
+    const variant = req.query.variant || 'classic';
+    if (!RATED.includes(variant)) return reply.code(400).send({ error: 'Unknown rules.' });
     const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 20, 1), 50);
     const offset = Math.min(Math.max(Number.parseInt(req.query.offset, 10) || 0, 0), MAX_OFFSET);
-    return stats.leaderboard({ userId: req.userId, country, offset, limit });
+    return stats.leaderboard({ userId: req.userId, variant, country, offset, limit });
   });
 
   app.post('/api/games/cpu', { preHandler: app.requireUser }, async (req, reply) => {
