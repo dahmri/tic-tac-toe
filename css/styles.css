@@ -1394,3 +1394,29 @@ a.btn {
     animation: none;
   }
 }
+
+/* Privacy policy and terms */
+.site-footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.site-footer a,
+.privacy a {
+  color: inherit;
+}
+.dialog.legal p,
+.dialog.legal li {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.dialog.legal ul {
+  padding-left: 1.2em;
+  margin: 0;
+}
+.draft {
+  padding: 8px 10px;
+  border: 2px dashed var(--o);
+  border-radius: 8px;
+  font-weight: 700;
+}

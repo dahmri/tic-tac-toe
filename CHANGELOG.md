@@ -6,6 +6,21 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Privacy policy and terms of use**, linked at the bottom of every page
+  and from the sign-up form (also at `/#privacy` and `/#terms`), in all
+  three languages. They're drafts: the site owner's name, contact email,
+  country and backup period are placeholders to fill in before launch.
+
+### Changed
+
+- **New accounts need you to be 16** (was 13): the age of digital consent
+  everywhere in the EU. Accounts created before keep working.
+- **Fonts are served by the site itself** instead of Google Fonts, so
+  visitors' IP addresses no longer go to Google. The site now loads
+  nothing from other companies.
+
 ## [1.8.0] - 2026-09-24
 
 ### Fixed

@@ -139,6 +139,15 @@ curl http://localhost:8080/api/health
 docker compose logs -f api  # follow the game server's log
 ```
 
+## Before launch: the legal pages
+
+The privacy policy and terms (`index.html`, `#privacyDialog` and
+`#termsDialog`, and their translations in `js/locales/`) contain
+placeholders: `[Your name]`, `[contact email]`, `[country]` and `[30]` (days
+backups are kept). Replace them everywhere (the same text is in all three
+languages), remove the "Draft" notices, and have someone who knows the law
+where you operate read them.
+
 ## Monitoring
 
 - **Is it up?** The Uptime workflow (`.github/workflows/uptime.yml`)

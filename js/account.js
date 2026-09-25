@@ -503,7 +503,9 @@ export async function initAccount(callbacks) {
   for (const form of [$('signupForm'), $('profileForm')]) {
     fillAvatars(form);
     fillCountries(form.elements.country);
-    form.elements.birthDate.max = birthDateLimit();
+    // Sign-up needs the minimum age; the profile keeps older accounts' dates
+    form.elements.birthDate.max =
+      form.id === 'signupForm' ? birthDateLimit() : new Date().toISOString().slice(0, 10);
     form.elements.birthDate.min = '1900-01-01';
   }
 
