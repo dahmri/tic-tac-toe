@@ -2,13 +2,14 @@
 //
 //   npm run load-test -- --players 400 --seconds 60 --url http://127.0.0.1:8000
 //
-// Run it against a test server started with RATE_LIMITS=off and
-// MAIL_OUTBOX=on (it signs players up and confirms their email through the
+// Run it against a test server started with RATE_LIMITS=off,
+// MAIL_OUTBOX=on and SIGNUP_CHALLENGE_BITS=4 SIGNUP_CHALLENGE_MIN_MS=0 (it signs players up and confirms their email through the
 // test outbox), never against production. It reports how long the server
 // takes to answer a move (the time until both players have the new board),
 // how many moves a second it handled, and any errors.
 
 import { parseArgs } from 'node:util';
+import { solves } from '../server/challenge.js';
 
 const { values } = parseArgs({
   options: {
@@ -52,7 +53,12 @@ async function api(method, path, body, cookie) {
 async function signUp(n) {
   const username = `lt_${run}_${n}`.slice(0, 20);
   const email = `${username}@example.com`;
+  const { data: puzzle } = await api('GET', '/api/challenge');
+  let nonce = 0;
+  while (!solves(puzzle.challenge, String(nonce), puzzle.bits)) nonce++;
   const { data, cookie } = await api('POST', '/api/account', {
+    challenge: puzzle.challenge,
+    nonce: String(nonce),
     firstName: 'Load',
     lastName: 'Test',
     username,

@@ -17,6 +17,7 @@ import { createInvites } from './invites.js';
 import { createStats } from './stats.js';
 import { createMatchmaking } from './matchmaking.js';
 import { createSafety } from './safety.js';
+import { createChallenges } from './challenge.js';
 import { createMailer } from './mailer.js';
 import { createEmailVerification } from './email-verification.js';
 import { createPasswordReset } from './password-reset.js';
@@ -95,6 +96,12 @@ export async function buildApp({ config, db, redis }) {
     bus,
     matches,
     safety,
+    challenges: createChallenges({
+      key: config.dataKey,
+      redis,
+      bits: config.challengeBits,
+      minAgeMs: config.challengeMinMs,
+    }),
     invites: createInvites(redis, { bus, presence, matches, safety }),
     matchmaking: createMatchmaking(redis, { presence, matches, stats, bus }),
     stats,

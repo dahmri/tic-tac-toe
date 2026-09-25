@@ -10,6 +10,7 @@ import { onLangChange, t } from './i18n.js';
 import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
 import { uploadGuestGames } from './stats.js';
+import { checkAnswer, prepareCheck } from './bot-check.js';
 
 // Any element by id, typed loosely: the pages hold forms, dialogs and inputs
 const $ = (id) => /** @type {any} */ (document.getElementById(id));
@@ -136,6 +137,7 @@ function setAuthTab(tab) {
     );
   $('loginForm').hidden = tab !== 'login';
   $('signupForm').hidden = tab !== 'signup';
+  if (tab === 'signup') prepareCheck().catch(() => {});
   for (const id of ['resetForm', 'resetMailForm', 'newPasswordForm']) $(id).hidden = true;
   const form = tab === 'login' ? $('loginForm') : $('signupForm');
   showErrors(form);
@@ -626,7 +628,17 @@ export async function initAccount(callbacks) {
     const form = e.currentTarget;
     const { ok, value, errors } = validateRegistration(formData(form));
     if (!ok) return showErrors(form, errors, 'Check the highlighted fields.');
-    const res = await submit(form, () => api('POST', '/api/account', value));
+    const res = await submit(form, async () => {
+      const answer = await checkAnswer().catch(() => {
+        throw new Error("Couldn't check you're not a robot. Try again.");
+      });
+      const website = form.elements.website.value;
+      try {
+        return await api('POST', '/api/account', { ...value, ...answer, website });
+      } finally {
+        prepareCheck().catch(() => {}); // a new one, in case they try again
+      }
+    });
     if (!res) return;
     signedIn(res.user);
     const added = await uploadGuestGames();

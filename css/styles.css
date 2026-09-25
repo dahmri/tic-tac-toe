@@ -1504,3 +1504,12 @@ body.spectating .cell {
 .session-what small {
   color: var(--muted);
 }
+
+/* The sign-up form's field for bots: out of sight, out of reach */
+.trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

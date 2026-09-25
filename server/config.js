@@ -68,6 +68,10 @@ export function loadConfig(env = process.env) {
     // blip) has to come back before they leave their match and the
     // quick-match queue. Tests shorten it.
     leaveGraceMs: Number(env.LEAVE_GRACE_MS) || 20_000,
+    // The sign-up check (server/challenge.js): how hard the puzzle is, and
+    // how soon after it's issued an answer is believable. Tests lower both.
+    challengeBits: Number(env.SIGNUP_CHALLENGE_BITS) || 18,
+    challengeMinMs: env.SIGNUP_CHALLENGE_MIN_MS ? Number(env.SIGNUP_CHALLENGE_MIN_MS) : 1000,
     // Time each player has for a move in online matches. Tests shorten it.
     turnMs: Number(env.TURN_MS) || 30_000,
     // Browser tests sign up many players from one IP, so they turn this off

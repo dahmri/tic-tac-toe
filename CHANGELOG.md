@@ -11,6 +11,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Where you're logged in.** Your profile lists the devices you're logged
   in on ("Firefox on Windows", last active...), so you can log one out, or
   everywhere else at once. No IP addresses are kept.
+- **A sign-up check without a CAPTCHA.** While you fill in the sign-up
+  form, your browser quietly solves a small puzzle (about a second of
+  work); bots signing up by the thousand pay that each time. Nothing is
+  sent to another company and there are no pictures to click.
 
 ## [1.9.0] - 2026-09-25
 

@@ -105,6 +105,8 @@ export default {
   Copy: 'Copiar',
   'Copy it by hand: select the code above.': 'Cópialo a mano: selecciona el código de arriba.',
   'Couch Potato': 'Papa de sofá',
+  "Couldn't check you're not a robot. Try again.":
+    'No se pudo comprobar que no eres un robot. Inténtalo de nuevo.',
   Country: 'País',
   'Crabby Pants': 'Cangrejo gruñón',
   'Create a free account': 'Crear una cuenta gratis',
@@ -482,6 +484,7 @@ export default {
     'Te emparejamos con un jugador de puntuación parecida.',
   "We'll send you a link to confirm it. Other players never see it.":
     'Te enviaremos un enlace para confirmarlo. Los demás jugadores nunca lo ven.',
+  Website: 'Sitio web',
   'Week of puzzles': 'Semana de retos',
   'What other players see. Letters, numbers and _.':
     'Lo que ven los demás jugadores. Letras, números y _.',

@@ -99,6 +99,9 @@ jobs:
             # No real email: the tests read confirmation links from the outbox
             echo "SITE_URL=http://127.0.0.1:8080"
             echo "MAIL_OUTBOX=on"
+            # An easy sign-up puzzle: the tests sign up many players
+            echo "SIGNUP_CHALLENGE_BITS=4"
+            echo "SIGNUP_CHALLENGE_MIN_MS=0"
           } > .env
           docker compose up -d --build
           for i in $(seq 1 60); do curl -fsS http://127.0.0.1:8080/api/health && break; sleep 2; done
