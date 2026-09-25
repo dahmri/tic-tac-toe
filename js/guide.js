@@ -176,8 +176,14 @@ function go(n) {
   render();
 }
 
-// Opens the guide for 'vanish' or 'ultimate'
+// Opens the guide for 'vanish' or 'ultimate'. The module loads the first
+// time a guide is asked for (main.js), and wires its buttons then.
+let wired = false;
 export function openGuide(rules) {
+  if (!wired) {
+    wire();
+    wired = true;
+  }
   guide = GUIDES[rules];
   if (!guide) return;
   const ultimate = rules === 'ultimate';
@@ -189,8 +195,7 @@ export function openGuide(rules) {
   if (!$('guideDialog').open) $('guideDialog').showModal();
 }
 
-export function initGuide(currentRules) {
-  $('guideBtn').addEventListener('click', () => openGuide(currentRules()));
+function wire() {
   $('guideBack').addEventListener('click', () => go(step - 1));
   $('guideNext').addEventListener('click', () => {
     if (step === guide.steps.length - 1) $('guideDialog').close();

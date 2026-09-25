@@ -70,6 +70,44 @@ for (const scheme of ['light', 'dark']) {
           .getByRole('button', { name: 'Close' })
           .click();
       }
+      // The arena standings, from the lobby
+      await page.getByRole('button', { name: 'Standings' }).click();
+      await expect(page.getByRole('dialog', { name: 'Arena standings' })).toBeVisible();
+      await page.waitForTimeout(300);
+      await audit(page, 'arena standings');
+      await page
+        .getByRole('dialog', { name: 'Arena standings' })
+        .getByRole('button', { name: 'Close' })
+        .click();
+    });
+
+    test('the how-to-play guide', async ({ page }) => {
+      await page.goto('/');
+      await page.getByRole('button', { name: /Play as a guest/ }).click();
+      await page.getByRole('button', { name: 'Ultimate' }).click();
+      await page.getByRole('button', { name: 'How to play' }).click();
+      await expect(page.getByRole('dialog', { name: 'How to play: Ultimate' })).toBeVisible();
+      await audit(page, 'guide');
+    });
+
+    test.describe('on a phone', () => {
+      test.use({ viewport: { width: 390, height: 844 } });
+
+      test('the menu, open', async ({ page }) => {
+        await signUp(page);
+        await page.goto('/');
+        await page.getByRole('button', { name: 'Menu' }).click();
+        await expect(page.getByRole('button', { name: 'Stats' })).toBeVisible();
+        await audit(page, 'phone menu');
+      });
     });
   });
 }
+
+test('the theme forced dark on a light system passes too', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Theme: automatic' }).click(); // light
+  await page.getByRole('button', { name: 'Theme: light' }).click(); // dark
+  await page.getByRole('button', { name: /Play as a guest/ }).click();
+  await audit(page, 'forced dark');
+});

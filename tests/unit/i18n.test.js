@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fr from '../../js/locales/fr.js';
 import es from '../../js/locales/es.js';
 import { pickLang, translate } from '../../js/i18n.js';
+import '../../js/locales/all.js';
 import { translationKeys } from './i18n-keys.js';
 
 const keys = translationKeys();

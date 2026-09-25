@@ -17,8 +17,8 @@ import { initArena } from './arena-ui.js';
 import { initTheme } from './theme.js';
 import { initMenu } from './menu.js';
 import { captureInvite, claimInvite } from './share.js';
+import { followRoute, initRoutes } from './routes.js';
 import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
-import { initGuide } from './guide.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initReplay, openReplay } from './replay.js';
 import { checkAchievements } from './achievements-ui.js';
@@ -77,7 +77,7 @@ import {
 // First: report errors from here on, and pick the language before
 // anything writes to the page
 initMonitor();
-initLanguage();
+await initLanguage();
 
 // Keypad layout: 7 8 9 on top, 1 2 3 on the bottom
 const KEYMAP = { 7: 0, 8: 1, 9: 2, 4: 3, 5: 4, 6: 5, 1: 6, 2: 7, 3: 8 };
@@ -453,7 +453,11 @@ initMenu();
 initStats();
 // Admins only, so its code loads when first opened
 $('adminBtn').addEventListener('click', () => import('./admin.js').then((m) => m.openAdmin()));
-initGuide(() => variant());
+// The guides load when first opened
+$('guideBtn').addEventListener('click', () =>
+  import('./guide.js').then((m) => m.openGuide(variant())),
+);
+initRoutes();
 initReplay();
 initLegal();
 initPlayerMenu();
@@ -494,6 +498,7 @@ initAccount({
     if (canPlayOnline()) goOnline();
     render();
     maybeCpu();
+    followRoute(); // opened from a link: /#stats and the like
   },
   // The email was confirmed (online opens) or changed (it closes until confirmed)
   onEmailState() {
@@ -510,6 +515,7 @@ initAccount({
     setNetMessage('');
     render();
     maybeCpu();
+    followRoute();
   },
   onSignOut() {
     goOffline();
