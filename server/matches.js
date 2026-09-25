@@ -29,9 +29,13 @@ export class MatchError extends Error {}
 
 /**
  * @param {any} redis
- * @param {{ bus: any, onRoundFinished?: (finished: any) => Promise<any>, turnMs?: number }} options
+ * @param {{ bus: any, onRoundFinished?: (finished: any) => Promise<any>, turnMs?: number,
+ *   ratingOf?: ((id: number, variant: string) => Promise<number>) | null }} options
  */
-export function createMatches(redis, { bus, onRoundFinished = async () => {}, turnMs = TURN_MS }) {
+export function createMatches(
+  redis,
+  { bus, onRoundFinished = async () => {}, turnMs = TURN_MS, ratingOf = null },
+) {
   redis.defineCommand('ttCasSet', {
     numberOfKeys: 1,
     lua: `if redis.call('GET', KEYS[1]) == ARGV[1] then
@@ -103,6 +107,11 @@ export function createMatches(redis, { bus, onRoundFinished = async () => {}, tu
 
     // Starts a match between the inviter (X) and the invited player (O)
     async start(x, o, variant = 'classic') {
+      if (ratingOf && variant !== 'classic') {
+        const [rx, ro] = await Promise.all([ratingOf(x.id, variant), ratingOf(o.id, variant)]);
+        x = { ...x, rating: rx };
+        o = { ...o, rating: ro };
+      }
       const match = newMatch({ id: randomUUID(), x, o, variant, turnMs });
       const claimed = await redis.ttClaimPlayers(playerKey(x.id), playerKey(o.id), match.id, TTL);
       if (!claimed) throw new MatchError('One of you is already in a game.');

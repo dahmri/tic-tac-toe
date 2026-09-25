@@ -38,7 +38,9 @@ test('an online win moves both ratings, and both players hear about it', async (
   await wait(50);
 
   const a = (await ann.get('/api/me/stats')).body.stats;
-  assert.equal(a.rating, 1216 + ratings[ann.user.id].change);
+  const classic = a.ratings.find((r) => r.variant === 'classic');
+  assert.equal(classic.rating, 1216 + ratings[ann.user.id].change);
+  assert.equal(classic.peakRating, 1216);
   assert.equal(a.peakRating, 1216);
   const [draw, win] = (await ann.get('/api/me/games')).body.games;
   assert.equal(win.ratingChange, 16);
@@ -49,8 +51,11 @@ test('games against the computer never change the rating', async () => {
   const ann = await player(t.app);
   await ann.post('/api/games/cpu', { difficulty: 'casual', starter: 'X', moves: X_WINS });
   const s = (await ann.get('/api/me/stats')).body.stats;
-  assert.equal(s.rating, 1200);
-  assert.equal(s.rank, null, 'only online players are ranked');
+  assert.ok(s.ratings.every((r) => r.rating === 1200));
+  assert.ok(
+    s.ratings.every((r) => r.rank === null),
+    'only online players are ranked',
+  );
   assert.equal((await ann.get('/api/me/games')).body.games[0].ratingChange, null);
 });
 
@@ -99,7 +104,7 @@ test('the leaderboard ranks players, for the world or one country', async () => 
   // The world board agrees with each player's rank in their stats
   const world = (await board(top, '?limit=50')).body;
   const mine = world.players.find((p) => p.id === low.user.id);
-  const lowStats = (await low.get('/api/me/stats')).body.stats;
+  const lowStats = (await low.get('/api/me/stats')).body.stats.ratings[0];
   assert.equal(mine.rank, lowStats.rank);
   assert.equal((await board(low)).body.me.rank, lowStats.rank);
   const ratings = world.players.map((p) => p.rating);
@@ -147,4 +152,47 @@ test('online players and new matches show the latest rating', async () => {
   const again = await live(t.app, ann);
   assert.equal(again.hello.me.rating, 1216);
   await again.close();
+});
+
+test('each set of rules has its own rating and leaderboard', async () => {
+  const ann = await player(t.app, { country: 'FJ' });
+  const bob = await player(t.app, { country: 'FJ' });
+  // Ann was already good at the classic game
+  await t.db.query(
+    `INSERT INTO player_ratings (user_id, variant, rating, season, season_played)
+     VALUES ($1, 'classic', 1500, to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM'), 5)`,
+    [ann.user.id],
+  );
+  const m = await startMatch(t.app, ann, bob, 'vanish');
+  assert.equal(m.a.hello.me.rating, 1500, 'the lobby shows the classic rating');
+  await m.play(X_WINS);
+  const { ratings } = await m.a.next('ratings');
+  assert.deepEqual(ratings[ann.user.id], { rating: 1216, change: 16 }, 'vanish starts at 1200');
+  await m.close();
+
+  const s = (await ann.get('/api/me/stats')).body.stats;
+  const by = Object.fromEntries(s.ratings.map((r) => [r.variant, r]));
+  assert.equal(by.classic.rating, 1500);
+  assert.equal(by.vanish.rating, 1216);
+  assert.equal(by.vanish.played, 1);
+  assert.equal(by.ultimate.rating, 1200);
+  assert.equal(by.ultimate.rank, null);
+
+  const vanish = (await board(ann, '?variant=vanish&country=FJ')).body;
+  assert.equal(vanish.variant, 'vanish');
+  assert.deepEqual(
+    vanish.players.map((p) => [p.id, p.rating]),
+    [
+      [ann.user.id, 1216],
+      [bob.user.id, 1184],
+    ],
+  );
+  const classic = (await board(ann, '?country=FJ')).body;
+  assert.deepEqual(
+    classic.players.map((p) => [p.id, p.rating]),
+    [[ann.user.id, 1500]],
+  );
+  assert.equal((await board(ann, '?variant=chess')).status, 400);
+  assert.equal(await t.app.ctx.stats.rating(ann.user.id, 'vanish'), 1216);
+  assert.equal(await t.app.ctx.stats.rating(ann.user.id), 1500);
 });

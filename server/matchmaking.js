@@ -1,10 +1,10 @@
 // Quick match: "find me an opponent". Waiting players sit in a Redis
 // queue ordered by rating, so every server instance shares it:
 //
-//   mm:queue   sorted set: user id -> rating (classic rules)
+//   mm:queue   sorted set: user id -> rating in the classic rules
 //   mm:since   hash: user id -> when they started waiting (ms)
 //   mm:queue:<rules>, mm:since:<rules>   the same for the other rules
-//                  (vanish, ultimate)
+//                  (vanish, ultimate), by the rating in those rules
 //   mm:variant hash: user id -> the rules they are waiting to play
 //
 // Players only meet others who want the same rules.
@@ -125,7 +125,7 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
         if (!(await matches.isPlaying(id)) && (await presence.isOnline(id))) {
           await redis
             .multi()
-            .zadd(queueKey(variant), await stats.rating(id), id)
+            .zadd(queueKey(variant), await stats.rating(id, variant), id)
             .hset(sinceKey(variant), id, Date.now())
             .hset(VARIANT, id, variant)
             .exec();
@@ -137,7 +137,7 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
   }
 
   async function search(me, mode, now, variant) {
-    const rating = await stats.rating(me.id);
+    const rating = await stats.rating(me.id, variant);
     const found = await redis.ttMatchmake(
       queueKey(variant),
       sinceKey(variant),

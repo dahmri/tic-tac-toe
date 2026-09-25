@@ -83,7 +83,9 @@ export function createUsers(db, dataKey) {
                 CASE WHEN s.season = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM')
                   THEN s.rating ELSE ${START_RATING} END AS rating,
                 u.email_verified_at IS NOT NULL AS verified
-         FROM users u LEFT JOIN player_stats s ON s.user_id = u.id WHERE u.id = $1`,
+         FROM users u
+         LEFT JOIN player_ratings s ON s.user_id = u.id AND s.variant = 'classic'
+         WHERE u.id = $1`,
         [id],
       );
       return rows[0] || null;
