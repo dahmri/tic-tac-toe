@@ -14,6 +14,8 @@ import { createUltimateBoard } from './ultimate-board.js';
 import { canPlayOnline, currentUser, initAccount, isGuest, leaveGuest } from './account.js';
 import { initLobby } from './lobby.js';
 import { initArena } from './arena-ui.js';
+import { initTheme } from './theme.js';
+import { initMenu } from './menu.js';
 import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
 import { initGuide } from './guide.js';
 import { initLeaderboard } from './leaderboard.js';
@@ -444,6 +446,8 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === 'h' || e.key === 'H') showHint();
 });
 
+initTheme();
+initMenu();
 initStats();
 // Admins only, so its code loads when first opened
 $('adminBtn').addEventListener('click', () => import('./admin.js').then((m) => m.openAdmin()));

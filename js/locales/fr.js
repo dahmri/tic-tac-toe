@@ -267,6 +267,7 @@ export default {
     'Crée un compte gratuit et joue en ligne pour entrer au classement.',
   'Make a new recovery code': 'Créer un nouveau code de récupération',
   Medium: 'Moyen',
+  Menu: 'Menu',
   'More for {name}': "Plus d'options pour {name}",
   'Most played opponents': 'Adversaires les plus joués',
   'Move {n} of {total}': 'Coup {n} sur {total}',
@@ -507,6 +508,8 @@ export default {
   'The arena is closed right now.': "L'arène est fermée pour le moment.",
   'The board never fills up, so a game goes on until someone makes a line. After 60 moves it is a draw.':
     "La grille ne se remplit jamais : la partie continue jusqu'à ce que quelqu'un fasse une ligne. Après 60 coups, c'est un match nul.",
+  'The classic pencil-and-paper game, three ways: against the computer, with a friend on the same screen, or with players around the world.':
+    "Le jeu classique du papier et du crayon, de trois façons : contre l'ordinateur, avec un ami sur le même écran, ou avec des joueurs du monde entier.",
   'The game': 'Le jeu',
   'The game is busy. Try again.': 'La partie est occupée. Réessaie.',
   'The link works for 1 hour. If you didn’t ask for this, ignore this email: your password stays the same.':
@@ -515,6 +518,9 @@ export default {
     "Le lien fonctionne pendant 24 heures. Si tu ne t'es pas inscrit, ignore cet e-mail.",
   'The square you pick sends your opponent to the matching board: a centre square sends O to the centre board.':
     'La case que tu choisis envoie ton adversaire dans la grille correspondante : une case du centre envoie O dans la grille du centre.',
+  'Theme: automatic': 'Thème : automatique',
+  'Theme: dark': 'Thème : sombre',
+  'Theme: light': 'Thème : clair',
   'These terms are governed by the law of [country]. Questions: [contact email].':
     'Ces conditions sont régies par le droit de [country]. Questions : [contact email].',
   'This account is suspended until {date}.': "Ce compte est suspendu jusqu'au {date}.",
@@ -720,7 +726,9 @@ export default {
   '▶ Play': '▶ Lecture',
   '✉️ Add your email to play online': '✉️ Ajoute ton e-mail pour jouer en ligne',
   '✉️ Confirm your email to play online': '✉️ Confirme ton e-mail pour jouer en ligne',
+  '✏️ Classic, 3 marks and Ultimate rules': '✏️ Règles classiques, 3 marques et Ultimate',
   '🌍 Whole world': '🌍 Monde entier',
+  '🏆 Ratings, seasons and a weekend arena': '🏆 Cotes, saisons et une arène le week-end',
   '👀 Watching': '👀 Tu regardes',
   '👀 {n} watching': '👀 {n} spectateur(s)',
   '🔍 Show my mistake': '🔍 Montrer mon erreur',
@@ -728,5 +736,6 @@ export default {
   '🔒 Online games need a free account': '🔒 Les parties en ligne demandent un compte gratuit',
   '🔥 Streak: {n} · Best: {best} · Solved: {total}':
     '🔥 Série : {n} · Record : {best} · Résolus : {total}',
+  '🧩 A new puzzle every day': '🧩 Un nouveau défi chaque jour',
   '🧩 Puzzle': '🧩 Défi',
 };
