@@ -11,7 +11,23 @@
 // default). `deadline` is when their time runs out; timeUp() gives the
 // round to their opponent after that. There's no clock between rounds.
 
-import { emptyBoard, gameResult, other, playOn, replay } from '../js/rules.js';
+import { boardSize, gameResult, other, playOn, replay } from '../js/rules.js';
+import { isLegal, playUltimate, replayUltimate } from '../js/ultimate.js';
+
+const emptyBoardFor = (variant) => Array(boardSize(variant)).fill(null);
+
+// The board after `p` plays `square`, and the result if the round is over
+function play(match, square, p) {
+  const variant = match.variant ?? 'classic';
+  if (variant === 'ultimate') {
+    const pos = replayUltimate(match.moves, match.starter);
+    if (!isLegal(pos, square)) return { error: 'Play in the highlighted board.' };
+    const next = playUltimate(pos, square);
+    return { board: next.cells, result: next.result };
+  }
+  const { board } = playOn(replay(match.moves, match.starter, variant), square, p, variant);
+  return { board, result: gameResult(board, match.moves.length + 1, variant) };
+}
 
 export const TURN_MS = 30_000;
 
@@ -22,7 +38,7 @@ export function newMatch({ id, x, o, variant = 'classic', turnMs = TURN_MS, now 
     turnMs,
     deadline: now + turnMs,
     players: { X: x, O: o }, // { id, username, country, avatar, rating }
-    board: emptyBoard(),
+    board: emptyBoardFor(variant),
     turn: 'X',
     starter: 'X',
     round: 1,
@@ -72,12 +88,13 @@ export function applyMove(match, userId, square, now = Date.now()) {
   if (match.ended) return fail('This game has ended.');
   if (match.over) return fail('This round is over.');
   if (match.turn !== p) return fail("It's not your turn.");
-  if (!Number.isInteger(square) || square < 0 || square > 8) return fail('Not a square.');
+  const size = boardSize(match.variant ?? 'classic');
+  if (!Number.isInteger(square) || square < 0 || square >= size) return fail('Not a square.');
   if (match.board[square]) return fail('That square is taken.');
 
-  const variant = match.variant ?? 'classic';
-  const position = replay(match.moves, match.starter, variant);
-  const { board } = playOn(position, square, p, variant);
+  const played = play(match, square, p);
+  if (played.error) return fail(played.error);
+  const { board, result: w } = played;
   const next = {
     ...match,
     board,
@@ -86,7 +103,6 @@ export function applyMove(match, userId, square, now = Date.now()) {
     deadline: now + (match.turnMs ?? TURN_MS),
     version: match.version + 1,
   };
-  const w = gameResult(board, next.moves.length, variant);
   if (!w) return { match: next };
 
   next.over = true;
@@ -106,7 +122,7 @@ export function nextRound(match, userId, now = Date.now()) {
   return {
     match: {
       ...match,
-      board: emptyBoard(),
+      board: emptyBoardFor(match.variant ?? 'classic'),
       turn: starter,
       starter,
       round: match.round + 1,

@@ -4,16 +4,25 @@
 
 import { emptyBoard, gameResult, nextToVanish, other, playOn } from './rules.js';
 import { hintMove, pickMove, pickVanishMove } from './ai.js';
+import {
+  emptyUltimate,
+  isLegal as ultimateLegal,
+  pickUltimateMove,
+  playUltimate,
+} from './ultimate.js';
+import { createUltimateBoard } from './ultimate-board.js';
 import { canPlayOnline, currentUser, initAccount, isGuest, leaveGuest } from './account.js';
 import { initLobby } from './lobby.js';
 import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
-import { initReplay } from './replay.js';
+import { initReplay, openReplay } from './replay.js';
 import { checkAchievements } from './achievements-ui.js';
 import { setSound, sound, soundOn } from './sound.js';
 import { onLangChange, t } from './i18n.js';
 import { initLanguage } from './language.js';
 import { initMonitor } from './monitor.js';
+import { initLegal } from './legal.js';
+import { initPlayerMenu } from './player-menu.js';
 import {
   celebrate,
   clearBoard,
@@ -42,7 +51,11 @@ import {
   goOnline,
   inMatch,
   initOnline,
+  lostRound,
+  watchPlayer,
+  watching,
   matchMoves,
+  onBoardMoves,
   online,
   onlineLocked,
   onlineStatus,
@@ -64,10 +77,15 @@ initLanguage();
 // Keypad layout: 7 8 9 on top, 1 2 3 on the bottom
 const KEYMAP = { 7: 0, 8: 1, 9: 2, 4: 3, 5: 4, 6: 5, 1: 6, 2: 7, 3: 8 };
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 const statusEl = $('status');
 
 let cpuTimer = null;
+// The Ultimate board (shown instead of the classic one under its rules)
+const ubAt = $('uboard');
+const ub = createUltimateBoard(ubAt, { onPlay: (i) => humanMove(i) });
+const ultimate = () => variant() === 'ultimate';
 // The round in progress, recorded when a game against the computer ends
 let round = { moves: [], starter: 'X', diff: 'casual', variant: 'classic', startedAt: 0 };
 
@@ -79,10 +97,19 @@ function isHumanTurn() {
   return canMove();
 }
 
+// The square played last on the board (local game, or online match)
+const lastMove = () => (online() ? onBoardMoves().at(-1) : round.moves.at(-1)) ?? -1;
+
+// The result on the board, whatever the rules: { p, line? } or null
+function result() {
+  if (ultimate()) return game.upos?.result ?? null;
+  return gameResult(game.board, online() ? matchMoves() : round.moves.length, variant());
+}
+
 function statusHTML() {
   const tag = (m) => `<span class="${m.toLowerCase()}">${m}</span>`;
   if (settings.mode === 'puzzle') return puzzleStatus();
-  const w = gameResult(game.board, online() ? matchMoves() : round.moves.length, variant());
+  const w = result();
   if (online()) return onlineStatus(w, tag);
 
   if (w && w.p === 'D') return t("<mark>Cat's game.</mark> Nobody wins.");
@@ -110,6 +137,11 @@ function playerLabel(p) {
 
 function render() {
   const humanTurn = isHumanTurn();
+  // One board or the other, by the rules on it
+  const onUltimate = ultimate() && !!game.upos;
+  if (onUltimate) {
+    ub.render(game.upos, { playable: humanTurn && !game.busy, last: lastMove() });
+  }
   renderSquares({
     board: game.board,
     turn: game.turn,
@@ -122,41 +154,74 @@ function render() {
   $('lblX').textContent = playerLabel('X');
   $('lblO').textContent = playerLabel('O');
   $('diffGroup').hidden = settings.mode !== 'cpu';
-  $('diff-hard').textContent = settings.variant === 'vanish' ? t('Hard') : t('Unbeatable');
+  // Only the classic computer can't be beaten
+  $('diff-hard').textContent = settings.variant === 'classic' ? t('Unbeatable') : t('Hard');
   // An online match keeps the rules it started with
   const puzzle = settings.mode === 'puzzle';
-  $('rulesRow').hidden = inMatch() || onlineLocked() || puzzle;
-  $('ruleNote').hidden = variant() !== 'vanish';
+  $('rulesRow').hidden = inMatch() || watching() || onlineLocked() || puzzle;
+  $('ruleNote').hidden = variant() === 'classic';
+  $('ruleNote').textContent =
+    variant() === 'vanish'
+      ? t('You keep only your last 3 marks: the faded one vanishes when you play again.')
+      : t(
+          'Win three small boards in a row. The square you play sends your opponent to that board.',
+        );
   document
     .querySelectorAll('[data-variant]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === settings.variant));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.variant === settings.variant)),
+    );
   $('hintBtn').hidden = online() || puzzle;
   $('hintBtn').disabled = !humanTurn || game.busy;
   document
     .querySelectorAll('[data-mode]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === settings.mode));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.mode === settings.mode)),
+    );
   document
     .querySelectorAll('[data-diff]')
-    .forEach((b) => b.setAttribute('aria-pressed', b.dataset.diff === settings.diff));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.diff === settings.diff)),
+    );
 
   renderOnline();
-  $('board').hidden = online() && !inMatch();
-  document.querySelector('.scores').hidden = (online() && !inMatch()) || puzzle;
+  // Online, the board shows a match: one's own, or one being watched
+  const noBoard = online() && !inMatch() && !watching();
+  $('board').hidden = noBoard || onUltimate;
+  $('uboardWrap').hidden = noBoard || !onUltimate;
+  $('scores').hidden = noBoard || puzzle;
   $('next').disabled = (online() && !inMatch()) || (online() && !game.over);
   $('reset').hidden = online();
   $('next').closest('.actions').hidden = (online() && !inMatch()) || puzzle;
+  document.body.classList.toggle('spectating', watching());
   renderPuzzle(puzzle);
+  $('whyBtn').hidden = !lostGame();
 
   tally($('tX'), settings.scores.X);
   tally($('tO'), settings.scores.O);
   tally($('tD'), settings.scores.D);
 }
 
+// The game just lost against the computer or online, to analyse, or null
+function lostGame() {
+  if (online()) return lostRound();
+  if (settings.mode !== 'cpu' || !game.over || round.variant !== 'classic') return null;
+  const w = gameResult(game.board, round.moves.length, 'classic');
+  return w?.p === 'O'
+    ? { squares: round.moves, starter: round.starter, symbol: 'X', variant: 'classic' }
+    : null;
+}
+
 /* ---------- Local play ---------- */
 
 function place(i, p) {
-  Object.assign(game, playOn(game, i, p, settings.variant));
-  syncMarks(game.board);
+  if (settings.variant === 'ultimate') {
+    game.upos = playUltimate(game.upos, i);
+    game.board = game.upos.cells;
+  } else {
+    Object.assign(game, playOn(game, i, p, settings.variant));
+    syncMarks(game.board);
+  }
   clearHighlight();
   // A game counts at the difficulty and rules it started with, from its first move
   if (!round.moves.length) {
@@ -164,7 +229,7 @@ function place(i, p) {
   }
   round.moves.push(i);
   sound.mark(p);
-  const w = gameResult(game.board, round.moves.length, settings.variant);
+  const w = result();
   if (w) {
     game.over = true;
     if (w.p === 'D') sound.draw();
@@ -189,7 +254,7 @@ function place(i, p) {
     settings.scores[w.p]++;
     settings.starter = other(settings.starter); // alternate who opens the next round
     saveSettings();
-    if (w.line) drawWin(w.line);
+    if (w.line && settings.variant !== 'ultimate') drawWin(w.line);
   } else {
     game.turn = other(p);
   }
@@ -198,6 +263,7 @@ function place(i, p) {
 
 function humanMove(i) {
   if (game.board[i] || !isHumanTurn() || game.busy) return;
+  if (ultimate() && !ultimateLegal(game.upos, i)) return;
   if (online()) {
     sendMove(i);
     render();
@@ -217,9 +283,11 @@ function maybeCpu() {
       cpuTimer = null;
       game.busy = false;
       const square =
-        settings.variant === 'vanish'
-          ? pickVanishMove(game, 'O', settings.diff)
-          : pickMove(game.board, 'O', settings.diff);
+        settings.variant === 'ultimate'
+          ? pickUltimateMove(game.upos, settings.diff)
+          : settings.variant === 'vanish'
+            ? pickVanishMove(game, 'O', settings.diff)
+            : pickMove(game.board, 'O', settings.diff);
       place(square, 'O');
     },
     420 + Math.random() * 250,
@@ -230,9 +298,11 @@ function maybeCpu() {
 function resetBoard() {
   clearTimeout(cpuTimer);
   cpuTimer = null;
-  game.board = emptyBoard();
   game.marks = { X: [], O: [] };
   game.turn = settings.starter;
+  // Online, the match sets the board; locally, the chosen rules do
+  game.upos = !online() && settings.variant === 'ultimate' ? emptyUltimate(game.turn) : null;
+  game.board = game.upos ? game.upos.cells : emptyBoard();
   game.over = false;
   game.busy = false;
   round = {
@@ -243,6 +313,7 @@ function resetBoard() {
     startedAt: Date.now(),
   };
   clearBoard();
+  ub.clear();
   if (settings.mode === 'puzzle') startPuzzle();
 }
 
@@ -257,6 +328,15 @@ function newRound() {
 // Hints: the move the computer would play, for vs Computer and Same screen
 function showHint() {
   if (online() || settings.mode === 'puzzle' || !isHumanTurn() || game.busy) return;
+  if (settings.variant === 'ultimate') {
+    const i = pickUltimateMove(game.upos, 'hard');
+    ub.highlight(i);
+    statusEl.innerHTML = t('Try board {b}, square {c}.', {
+      b: Math.floor(i / 9) + 1,
+      c: (i % 9) + 1,
+    });
+    return;
+  }
   const i = hintMove(game, game.turn, settings.variant);
   highlight(i);
   statusEl.innerHTML = t('Try row {row}, column {col}.', {
@@ -312,8 +392,10 @@ initPuzzle({ render });
 
 document
   .querySelectorAll('[data-mode]')
-  .forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
-document.querySelectorAll('[data-diff]').forEach((b) =>
+  .forEach((/** @type {HTMLElement} */ b) =>
+    b.addEventListener('click', () => setMode(b.dataset.mode)),
+  );
+document.querySelectorAll('[data-diff]').forEach((/** @type {HTMLElement} */ b) =>
   b.addEventListener('click', () => {
     if (settings.diff === b.dataset.diff) return;
     settings.diff = b.dataset.diff;
@@ -323,9 +405,15 @@ document.querySelectorAll('[data-diff]').forEach((b) =>
 );
 document
   .querySelectorAll('[data-variant]')
-  .forEach((b) => b.addEventListener('click', () => setVariant(b.dataset.variant)));
+  .forEach((/** @type {HTMLElement} */ b) =>
+    b.addEventListener('click', () => setVariant(b.dataset.variant)),
+  );
 $('next').addEventListener('click', newRound);
 $('hintBtn').addEventListener('click', showHint);
+$('whyBtn').addEventListener('click', () => {
+  const lost = lostGame();
+  if (lost) openReplay(lost, t('Your last game'), { analyze: true });
+});
 function renderSound() {
   $('soundBtn').setAttribute('aria-pressed', String(soundOn()));
   $('soundBtn').textContent = soundOn() ? '🔊' : '🔇';
@@ -345,13 +433,18 @@ document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   if ($('gameView').hidden || document.querySelector('dialog[open]')) return;
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
-  if (e.key in KEYMAP) humanMove(KEYMAP[e.key]);
-  else if (e.key === 'n' || e.key === 'N') newRound();
+  // Under the Ultimate rules the keys pick a square in the board to play in
+  if (e.key in KEYMAP) {
+    if (!ultimate()) humanMove(KEYMAP[e.key]);
+    else if (game.upos?.active >= 0) humanMove(game.upos.active * 9 + KEYMAP[e.key]);
+  } else if (e.key === 'n' || e.key === 'N') newRound();
   else if (e.key === 'h' || e.key === 'H') showHint();
 });
 
 initStats();
 initReplay();
+initLegal();
+initPlayerMenu();
 
 // Installable, and playable offline (see sw.js). Browsers only allow it
 // over https or on localhost; elsewhere this quietly does nothing.
@@ -362,6 +455,7 @@ initLeaderboard(currentUser);
 initLobby({
   send: sendToLobby,
   variant: () => settings.variant,
+  watch: watchPlayer,
   message: setNetMessage,
 });
 

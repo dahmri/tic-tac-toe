@@ -119,6 +119,7 @@ function decodeCursor(cursor) {
 
 const rate = (won, played) => (played ? Math.round((won / played) * 100) : null);
 
+/** @param {any} [log] */
 export function createStats(db, redis, log = console) {
   // Saves one finished game. `game` = { mode, matchId?, round?, difficulty?,
   // variant, starter, xId, oId (null = computer), result, forfeit, moves,
@@ -408,6 +409,10 @@ export function createStats(db, redis, log = console) {
   }
 
   // One page of history, newest first
+  /**
+   * @param {number} userId
+   * @param {{ cursor?: string, limit?: number }} [page]
+   */
   async function history(userId, { cursor, limit = 20 } = {}) {
     const after = cursor ? decodeCursor(cursor) : null;
     // Two plain forms, so each is a straight walk down the primary key index

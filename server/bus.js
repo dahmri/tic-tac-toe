@@ -1,44 +1,48 @@
-// Delivers messages to a player wherever they are connected. Each player
-// has a Redis channel (u:<id>); the instance holding their connection
-// subscribes to it, so any instance can reach any player.
+// Delivers messages wherever the listener is connected, through Redis
+// pub/sub, so any instance can reach any connection:
+//
+//   u:<id>        a player's own channel (the instance holding their
+//                 connection subscribes to it)
+//   m:<match id>  a match's channel, for spectators
 
 export function createBus(redis) {
   const sub = redis.duplicate();
-  const listeners = new Map(); // user id -> Set of callbacks on this instance
+  const listeners = new Map(); // channel -> Set of callbacks on this instance
 
   sub.on('message', (channel, raw) => {
-    const set = listeners.get(Number(channel.slice(2)));
+    const set = listeners.get(channel);
     if (!set) return;
     const msg = JSON.parse(raw);
     for (const fn of set) fn(msg);
   });
 
-  return {
-    // Calls fn(msg) for every message sent to the player. Returns a
-    // function that stops listening.
-    async listen(userId, fn) {
-      let set = listeners.get(userId);
-      if (!set) {
-        set = new Set();
-        listeners.set(userId, set);
-        await sub.subscribe(`u:${userId}`);
+  // Calls fn(msg) for every message on the channel; returns a function
+  // that stops listening
+  async function listenTo(channel, fn) {
+    let set = listeners.get(channel);
+    if (!set) {
+      set = new Set();
+      listeners.set(channel, set);
+      await sub.subscribe(channel);
+    }
+    set.add(fn);
+    return async () => {
+      set.delete(fn);
+      if (set.size === 0 && listeners.get(channel) === set) {
+        listeners.delete(channel);
+        await sub.unsubscribe(channel);
       }
-      set.add(fn);
-      return async () => {
-        set.delete(fn);
-        if (set.size === 0 && listeners.get(userId) === set) {
-          listeners.delete(userId);
-          await sub.unsubscribe(`u:${userId}`);
-        }
-      };
-    },
+    };
+  }
 
-    send(userId, msg) {
-      return redis.publish(`u:${userId}`, JSON.stringify(msg));
-    },
+  const publish = (channel, msg) => redis.publish(channel, JSON.stringify(msg));
 
-    close() {
-      return sub.quit();
-    },
+  return {
+    listen: (userId, fn) => listenTo(`u:${userId}`, fn),
+    send: (userId, msg) => publish(`u:${userId}`, msg),
+    // A match's spectators
+    watch: (matchId, fn) => listenTo(`m:${matchId}`, fn),
+    toWatchers: (matchId, msg) => publish(`m:${matchId}`, msg),
+    close: () => sub.quit(),
   };
 }

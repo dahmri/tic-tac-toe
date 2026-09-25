@@ -112,7 +112,15 @@ export function createPresence(redis) {
 
     // One page of online players, most recently active first, optionally
     // in one country. `playing` marks players already in a game.
-    async list({ country = null, offset = 0, limit = 30, excludeId = null, now = Date.now() }) {
+    // `avoid`: ids never to list (blocked players)
+    async list({
+      country = null,
+      offset = 0,
+      limit = 30,
+      excludeId = null,
+      avoid = new Set(),
+      now = Date.now(),
+    }) {
       const key = setKey(country);
       const min = now - ONLINE_WINDOW_MS;
       // Drop anyone whose instance stopped reporting them
@@ -126,7 +134,7 @@ export function createPresence(redis) {
 
       const pageIds = ids
         .map(Number)
-        .filter((id) => id !== excludeId)
+        .filter((id) => id !== excludeId && !avoid.has(id))
         .slice(0, limit);
       const m = redis.multi();
       for (const id of pageIds)

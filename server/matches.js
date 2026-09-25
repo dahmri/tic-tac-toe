@@ -27,6 +27,10 @@ export const withClock = (match, now = Date.now()) =>
 
 export class MatchError extends Error {}
 
+/**
+ * @param {any} redis
+ * @param {{ bus: any, onRoundFinished?: (finished: any) => Promise<any>, turnMs?: number }} options
+ */
 export function createMatches(redis, { bus, onRoundFinished = async () => {}, turnMs = TURN_MS }) {
   redis.defineCommand('ttCasSet', {
     numberOfKeys: 1,
@@ -47,9 +51,14 @@ export function createMatches(redis, { bus, onRoundFinished = async () => {}, tu
     lua: `if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0`,
   });
 
+  // The players, and anyone watching (routes/live.js)
   const notify = (match) => {
     const msg = { t: 'match', match: withClock(match) };
-    return Promise.all([bus.send(match.players.X.id, msg), bus.send(match.players.O.id, msg)]);
+    return Promise.all([
+      bus.send(match.players.X.id, msg),
+      bus.send(match.players.O.id, msg),
+      bus.toWatchers(match.id, { t: 'watched', match: msg.match }),
+    ]);
   };
 
   const clock = (match) =>
