@@ -19,6 +19,7 @@
     <meta name="theme-color" content="#1c2420" media="(prefers-color-scheme: dark)" />
     <link rel="stylesheet" href="css/fonts.css" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/ultimate.css" />
   </head>
   <body>
     <main class="sheet">
@@ -298,6 +299,14 @@
             <button id="variant-vanish" type="button" data-variant="vanish" aria-pressed="false">
               3 marks
             </button>
+            <button
+              id="variant-ultimate"
+              type="button"
+              data-variant="ultimate"
+              aria-pressed="false"
+            >
+              Ultimate
+            </button>
           </div>
           <p class="rule-note" id="ruleNote" hidden>
             You keep only your last 3 marks: the faded one vanishes when you play again.
@@ -393,15 +402,18 @@
           <button id="puzzleAgain" type="button" class="btn ghostbtn" hidden>Practice again</button>
         </div>
 
-        <div class="board" id="board">
-          <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
-            <path d="M101 6 C98 80 103 190 99 294" />
-            <path d="M199 8 C202 100 197 210 201 292" />
-            <path d="M6 100 C90 97 200 103 294 99" />
-            <path d="M8 201 C110 203 190 197 292 200" />
-          </svg>
-          <svg class="winline" id="winline" viewBox="0 0 300 300" aria-hidden="true"></svg>
-          <svg class="confetti" id="confetti" viewBox="0 0 300 300" aria-hidden="true"></svg>
+        <div class="play-area">
+          <div class="board" id="board">
+            <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
+              <path d="M101 6 C98 80 103 190 99 294" />
+              <path d="M199 8 C202 100 197 210 201 292" />
+              <path d="M6 100 C90 97 200 103 294 99" />
+              <path d="M8 201 C110 203 190 197 292 200" />
+            </svg>
+            <svg class="winline" id="winline" viewBox="0 0 300 300" aria-hidden="true"></svg>
+            <svg class="confetti" id="confetti" viewBox="0 0 300 300" aria-hidden="true"></svg>
+          </div>
+          <div class="uboard-wrap" id="uboardWrap" hidden><div id="uboard"></div></div>
           <div class="reaction-feed" id="reactionFeed" aria-hidden="true"></div>
         </div>
 
@@ -682,6 +694,7 @@
           <path d="M8 201 C110 203 190 197 292 200" />
         </svg>
       </div>
+      <div class="replay-uboard" id="replayUBoard" hidden></div>
       <p class="replay-step" id="replayStep" aria-live="polite"></p>
       <p class="replay-note" id="replayNote" role="status"></p>
       <div class="replay-controls">

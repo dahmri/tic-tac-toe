@@ -155,3 +155,13 @@ test('running out of time gives the round to the other player', async () => {
   assert.equal(moved.deadline, 35_000, 'each move restarts the clock');
   assert.equal(nextRound(match, 1, 40_000).match.deadline, 70_000);
 });
+
+test('ultimate matches: 81 squares, and moves must go to the board the last one sent you to', async () => {
+  const m = newMatch({ id: 'u1', x: ann, o: bob, variant: 'ultimate', now: 1000 });
+  assert.equal(m.board.length, 81);
+  const first = applyMove(m, 1, 4 * 9 + 2, 2000); // X: centre board, square 2 -> O to board 2
+  assert.equal(first.error, undefined);
+  assert.equal(applyMove(first.match, 2, 0, 2000).error, 'Play in the highlighted board.');
+  assert.equal(applyMove(first.match, 2, 2 * 9 + 4, 2000).error, undefined);
+  assert.equal(applyMove(first.match, 2, 81, 2000).error, 'Not a square.');
+});

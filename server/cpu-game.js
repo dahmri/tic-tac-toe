@@ -21,6 +21,7 @@ import {
   winner,
 } from '../js/rules.js';
 import { bestMoves, vanishWinningMoves } from '../js/ai.js';
+import { emptyUltimate, isLegal, playUltimate } from '../js/ultimate.js';
 
 export const DIFFICULTIES = ['casual', 'medium', 'hard'];
 
@@ -30,10 +31,11 @@ export function checkCpuGame({ difficulty, starter, moves, variant = 'classic' }
   if (!DIFFICULTIES.includes(difficulty)) return fail('Unknown difficulty.');
   if (!isVariant(variant)) return fail('Unknown rules.');
   if (starter !== 'X' && starter !== 'O') return fail('Unknown first player.');
-  const max = variant === 'vanish' ? VANISH_MAX_MOVES : 9;
+  const max = variant === 'vanish' ? VANISH_MAX_MOVES : variant === 'ultimate' ? 81 : 9;
   if (!Array.isArray(moves) || moves.length < 5 || moves.length > max) {
     return fail('Not a finished game.');
   }
+  if (variant === 'ultimate') return checkUltimate(starter, moves);
 
   let position = emptyPosition();
   let turn = starter;
@@ -69,6 +71,19 @@ function computerChoices(position, difficulty, variant) {
     if (blocks.length) return blocks;
   }
   return null;
+}
+
+// Ultimate: every move legal, and the game really over. The computer looks
+// ahead a few moves rather than playing perfectly, so its moves aren't
+// checked beyond that.
+function checkUltimate(starter, moves) {
+  let pos = emptyUltimate(starter);
+  for (const square of moves) {
+    if (pos.result) return fail('Moves after the end of the game.');
+    if (!isLegal(pos, square)) return fail('Illegal move.');
+    pos = playUltimate(pos, square);
+  }
+  return pos.result ? { result: pos.result.p } : fail('Not a finished game.');
 }
 
 function winningSquares(board, p) {

@@ -5,6 +5,8 @@
 
 import { gameResult, replay } from './rules.js';
 import { mistakes } from './analysis.js';
+import { replayUltimate } from './ultimate.js';
+import { createUltimateBoard } from './ultimate-board.js';
 import { markSVG } from './marks.js';
 import { t } from './i18n.js';
 
@@ -16,6 +18,7 @@ let game = null; // { squares, starter, variant, symbol }
 let step = 0;
 let timer = null;
 let cells = [];
+let ub = null; // the Ultimate board, for games under those rules
 
 function stop() {
   clearInterval(timer);
@@ -27,6 +30,13 @@ function stop() {
 function show(n) {
   step = Math.max(0, Math.min(n, game.squares.length));
   const moves = game.squares.slice(0, step);
+  const onUltimate = game.variant === 'ultimate';
+  $('replayBoard').hidden = onUltimate;
+  $('replayUBoard').hidden = !onUltimate;
+  if (onUltimate) {
+    ub.render(replayUltimate(moves, game.starter), { last: moves.at(-1) ?? -1 });
+    return steps();
+  }
   const { board } = replay(moves, game.starter, game.variant);
   const last = moves.at(-1);
   const end = step === game.squares.length ? gameResult(board, step, game.variant) : null;
@@ -44,6 +54,11 @@ function show(n) {
     );
   });
   $('replayBoard').classList.toggle('won', !!end?.line);
+  steps();
+}
+
+// The move counter and the buttons
+function steps() {
   $('replayStep').textContent = step
     ? t('Move {n} of {total}', { n: step, total: game.squares.length })
     : t('Start: {mark} moves first', { mark: game.starter });
@@ -100,6 +115,7 @@ export function openReplay(g, title, { analyze = false } = {}) {
   };
   $('replayWho').textContent = title;
   $('replayWhy').hidden = game.variant !== 'classic' || !game.symbol;
+  ub.clear();
   $('replayDialog').showModal();
   stop();
   if (analyze && !$('replayWhy').hidden) return showMistake();
@@ -108,6 +124,7 @@ export function openReplay(g, title, { analyze = false } = {}) {
 }
 
 export function initReplay() {
+  ub = createUltimateBoard($('replayUBoard'));
   const board = $('replayBoard');
   cells = Array.from({ length: 9 }, () => {
     const c = document.createElement('div');

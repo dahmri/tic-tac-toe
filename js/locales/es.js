@@ -66,6 +66,7 @@ export default {
   "Blocked players can't invite you or be matched with you, and you won't see each other online.":
     'Los jugadores bloqueados no pueden invitarte ni emparejarse contigo, y no se verán en línea.',
   'Blocked.': 'Bloqueado.',
+  'Board {b}, square {c}: {value}': 'Tablero {b}, casilla {c}: {value}',
   'By creating an account you accept the <a href="#terms">terms of use</a> and the <a href="#privacy">privacy policy</a>. You must be at least 16.':
     'Al crear una cuenta aceptas las <a href="#terms">condiciones de uso</a> y la <a href="#privacy">política de privacidad</a>. Debes tener al menos 16 años.',
   "Can't reach the server. Check your connection.":
@@ -296,6 +297,7 @@ export default {
     'Juega una partida en línea para entrar en la clasificación.',
   'Play as a guest 👻': 'Jugar como invitado 👻',
   'Play fair and be kind': 'Juega limpio y sé amable',
+  'Play in the highlighted board.': 'Juega en el tablero resaltado.',
   Played: 'Jugadas',
   Player: 'Jugador',
   'Player {mark}': 'Jugador {mark}',
@@ -425,9 +427,12 @@ export default {
   'Top Banana': 'Plátano jefe',
   'Trash Panda': 'Mapache basurero',
   'Try Unbeatable: nobody has ever beaten it.': 'Prueba Imbatible: nadie le ha ganado nunca.',
+  'Try board {b}, square {c}.': 'Prueba el tablero {b}, casilla {c}.',
   'Try row {row}, column {col}.': 'Prueba la fila {row}, columna {col}.',
   'Turbo Snail': 'Caracol turbo',
   'Tuxedo Penguin': 'Pingüino de esmoquin',
+  Ultimate: 'Ultimate',
+  'Ultimate rules.': 'Reglas Ultimate.',
   Unbeatable: 'Imbatible',
   Unblock: 'Desbloquear',
   'Unblock {name}': 'Desbloquear a {name}',
@@ -454,6 +459,7 @@ export default {
   'Usernames are 3 to 20 characters.': 'Los nombres de usuario tienen de 3 a 20 caracteres.',
   'Vanishing act': 'Acto de desaparición',
   'Waiting for {who} (3 marks)…': 'Esperando a {who} (3 marcas)…',
+  'Waiting for {who} (Ultimate)…': 'Esperando a {who} (Ultimate)…',
   'Waiting for {who}…': 'Esperando a {who}…',
   Watch: 'Mirar',
   'Watch {name} play': 'Ver jugar a {name}',
@@ -487,6 +493,8 @@ export default {
   'Win rate as O': 'Porcentaje de victorias con O',
   'Win rate as X': 'Porcentaje de victorias con X',
   'Win streak': 'Racha de victorias',
+  'Win three small boards in a row. The square you play sends your opponent to that board.':
+    'Gana tres tableros pequeños en línea. La casilla donde juegas manda a tu rival al tablero correspondiente.',
   'Wipe scores': 'Borrar el marcador',
   'With an account you can play people around the world, get a rating, climb the leaderboard, keep your stats, and pick a funny avatar.':
     'Con una cuenta puedes jugar con gente de todo el mundo, obtener una puntuación, subir en la clasificación, guardar tus estadísticas y elegir un avatar divertido.',
@@ -573,6 +581,7 @@ export default {
   '{rate} of {n}': '{rate} de {n}',
   '{who} invites you to play': '{who} te invita a jugar',
   '{who} invites you to play (3 marks)': '{who} te invita a jugar (3 marcas)',
+  '{who} invites you to play (Ultimate)': '{who} te invita a jugar (Ultimate)',
   '{x} vs {o}': '{x} contra {o}',
   '⏱ Your time: {secs}s': '⏱ Tu tiempo: {secs} s',
   "⏱ {name}'s time: {secs}s": '⏱ Tiempo de {name}: {secs} s',

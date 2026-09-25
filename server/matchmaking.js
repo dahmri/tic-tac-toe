@@ -3,7 +3,8 @@
 //
 //   mm:queue   sorted set: user id -> rating (classic rules)
 //   mm:since   hash: user id -> when they started waiting (ms)
-//   mm:queue:vanish, mm:since:vanish   the same for the vanish variant
+//   mm:queue:<rules>, mm:since:<rules>   the same for the other rules
+//                  (vanish, ultimate)
 //   mm:variant hash: user id -> the rules they are waiting to play
 //
 // Players only meet others who want the same rules.
@@ -20,15 +21,13 @@
 
 import { MatchError } from './matches.js';
 import { ONLINE_WINDOW_MS } from './presence.js';
-import { isVariant } from '../js/rules.js';
+import { isVariant, VARIANTS } from '../js/rules.js';
 
-const queueKey = (variant) => (variant === 'vanish' ? 'mm:queue:vanish' : 'mm:queue');
-const sinceKey = (variant) => (variant === 'vanish' ? 'mm:since:vanish' : 'mm:since');
+// Classic keeps the original keys; each other set of rules has its own
+const queueKey = (variant) => (variant === 'classic' ? 'mm:queue' : `mm:queue:${variant}`);
+const sinceKey = (variant) => (variant === 'classic' ? 'mm:since' : `mm:since:${variant}`);
 const VARIANT = 'mm:variant';
-const ALL = [
-  ['mm:queue', 'mm:since'],
-  ['mm:queue:vanish', 'mm:since:vanish'],
-];
+const ALL = VARIANTS.map((v) => [queueKey(v), sinceKey(v)]);
 export const BASE_GAP = 100; // rating points
 export const GAP_PER_SECOND = 10;
 const STALE_MS = 10 * 60_000; // disconnected and waiting this long: gone
@@ -106,7 +105,8 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
     const m = redis.multi();
     for (const [queue, since] of ALL) m.zrem(queue, userId).hdel(since, userId);
     const res = await m.hdel(VARIANT, userId).exec();
-    if (res[0][1] || res[2][1]) await tell(userId, false);
+    // Was in one of the queues: every other reply is a ZREM count
+    if (ALL.some((_, i) => res[i * 2][1])) await tell(userId, false);
   }
 
   // Starts a match with the player the queue paired us with. If either of
@@ -186,12 +186,9 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
     leave,
 
     async isWaiting(userId) {
-      const [[, a], [, b]] = await redis
-        .multi()
-        .zscore(ALL[0][0], userId)
-        .zscore(ALL[1][0], userId)
-        .exec();
-      return a !== null || b !== null;
+      const m = redis.multi();
+      for (const [queue] of ALL) m.zscore(queue, userId);
+      return (await m.exec()).some(([, score]) => score !== null);
     },
   };
 }
