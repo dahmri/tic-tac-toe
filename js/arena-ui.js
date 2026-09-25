@@ -101,8 +101,12 @@ export function initArena(callbacks) {
   });
   $('arenaPause').addEventListener('click', () => actions.send({ t: 'arena-pause' }));
   $('arenaStandingsBtn').addEventListener('click', async () => {
+    $('arenaTable').hidden = true;
+    $('arenaEmpty').hidden = true;
+    $('arenaLoading').hidden = false;
     $('arenaDialog').showModal();
     await refreshArena();
+    $('arenaLoading').hidden = true;
     renderStandings();
   });
   $('arenaDialog')

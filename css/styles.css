@@ -93,17 +93,74 @@ body {
   display: grid;
   gap: 20px;
 }
+.game-cols,
+.side,
+.stage {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  min-width: 0;
+}
+/* Wide screens: the choices and the lobby beside the board */
+@media (min-width: 1000px) {
+  .sheet {
+    max-width: 1080px;
+  }
+  .sheet > header,
+  .auth,
+  .sheet > .loading,
+  .site-footer {
+    width: 100%;
+    max-width: 440px;
+    justify-self: center;
+  }
+  .sheet > header {
+    max-width: 1080px;
+  }
+  .game-cols {
+    grid-template-columns: minmax(340px, 400px) minmax(0, 560px);
+    justify-content: center;
+    gap: 48px;
+  }
+  .stage {
+    position: sticky;
+    top: 16px;
+  }
+  /* The board fits the screen's height, with the buttons under it in view */
+  .stage .board,
+  .stage .uboard-wrap {
+    max-width: min(100%, calc(100vh - 400px));
+    min-width: 300px;
+  }
+}
 
 header {
   position: relative;
   display: grid;
   gap: 2px;
 }
-/* The language menu, top right */
-.lang-pick {
+/* The theme switch and language menu, top right */
+.top-tools {
   position: absolute;
   top: 0;
   right: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.theme-btn {
+  font: 700 1rem/1 var(--body);
+  color: var(--ink);
+  background: var(--chip);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  width: 34px;
+  height: 30px;
+  cursor: pointer;
+}
+.theme-btn:focus-visible {
+  outline: none;
+  border-color: var(--ink);
 }
 .lang-pick select {
   font: 700 0.8rem/1 var(--body);
@@ -785,6 +842,52 @@ kbd {
 .account-bar .btn {
   padding: 8px 6px;
 }
+.account-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.menu-btn {
+  display: none;
+}
+/* Phones: the links fold behind a Menu button */
+@media (max-width: 640px) {
+  .account-bar {
+    position: relative;
+    flex-wrap: nowrap;
+  }
+  .account-bar .me strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .menu-btn {
+    display: inline-block;
+  }
+  .account-links {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 20;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 180px;
+    padding: 8px;
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  }
+  .account-links.open {
+    display: flex;
+  }
+  .account-links .btn {
+    text-align: left;
+    padding: 10px 12px;
+  }
+}
 
 /* Avatars: the picker on the sign-up and profile forms, and the face next
    to every player's name */
@@ -856,13 +959,6 @@ kbd {
 }
 
 /* Guests: the way in without an account, and what Online looks like to them */
-.guest-cta {
-  display: grid;
-  gap: 6px;
-  justify-items: start;
-  padding-top: 16px;
-  border-top: 2px dashed var(--grid);
-}
 .guest-locked {
   display: grid;
   gap: 8px;
@@ -1139,9 +1235,30 @@ kbd {
   font: 700 0.9rem/1 var(--body);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .turn-clock.low {
   color: var(--o);
+}
+/* A ring that empties as the time for the move runs out */
+.clock-ring {
+  --left: 1;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: conic-gradient(currentColor calc(var(--left) * 360deg), var(--chip) 0);
+  mask: radial-gradient(circle, transparent 5px, #000 6px);
+  transition: background 0.25s linear;
+}
+.turn-clock.low .clock-ring {
+  animation: tick 1s ease-in-out infinite;
+}
+@keyframes tick {
+  50% {
+    transform: scale(1.15);
+  }
 }
 .reactions {
   display: flex;
@@ -1630,7 +1747,7 @@ body.spectating .cell {
   display: grid;
   gap: 6px;
   padding: 12px;
-  border: 2px dashed var(--muted);
+  background: var(--chip);
   border-radius: 12px;
 }
 .arena p {
@@ -1643,4 +1760,116 @@ body.spectating .cell {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* The welcome above the log-in form */
+.welcome {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  background: var(--chip);
+  border-radius: 14px;
+}
+.welcome-lead {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.welcome-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+.welcome-play {
+  justify-self: start;
+}
+
+/* Placeholders while a list loads */
+.skeletons {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+}
+.skeletons span {
+  display: block;
+  height: 18px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--chip) 25%, var(--grid) 50%, var(--chip) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+.skeletons span:nth-child(2n) {
+  width: 80%;
+}
+.skeletons span:nth-child(3n) {
+  width: 60%;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeletons span {
+    animation: none;
+  }
+}
+
+/* Empty lists: a friendly note rather than a bare line */
+.empty {
+  padding: 12px;
+  border: 2px dashed var(--grid);
+  border-radius: 10px;
+  text-align: center;
+}
+
+/* Your move online: the board lights up */
+body.my-turn .play-area .board,
+body.my-turn .play-area .uboard-wrap {
+  border-radius: 14px;
+  box-shadow: 0 0 0 4px var(--hi);
+  transition: box-shadow 0.3s;
+}
+body.my-turn .status {
+  animation: nudge 0.5s ease-out;
+}
+@keyframes nudge {
+  30% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+}
+/* A round's points pop in */
+.status .delta {
+  display: inline-block;
+  animation: pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes pop {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clock-ring,
+  body.my-turn .status,
+  .status .delta,
+  .turn-clock.low .clock-ring {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Invite links */
+.invited {
+  margin: 0;
+  font-weight: 700;
+}
+.share-btn {
+  justify-self: start;
 }

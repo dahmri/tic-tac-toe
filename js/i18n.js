@@ -7,12 +7,20 @@
 // translates its messages into the language each request asks for).
 // No DOM code here: see language.js for the page.
 
-import fr from './locales/fr.js';
-import es from './locales/es.js';
-
 export const LANGUAGES = { en: 'English', fr: 'Français', es: 'Español' };
 export const DEFAULT_LANG = 'en';
-const DICTIONARIES = { fr, es };
+// Filled in as needed: the browser loads a language when it's chosen
+// (loadDictionary), the server loads them all (locales/all.js)
+const DICTIONARIES = {};
+
+export function addDictionary(code, dict) {
+  DICTIONARIES[code] = dict;
+}
+
+export async function loadDictionary(code) {
+  if (code === DEFAULT_LANG || !Object.hasOwn(LANGUAGES, code) || DICTIONARIES[code]) return;
+  DICTIONARIES[code] = (await import(`./locales/${code}.js`)).default;
+}
 
 export const isLang = (l) => Object.hasOwn(LANGUAGES, l);
 

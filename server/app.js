@@ -25,6 +25,7 @@ import { createFriends } from './friends.js';
 import { createPuzzles } from './puzzles.js';
 import { createAchievements } from './achievements.js';
 import { pickLang, translate } from '../js/i18n.js';
+import '../js/locales/all.js';
 import accountRoutes from './routes/account.js';
 import playersRoutes from './routes/players.js';
 import liveRoutes from './routes/live.js';

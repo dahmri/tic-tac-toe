@@ -184,6 +184,7 @@ async function open() {
   const dialog = $('statsDialog');
   $('statsMsg').textContent = '';
   $('statsBody').hidden = true;
+  $('statsLoading').hidden = false;
   dialog.showModal();
   try {
     const [summary, { achievements }] = await Promise.all([
@@ -196,6 +197,8 @@ async function open() {
     $('statsBody').hidden = false;
   } catch (err) {
     $('statsMsg').textContent = t(err.message);
+  } finally {
+    $('statsLoading').hidden = true;
   }
 }
 

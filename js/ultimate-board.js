@@ -38,6 +38,8 @@ export function createUltimateBoard(container, { onPlay = null } = {}) {
     // pos: an Ultimate position; playable: whether the viewer may move;
     // last: the square played last (drawn with the pencil)
     render(pos, { playable = false, last = -1 } = {}) {
+      let added = -1;
+      let count = 0;
       minis.forEach((mini, b) => {
         const done = pos.smalls[b];
         mini.classList.toggle(
@@ -57,6 +59,10 @@ export function createUltimateBoard(container, { onPlay = null } = {}) {
       squares.forEach((sq, i) => {
         const v = pos.cells[i];
         if (sq.dataset.mark !== (v || '')) {
+          if (v) {
+            added = i;
+            count++;
+          }
           sq.dataset.mark = v || '';
           sq.innerHTML = v ? markSVG(v, i === last ? '' : 'still') : '';
         }
@@ -68,6 +74,15 @@ export function createUltimateBoard(container, { onPlay = null } = {}) {
         );
         if (sq instanceof HTMLButtonElement) sq.disabled = !playable || !isLegal(pos, i);
       });
+      // One new mark: say where (screen readers), like the classic board
+      const said = document.getElementById('moveSaid');
+      if (count === 1 && said && container.closest('.stage')) {
+        said.textContent = t('{mark} played board {b}, square {c}.', {
+          mark: pos.cells[added],
+          b: Math.floor(added / 9) + 1,
+          c: (added % 9) + 1,
+        });
+      }
     },
 
     highlight(square) {
