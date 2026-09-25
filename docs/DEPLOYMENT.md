@@ -148,6 +148,36 @@ backups are kept). Replace them everywhere (the same text is in all three
 languages), remove the "Draft" notices, and have someone who knows the law
 where you operate read them.
 
+## Capacity
+
+`npm run load-test` connects many players to a server and has them play
+online matches (invitations, moves every ~0.3 s, new rounds) while their
+lobbies poll the player list, then reports how quickly moves are answered:
+
+```sh
+# a test server: no rate limits, and emails readable by the script
+RATE_LIMITS=off MAIL_OUTBOX=on PORT=4280 node server/index.js
+npm run load-test -- --url http://127.0.0.1:4280 --players 1000 --seconds 60
+```
+
+Never point it at production: it creates accounts. On staging, start the
+api with `RATE_LIMITS=off MAIL_OUTBOX=on` for the test only.
+
+Measured on 25 September 2026, on a laptop (Apple Silicon) running one
+game server, PostgreSQL, Redis and the load test itself:
+
+| Players | Matches at once | Moves a second | Move answered: median / 99% / worst |
+| ------- | --------------- | -------------- | ----------------------------------- |
+| 500     | 250             | 632            | 1.1 ms / 6.8 ms / 21 ms             |
+| 1,000   | 500             | 1,249          | 0.8 ms / 5.4 ms / 17 ms             |
+| 2,000   | 1,000           | 2,674          | 0.8 ms / 4.3 ms / 28 ms             |
+| 4,000   | 2,000           | 5,331          | 0.9 ms / 8.1 ms / 259 ms            |
+
+No errors at any size; the server used about 400 MB of memory at 4,000
+players. A small VPS is slower than this laptop: run the test on staging
+before a launch. Beyond one server, run more game servers behind nginx
+(`API_REPLICAS=4`): they share everything through Redis.
+
 ## Monitoring
 
 - **Is it up?** The Uptime workflow (`.github/workflows/uptime.yml`)

@@ -15,6 +15,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   same screen, or online (invitations and quick match), with hints,
   replays and stats. The board you must play in is highlighted, and the
   number keys play in it.
+- **Load test** (`npm run load-test`): many players playing online at
+  once, with how fast moves are answered. One server handled 4,000
+  players (2,000 matches) with 99% of moves answered within 10 ms on a
+  laptop; see docs/DEPLOYMENT.md.
 - **Watch live games.** Players in a game have a Watch button in the
   lobby (and in your friends list): you see their board move by move, with
   their reactions, until you stop or the game ends. The players see how
