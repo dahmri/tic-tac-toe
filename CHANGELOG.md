@@ -15,6 +15,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   form, your browser quietly solves a small puzzle (about a second of
   work); bots signing up by the thousand pay that each time. Nothing is
   sent to another company and there are no pictures to click.
+- **Backup restore drill.** `scripts/restore-drill.sh` restores the newest
+  backup into a scratch database and checks it can really be used
+  (migrations, tables, personal data opens with the server's key). See
+  docs/DEPLOYMENT.md.
 
 ## [1.9.0] - 2026-09-25
 

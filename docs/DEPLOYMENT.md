@@ -217,6 +217,20 @@ docker compose exec -T db pg_dump -U tictactoe -Fc tictactoe > /backups/ttt-$(da
 Restore with `pg_restore -U tictactoe -d tictactoe --clean`. Keep backups
 off the server, and keep `DATA_ENCRYPTION_KEY` apart from them.
 
+A backup nobody has restored is a hope, not a backup. Once a month, run
+the restore drill: it restores the newest backup into a scratch database
+beside the live one, checks that every migration is there, that the
+tables read, and that players' personal data opens with the server's
+`DATA_ENCRYPTION_KEY`, then drops the copy. It exits non-zero if the
+backup isn't usable.
+
+```sh
+cd /srv/tic-tac-toe/current && scripts/restore-drill.sh            # newest /backups/ttt-*.dump
+cd /srv/tic-tac-toe/current && scripts/restore-drill.sh old.dump   # a given one
+# monthly, mailing any failure (cron sends output to MAILTO):
+0 5 1 * * cd /srv/tic-tac-toe/current && scripts/restore-drill.sh >/dev/null
+```
+
 ## Rollback
 
 ```sh
