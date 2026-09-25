@@ -1481,3 +1481,26 @@ fieldset.field {
 body.spectating .cell {
   cursor: default;
 }
+
+/* Where you're logged in */
+.sessions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.session {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--grid);
+}
+.session-what {
+  display: grid;
+  flex: 1;
+}
+.session-what small {
+  color: var(--muted);
+}

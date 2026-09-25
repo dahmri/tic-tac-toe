@@ -544,6 +544,13 @@
         <button type="submit" class="btn">Change password</button>
       </form>
 
+      <h3>Where you're logged in</h3>
+      <ul class="sessions" id="sessionList" aria-label="Where you're logged in"></ul>
+      <button type="button" class="btn ghostbtn" id="logoutOthers" hidden>
+        Log out everywhere else
+      </button>
+      <p class="form-msg" id="sessionMsg" role="status"></p>
+
       <h3>Recovery code</h3>
       <form class="form" id="recoveryForm" novalidate>
         <p class="help">
