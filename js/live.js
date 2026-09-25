@@ -38,7 +38,9 @@ export function connectLive({ onMessage, onStatus }) {
       }
       onMessage(msg);
     });
-    ws.addEventListener('close', () => {
+    ws.addEventListener('close', (e) => {
+      // Logged out by the site (account suspended or deleted): start over
+      if (e.code === 4401) return location.reload();
       clearInterval(pingTimer);
       if (stopped) return;
       onStatus('offline');

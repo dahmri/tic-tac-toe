@@ -254,6 +254,7 @@
           <button id="leaderboardBtn" type="button" class="btn ghostbtn">Leaderboard</button>
           <button id="statsBtn" type="button" class="btn ghostbtn" data-member>Stats</button>
           <button id="profileBtn" type="button" class="btn ghostbtn" data-member>Profile</button>
+          <button id="adminBtn" type="button" class="btn ghostbtn" hidden>Admin</button>
           <button id="logoutBtn" type="button" class="btn ghostbtn" data-member>Log out</button>
           <button id="joinBtn" type="button" class="btn ghostbtn" data-guest hidden>
             Log in or sign up
@@ -612,6 +613,63 @@
         <button type="button" class="btn" id="copyRecovery">Copy</button>
         <button type="button" class="btn primary" id="recoverySaved">I've saved it</button>
       </div>
+    </dialog>
+
+    <dialog class="dialog admin" id="adminDialog" aria-labelledby="adminTitle">
+      <div class="dialog-head">
+        <h2 id="adminTitle">Admin</h2>
+        <button type="button" class="btn ghostbtn" data-close>Close</button>
+      </div>
+      <div class="seg" role="tablist" aria-label="Admin">
+        <button type="button" role="tab" data-admin-tab="reports" aria-selected="true">
+          Reports
+        </button>
+        <button type="button" role="tab" data-admin-tab="players" aria-selected="false">
+          Players
+        </button>
+        <button type="button" role="tab" data-admin-tab="usage" aria-selected="false">Usage</button>
+        <button type="button" role="tab" data-admin-tab="log" aria-selected="false">Log</button>
+      </div>
+      <p class="form-msg" id="adminMsg" role="alert"></p>
+      <section data-admin-panel="reports">
+        <p class="empty" id="reportsEmpty" hidden>No reports to look at.</p>
+        <ul class="admin-list" id="reportList"></ul>
+      </section>
+      <section data-admin-panel="players" hidden>
+        <form class="admin-search" id="adminSearch">
+          <label for="adminQuery">Find a player</label>
+          <input id="adminQuery" name="q" autocomplete="off" placeholder="Username" />
+          <button type="submit" class="btn">Search</button>
+        </form>
+        <ul class="admin-list" id="adminPlayers"></ul>
+      </section>
+      <section data-admin-panel="usage" hidden>
+        <div class="tiles" id="usageTiles"></div>
+        <p class="note">
+          Counts only: nobody's visits are recorded. Active means signed-in players who used the
+          site that day.
+        </p>
+        <div class="table-wrap">
+          <table class="table usage-table" id="usageTable">
+            <thead>
+              <tr>
+                <th scope="col">Day</th>
+                <th scope="col" class="num">Active</th>
+                <th scope="col" class="num">Sign-ups</th>
+                <th scope="col" class="num">Online</th>
+                <th scope="col" class="num">Computer</th>
+                <th scope="col" class="num">Classic</th>
+                <th scope="col" class="num">3 marks</th>
+                <th scope="col" class="num">Ultimate</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <section data-admin-panel="log" hidden>
+        <ul class="admin-log" id="adminLog"></ul>
+      </section>
     </dialog>
 
     <dialog class="dialog stats" id="statsDialog" aria-labelledby="statsTitle">

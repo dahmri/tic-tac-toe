@@ -1513,3 +1513,71 @@ body.spectating .cell {
   height: 1px;
   overflow: hidden;
 }
+
+/* Admin dialog: reports and players with their actions, usage numbers */
+.dialog.admin {
+  width: min(720px, calc(100vw - 32px));
+}
+.dialog.admin .seg {
+  margin-bottom: 12px;
+}
+.admin-list,
+.admin-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.admin-item {
+  padding: 10px 12px;
+  background: var(--chip);
+  border-radius: 10px;
+}
+.admin-head,
+.admin-meta {
+  margin: 0;
+}
+.admin-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.admin-details {
+  margin: 6px 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.admin-actions select {
+  font: inherit;
+}
+.btn.danger {
+  color: var(--danger, #b3261e);
+}
+.admin-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.admin-search input {
+  flex: 1 1 160px;
+}
+.admin-log {
+  gap: 6px;
+  font-size: 0.9rem;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+.usage-table .bar-cell {
+  background: linear-gradient(to right, var(--chip) var(--bar), transparent var(--bar));
+}

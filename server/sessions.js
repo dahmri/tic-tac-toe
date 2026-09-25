@@ -5,16 +5,20 @@
 //   sess:<hash>      the user id
 //   usess:<id>       set of the user's session hashes
 //   sessmeta:<hash>  hash: device ("Firefox on Windows"), created, seen (ms)
+//   active:<day>     HyperLogLog of the players active that day: it counts
+//                    them for the usage numbers, but can't list them
 //
 // The device is read from the browser's user agent; no IP address is kept.
 // A session is shown to its owner by the first 12 characters of its hash,
 // which can't be turned back into the token.
 
 import { hashToken, newToken } from './security.js';
+import { activeKey } from './admin.js';
 
 export const SESSION_TTL = 30 * 24 * 3600; // seconds
 export const COOKIE = 'sid';
 const SEEN_EVERY_MS = 60_000; // "last seen" is updated at most this often
+const ACTIVE_TTL = 400 * 24 * 3600; // a year of daily counts, and a bit
 
 const sessionKey = (hash) => `sess:${hash}`;
 const userKey = (userId) => `usess:${userId}`;
@@ -72,6 +76,8 @@ export function createSessions(redis) {
         .expire(metaKey(hash), SESSION_TTL)
         .sadd(userKey(userId), hash)
         .expire(userKey(userId), SESSION_TTL)
+        .pfadd(activeKey(now), userId)
+        .expire(activeKey(now), ACTIVE_TTL)
         .exec();
       return token;
     },
@@ -91,6 +97,8 @@ export function createSessions(redis) {
           .multi()
           .hset(metaKey(hash), 'seen', now)
           .expire(metaKey(hash), SESSION_TTL)
+          .pfadd(activeKey(now), id)
+          .expire(activeKey(now), ACTIVE_TTL)
           .exec();
       }
       return Number(id);

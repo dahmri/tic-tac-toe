@@ -243,6 +243,8 @@ export default async function liveRoutes(app) {
     // Every tab of the player hears whether they are waiting for a match;
     // this instance keeps searching for them while they are
     const stopListening = bus.listen(me.id, (msg) => {
+      // Suspended or deleted: this connection's session is gone
+      if (msg.t === 'signed-out') return socket.close(4401, 'Signed out');
       if (msg.t === 'queue') entry.waiting = msg.waiting;
       else if (msg.t === 'match' && !msg.match.ended) entry.waiting = false;
       send(msg);

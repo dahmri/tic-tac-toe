@@ -185,7 +185,22 @@ players. A small VPS is slower than this laptop: run the test on staging
 before a launch. Beyond one server, run more game servers behind nginx
 (`API_REPLICAS=4`): they share everything through Redis.
 
-## Monitoring
+## Admins
+
+Make yourself an admin once you have an account on the site:
+
+```sh
+cd /srv/tic-tac-toe/current && docker compose exec api node server/make-admin.js <username>
+# and to take it back:
+cd /srv/tic-tac-toe/current && docker compose exec api node server/make-admin.js <username> --remove
+```
+
+Admins get an **Admin** button: open reports (dismiss them, or rename,
+suspend or delete the player), a player search, and the usage numbers
+(players active each day, sign-ups, games by kind, for the last 30 days).
+The numbers are counts only; which players were active isn't stored. Every
+admin action is written to a log, visible in the same dialog. Admins can't
+change other admins.
 
 - **Is it up?** The Uptime workflow (`.github/workflows/uptime.yml`)
   checks `SITE_URL` every 15 minutes: the page, and `/api/health`, which

@@ -19,6 +19,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
   backup into a scratch database and checks it can really be used
   (migrations, tables, personal data opens with the server's key). See
   docs/DEPLOYMENT.md.
+- **Admin page.** For whoever runs the site: open reports, renaming
+  players with offensive names, suspending (1, 7 or 30 days, or until
+  further notice) or deleting accounts, and a log of every admin action.
+  A suspended player is logged out at once. Make someone an admin with
+  `npm run make-admin -- <username>`.
+- **Usage numbers.** In the admin page: players active each day, sign-ups,
+  and games by kind over the last 30 days. Counts only: which players were
+  active isn't kept (Redis HyperLogLog), and nothing goes to an analytics
+  company.
 
 ## [1.9.0] - 2026-09-25
 

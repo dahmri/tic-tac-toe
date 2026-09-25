@@ -40,7 +40,7 @@ import {
   verifyPassword,
 } from '../security.js';
 import { EmailTakenError, UsernameTakenError } from '../users.js';
-import { MatchError } from '../matches.js';
+import { endAccount } from '../admin.js';
 import { COOKIE, SESSION_TTL } from '../sessions.js';
 
 const TAKEN = { username: 'That username is taken. Try another.' };
@@ -58,7 +58,7 @@ function taken(reply, err) {
 }
 
 export default async function accountRoutes(app) {
-  const { users, sessions, rateLimit, presence, config, stats, matches, matchmaking } = app.ctx;
+  const { users, sessions, rateLimit, presence, config, stats } = app.ctx;
   const { emailVerification, mailer, passwordReset } = app.ctx;
 
   // Where links in emails point: SITE_URL (always set in production), or
@@ -147,6 +147,13 @@ export default async function accountRoutes(app) {
       ? await verifyPassword(password, found.password_hash)
       : (await burnPasswordCheck(password), false);
     if (!valid) return reply.code(401).send({ error: 'Wrong username or password.' });
+    // Only once the password is right: nobody learns who is suspended
+    if (found.suspended_until > new Date()) {
+      return reply.code(403).send({
+        error: 'This account is suspended.',
+        until: found.suspended_until.getFullYear() < 9999 ? found.suspended_until : null,
+      });
+    }
 
     if (needsRehash(found.password_hash)) {
       await users.setPasswordHash(found.id, await hashPassword(password));
@@ -393,18 +400,7 @@ export default async function accountRoutes(app) {
   app.delete('/api/me', { preHandler: app.requireUser }, async (req, reply) => {
     if (!(await limit(reply, `password:${req.userId}`, 10, 900))) return;
     if (!(await confirmPassword(req, reply))) return;
-    const id = req.userId;
-    // Out of any game or queue first, as if they had left
-    await matchmaking.leave(id);
-    const match = await matches.current(id);
-    try {
-      if (match && !match.ended) await matches.leave(match.id, id);
-    } catch (err) {
-      if (!(err instanceof MatchError)) throw err; // it ended meanwhile: fine
-    }
-    await users.remove(id);
-    await sessions.destroyOthers(id, null);
-    await presence.forget(id);
+    await endAccount(app.ctx, req.userId, { kick: false });
     reply.clearCookie(COOKIE, { path: '/' });
     return reply.code(204).send();
   });

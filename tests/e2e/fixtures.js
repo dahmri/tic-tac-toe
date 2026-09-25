@@ -1,5 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import { solves } from '../../server/challenge.js';
+import { execFileSync } from 'node:child_process';
 
 // Collects uncaught errors and Content-Security-Policy violations, so a
 // test fails if the page breaks in ways the assertions might not notice.
@@ -72,6 +73,30 @@ export async function signUp(page, { confirmed = true, ...overrides } = {}) {
     expect(ok.status()).toBe(200);
   }
   return player;
+}
+
+// Makes a player an admin with the command whoever runs the site uses:
+// inside the api container when testing the Docker stack, otherwise
+// against the test server's database
+export function makeAdmin(username) {
+  if (process.env.E2E_BASE_URL) {
+    execFileSync('docker', [
+      'compose',
+      'exec',
+      '-T',
+      'api',
+      'node',
+      'server/make-admin.js',
+      username,
+    ]);
+  } else {
+    execFileSync('node', ['server/make-admin.js', username], {
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.E2E_DATABASE_URL || 'postgres://localhost/tictactoe_e2e',
+      },
+    });
+  }
 }
 
 export const test = base.extend({

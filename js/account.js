@@ -6,7 +6,7 @@
 
 import { api } from './api.js';
 import { AVATARS, GUEST_AVATAR, avatarEmoji, avatarName } from './avatars.js';
-import { onLangChange, t } from './i18n.js';
+import { lang, onLangChange, t } from './i18n.js';
 import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
 import { uploadGuestGames } from './stats.js';
@@ -156,6 +156,7 @@ function renderMe() {
   document
     .querySelectorAll('[data-guest]')
     .forEach((/** @type {HTMLElement} */ b) => (b.hidden = !guest));
+  $('adminBtn').hidden = guest || !user?.admin;
   renderEmailNotice();
 }
 
@@ -619,7 +620,19 @@ export async function initAccount(callbacks) {
     const form = e.currentTarget;
     const { username, password } = formData(form);
     if (!username || !password) return showErrors(form, {}, 'Enter your username and password.');
-    const res = await submit(form, () => api('POST', '/api/session', { username, password }));
+    const res = await submit(form, () =>
+      api('POST', '/api/session', { username, password }).catch((err) => {
+        // Suspended for a while: say until when
+        if (err.body?.until) {
+          const date = new Intl.DateTimeFormat(lang(), { dateStyle: 'long' }).format(
+            new Date(err.body.until),
+          );
+          const message = t('This account is suspended until {date}.', { date });
+          throw Object.assign(new Error(message), { fields: {} });
+        }
+        throw err;
+      }),
+    );
     if (res) signedIn(res.user);
   });
 

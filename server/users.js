@@ -6,7 +6,7 @@ import { emailHash, openPII, sealPII } from './security.js';
 import { START_RATING } from './rating.js';
 
 const PII_FIELDS = ['firstName', 'lastName', 'birthDate', 'phone', 'email'];
-const COLUMNS = 'id, username, country, avatar, pii, email_verified_at, created_at';
+const COLUMNS = 'id, username, country, avatar, role, pii, email_verified_at, created_at';
 
 export class UsernameTakenError extends Error {}
 export class EmailTakenError extends Error {}
@@ -33,6 +33,7 @@ export function createUsers(db, dataKey) {
       ...openPII(row.pii, dataKey),
       emailVerified: !!row.email_verified_at,
       createdAt: row.created_at,
+      ...(row.role === 'admin' && { admin: true }),
     };
   }
 
@@ -62,7 +63,8 @@ export function createUsers(db, dataKey) {
 
     async findLogin(username) {
       const { rows } = await db.query(
-        'SELECT id, password_hash FROM users WHERE lower(username) = lower($1)',
+        `SELECT id, password_hash, suspended_until FROM users
+         WHERE lower(username) = lower($1)`,
         [username],
       );
       return rows[0] || null;

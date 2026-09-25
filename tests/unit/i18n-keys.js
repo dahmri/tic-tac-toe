@@ -62,6 +62,7 @@ function codeKeys() {
         'server/migrate.js',
         'server/index.js',
         'server/restore-check.js',
+        'server/make-admin.js',
       ].includes(f),
   );
   for (const file of files) {

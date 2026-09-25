@@ -442,6 +442,8 @@ document.addEventListener('keydown', (e) => {
 });
 
 initStats();
+// Admins only, so its code loads when first opened
+$('adminBtn').addEventListener('click', () => import('./admin.js').then((m) => m.openAdmin()));
 initReplay();
 initLegal();
 initPlayerMenu();
