@@ -17,6 +17,7 @@
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
     <meta name="theme-color" content="#f6f7f2" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1c2420" media="(prefers-color-scheme: dark)" />
+    <script src="js/theme-boot.js"></script>
     <link rel="stylesheet" href="css/fonts.css" />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/ultimate.css" />
@@ -24,10 +25,16 @@
   <body>
     <main class="sheet">
       <header>
-        <label class="lang-pick">
-          <span class="sr-only">Language</span>
-          <select id="langSelect"></select>
-        </label>
+        <div class="top-tools">
+          <button type="button" class="theme-btn" id="themeBtn">
+            <span aria-hidden="true" id="themeIcon">◐</span>
+            <span class="sr-only" id="themeLabel">Theme: automatic</span>
+          </button>
+          <label class="lang-pick">
+            <span class="sr-only">Language</span>
+            <select id="langSelect"></select>
+          </label>
+        </div>
         <h1 data-no-i18n>Tic-<span class="x">Tac</span>-<span class="o">Toe</span></h1>
         <p class="sub">Three in a row wins. Nobody wins? That's a cat's game.</p>
       </header>
@@ -35,6 +42,25 @@
       <p class="loading" id="loading">Loading…</p>
 
       <section class="auth" id="authView" aria-label="Account" hidden>
+        <div class="welcome">
+          <p class="invited" id="invitedBy" hidden></p>
+          <p class="welcome-lead">
+            The classic pencil-and-paper game, three ways: against the computer, with a friend on
+            the same screen, or with players around the world.
+          </p>
+          <ul class="welcome-points">
+            <li>✏️ Classic, 3 marks and Ultimate rules</li>
+            <li>🏆 Ratings, seasons and a weekend arena</li>
+            <li>🧩 A new puzzle every day</li>
+          </ul>
+          <button type="button" class="btn primary welcome-play" id="guestBtn">
+            Play as a guest 👻
+          </button>
+          <small class="help"
+            >No account needed: play the computer or a friend on this screen. Online games and stats
+            need a free account; sign up later and your games come with you.</small
+          >
+        </div>
         <div class="seg" role="tablist" aria-label="Log in or sign up">
           <button id="tab-login" type="button" role="tab" data-auth="login" aria-selected="true">
             Log in
@@ -223,14 +249,6 @@
           <p class="form-msg" role="alert"></p>
           <button type="submit" class="btn primary">Create account</button>
         </form>
-
-        <div class="guest-cta">
-          <button id="guestBtn" type="button" class="btn">Play as a guest 👻</button>
-          <small class="help"
-            >No account needed: play the computer or a friend on this screen. Online games and stats
-            need a free account; sign up later and your games come with you.</small
-          >
-        </div>
       </section>
 
       <div class="game" id="gameView" hidden>
@@ -251,14 +269,25 @@
           >
             🔊
           </button>
-          <button id="leaderboardBtn" type="button" class="btn ghostbtn">Leaderboard</button>
-          <button id="statsBtn" type="button" class="btn ghostbtn" data-member>Stats</button>
-          <button id="profileBtn" type="button" class="btn ghostbtn" data-member>Profile</button>
-          <button id="adminBtn" type="button" class="btn ghostbtn" hidden>Admin</button>
-          <button id="logoutBtn" type="button" class="btn ghostbtn" data-member>Log out</button>
-          <button id="joinBtn" type="button" class="btn ghostbtn" data-guest hidden>
-            Log in or sign up
+          <button
+            id="menuBtn"
+            type="button"
+            class="btn ghostbtn menu-btn"
+            aria-expanded="false"
+            aria-controls="accountLinks"
+          >
+            Menu
           </button>
+          <nav class="account-links" id="accountLinks" aria-label="Account">
+            <button id="leaderboardBtn" type="button" class="btn ghostbtn">Leaderboard</button>
+            <button id="statsBtn" type="button" class="btn ghostbtn" data-member>Stats</button>
+            <button id="profileBtn" type="button" class="btn ghostbtn" data-member>Profile</button>
+            <button id="adminBtn" type="button" class="btn ghostbtn" hidden>Admin</button>
+            <button id="logoutBtn" type="button" class="btn ghostbtn" data-member>Log out</button>
+            <button id="joinBtn" type="button" class="btn ghostbtn" data-guest hidden>
+              Log in or sign up
+            </button>
+          </nav>
         </div>
 
         <div class="email-notice" id="emailNotice" hidden>
@@ -268,200 +297,240 @@
 
         <div class="invites" id="invites" aria-live="polite"></div>
 
-        <div class="controls">
-          <div class="seg" role="group" aria-label="Opponent">
-            <button id="mode-cpu" type="button" data-mode="cpu" aria-pressed="true">
-              vs Computer
-            </button>
-            <button id="mode-pvp" type="button" data-mode="pvp" aria-pressed="false">
-              Same screen
-            </button>
-            <button id="mode-online" type="button" data-mode="online" aria-pressed="false">
-              Online
-            </button>
-            <button id="mode-puzzle" type="button" data-mode="puzzle" aria-pressed="false">
-              🧩 Puzzle
-            </button>
-          </div>
-          <div class="seg" role="group" aria-label="Difficulty" id="diffGroup">
-            <button id="diff-casual" type="button" data-diff="casual" aria-pressed="true">
-              Casual
-            </button>
-            <button id="diff-medium" type="button" data-diff="medium" aria-pressed="false">
-              Medium
-            </button>
-            <button id="diff-hard" type="button" data-diff="hard" aria-pressed="false">
-              Unbeatable
-            </button>
-          </div>
-        </div>
-
-        <div class="rules-row" id="rulesRow">
-          <div class="seg" role="group" aria-label="Rules" id="variantGroup">
-            <button id="variant-classic" type="button" data-variant="classic" aria-pressed="true">
-              Classic
-            </button>
-            <button id="variant-vanish" type="button" data-variant="vanish" aria-pressed="false">
-              3 marks
-            </button>
-            <button
-              id="variant-ultimate"
-              type="button"
-              data-variant="ultimate"
-              aria-pressed="false"
-            >
-              Ultimate
-            </button>
-          </div>
-          <p class="rule-note" id="ruleNote" hidden>
-            You keep only your last 3 marks: the faded one vanishes when you play again.
-          </p>
-          <button type="button" class="btn ghostbtn guide-btn" id="guideBtn" hidden>
-            How to play
-          </button>
-        </div>
-
-        <section class="guest-locked" id="guestLocked" aria-label="Online game" hidden>
-          <p class="guest-locked-title" id="lockedTitle">🔒 Online games need a free account</p>
-          <p class="help" id="lockedText">
-            With an account you can play people around the world, get a rating, climb the
-            leaderboard, keep your stats, and pick a funny avatar.
-          </p>
-          <button id="guestJoin" type="button" class="btn primary">Create a free account</button>
-        </section>
-
-        <section class="online" id="onlinePanel" aria-label="Online game" hidden>
-          <div class="lobby" id="lobby">
-            <div class="rematch" id="rematch" hidden>
-              <span class="rematch-text" id="rematchText"></span>
-              <button id="inviteAgain" type="button" class="btn">Invite again</button>
-            </div>
-            <div class="quick" id="quickIdle">
-              <button id="findMatch" type="button" class="btn primary">Find me an opponent</button>
-              <span class="quick-note">We'll pair you with a player near your rating.</span>
-            </div>
-            <div class="quick searching" id="quickSearching" role="status" hidden>
-              <span class="scribble" aria-hidden="true"></span>
-              <span class="quick-note"
-                >Looking for an opponent… <span class="timer" id="searchTime">0:00</span></span
-              >
-              <button id="cancelSearch" type="button" class="btn ghostbtn">Cancel</button>
-            </div>
-            <div class="arena" id="arenaBox">
-              <h2 class="panel-title">Weekend arena</h2>
-              <p class="arena-when" id="arenaWhen"></p>
-              <p class="arena-me" id="arenaMe" role="status"></p>
-              <div class="arena-actions">
-                <button id="arenaJoin" type="button" class="btn primary" hidden>
-                  Join the arena
+        <div class="game-cols">
+          <div class="side">
+            <div class="controls">
+              <div class="seg" role="group" aria-label="Opponent">
+                <button id="mode-cpu" type="button" data-mode="cpu" aria-pressed="true">
+                  vs Computer
                 </button>
-                <button id="arenaPause" type="button" class="btn ghostbtn" hidden>Pause</button>
-                <button id="arenaStandingsBtn" type="button" class="btn ghostbtn">Standings</button>
+                <button id="mode-pvp" type="button" data-mode="pvp" aria-pressed="false">
+                  Same screen
+                </button>
+                <button id="mode-online" type="button" data-mode="online" aria-pressed="false">
+                  Online
+                </button>
+                <button id="mode-puzzle" type="button" data-mode="puzzle" aria-pressed="false">
+                  🧩 Puzzle
+                </button>
+              </div>
+              <div class="seg" role="group" aria-label="Difficulty" id="diffGroup">
+                <button id="diff-casual" type="button" data-diff="casual" aria-pressed="true">
+                  Casual
+                </button>
+                <button id="diff-medium" type="button" data-diff="medium" aria-pressed="false">
+                  Medium
+                </button>
+                <button id="diff-hard" type="button" data-diff="hard" aria-pressed="false">
+                  Unbeatable
+                </button>
               </div>
             </div>
-            <div class="friends" id="friendsBox">
-              <h2 class="panel-title">Friends <span class="count" id="friendsCount"></span></h2>
-              <ul class="players" id="friendList" aria-label="Friends"></ul>
-              <p class="empty" id="friendsEmpty">
-                No friends yet. Add players you like with the ☆ next to their name, or by username.
+
+            <div class="rules-row" id="rulesRow">
+              <div class="seg" role="group" aria-label="Rules" id="variantGroup">
+                <button
+                  id="variant-classic"
+                  type="button"
+                  data-variant="classic"
+                  aria-pressed="true"
+                >
+                  Classic
+                </button>
+                <button
+                  id="variant-vanish"
+                  type="button"
+                  data-variant="vanish"
+                  aria-pressed="false"
+                >
+                  3 marks
+                </button>
+                <button
+                  id="variant-ultimate"
+                  type="button"
+                  data-variant="ultimate"
+                  aria-pressed="false"
+                >
+                  Ultimate
+                </button>
+              </div>
+              <p class="rule-note" id="ruleNote" hidden>
+                You keep only your last 3 marks: the faded one vanishes when you play again.
               </p>
-              <form class="add-friend" id="addFriendForm" novalidate>
-                <label class="sr-only" for="friendName">Add a friend by username</label>
-                <input
-                  id="friendName"
-                  name="username"
-                  placeholder="Add a friend by username"
-                  autocomplete="off"
-                  spellcheck="false"
-                  autocapitalize="none"
-                  maxlength="20"
-                />
-                <button type="submit" class="btn">Add</button>
-              </form>
-              <p class="form-msg" id="friendMsg" role="alert"></p>
+              <button type="button" class="btn ghostbtn guide-btn" id="guideBtn" hidden>
+                How to play
+              </button>
             </div>
-            <div class="lobby-head">
-              <h2 class="panel-title">
-                Players online <span class="count" id="onlineCount"></span>
-              </h2>
-              <label class="sr-only" for="countryFilter">Show players from</label>
-              <select id="countryFilter" class="filter">
-                <option value="">All countries</option>
-              </select>
-            </div>
-            <ul class="players" id="playerList" aria-label="Players online"></ul>
-            <p class="empty" id="playersEmpty" hidden></p>
-            <button id="morePlayers" type="button" class="btn ghostbtn" hidden>Show more</button>
-          </div>
-          <div class="room watch-info" id="watchInfo" hidden>
-            <div class="room-head">
-              <span class="who">👀 Watching</span>
-              <strong class="opponent" id="watchNames"></strong>
-              <button id="stopWatching" type="button" class="btn ghostbtn">Stop watching</button>
-            </div>
-          </div>
-          <div class="room" id="roomInfo" hidden>
-            <div class="room-head">
-              <span class="who">Playing</span>
-              <strong class="opponent" id="opponentName"></strong>
-              <span id="opponentMore"></span>
-              <button id="leave" type="button" class="btn ghostbtn">Leave</button>
-            </div>
-            <p class="room-role" id="roomRole"></p>
-            <p class="spectators" id="spectators" hidden></p>
-            <div class="reactions" id="reactions" role="group" aria-label="Send a reaction"></div>
-          </div>
-          <p class="net-msg" id="netMsg" role="alert"></p>
-          <p class="sr-only" id="reactionSaid" aria-live="polite"></p>
-        </section>
 
-        <p class="status" id="status" aria-live="polite"></p>
-        <p class="turn-clock" id="turnClock" hidden></p>
-        <div class="puzzle-info" id="puzzleInfo" hidden>
-          <p class="puzzle-note" id="puzzleNote" role="status"></p>
-          <button id="puzzleAgain" type="button" class="btn ghostbtn" hidden>Practice again</button>
+            <section class="guest-locked" id="guestLocked" aria-label="Online game" hidden>
+              <p class="guest-locked-title" id="lockedTitle">🔒 Online games need a free account</p>
+              <p class="help" id="lockedText">
+                With an account you can play people around the world, get a rating, climb the
+                leaderboard, keep your stats, and pick a funny avatar.
+              </p>
+              <button id="guestJoin" type="button" class="btn primary">
+                Create a free account
+              </button>
+            </section>
+
+            <section class="online" id="onlinePanel" aria-label="Online game" hidden>
+              <div class="lobby" id="lobby">
+                <div class="rematch" id="rematch" hidden>
+                  <span class="rematch-text" id="rematchText"></span>
+                  <button id="inviteAgain" type="button" class="btn">Invite again</button>
+                </div>
+                <div class="quick" id="quickIdle">
+                  <button id="findMatch" type="button" class="btn primary">
+                    Find me an opponent
+                  </button>
+                  <span class="quick-note">We'll pair you with a player near your rating.</span>
+                </div>
+                <div class="quick searching" id="quickSearching" role="status" hidden>
+                  <span class="scribble" aria-hidden="true"></span>
+                  <span class="quick-note"
+                    >Looking for an opponent… <span class="timer" id="searchTime">0:00</span></span
+                  >
+                  <button id="cancelSearch" type="button" class="btn ghostbtn">Cancel</button>
+                </div>
+                <div class="arena" id="arenaBox">
+                  <h2 class="panel-title">Weekend arena</h2>
+                  <p class="arena-when" id="arenaWhen"></p>
+                  <p class="arena-me" id="arenaMe" role="status"></p>
+                  <div class="arena-actions">
+                    <button id="arenaJoin" type="button" class="btn primary" hidden>
+                      Join the arena
+                    </button>
+                    <button id="arenaPause" type="button" class="btn ghostbtn" hidden>Pause</button>
+                    <button id="arenaStandingsBtn" type="button" class="btn ghostbtn">
+                      Standings
+                    </button>
+                  </div>
+                </div>
+                <div class="friends" id="friendsBox">
+                  <h2 class="panel-title">Friends <span class="count" id="friendsCount"></span></h2>
+                  <ul class="players" id="friendList" aria-label="Friends"></ul>
+                  <p class="empty" id="friendsEmpty">
+                    No friends yet. Add players you like with the ☆ next to their name, or by
+                    username.
+                  </p>
+                  <form class="add-friend" id="addFriendForm" novalidate>
+                    <label class="sr-only" for="friendName">Add a friend by username</label>
+                    <input
+                      id="friendName"
+                      name="username"
+                      placeholder="Add a friend by username"
+                      autocomplete="off"
+                      spellcheck="false"
+                      autocapitalize="none"
+                      maxlength="20"
+                    />
+                    <button type="submit" class="btn">Add</button>
+                  </form>
+                  <p class="form-msg" id="friendMsg" role="alert"></p>
+                  <button type="button" class="btn ghostbtn share-btn" id="shareInvite">
+                    🔗 Share an invite link
+                  </button>
+                </div>
+                <div class="lobby-head">
+                  <h2 class="panel-title">
+                    Players online <span class="count" id="onlineCount"></span>
+                  </h2>
+                  <label class="sr-only" for="countryFilter">Show players from</label>
+                  <select id="countryFilter" class="filter">
+                    <option value="">All countries</option>
+                  </select>
+                </div>
+                <ul class="players" id="playerList" aria-label="Players online"></ul>
+                <p class="empty" id="playersEmpty" hidden></p>
+                <button id="morePlayers" type="button" class="btn ghostbtn" hidden>
+                  Show more
+                </button>
+              </div>
+              <div class="room watch-info" id="watchInfo" hidden>
+                <div class="room-head">
+                  <span class="who">👀 Watching</span>
+                  <strong class="opponent" id="watchNames"></strong>
+                  <button id="stopWatching" type="button" class="btn ghostbtn">
+                    Stop watching
+                  </button>
+                </div>
+              </div>
+              <div class="room" id="roomInfo" hidden>
+                <div class="room-head">
+                  <span class="who">Playing</span>
+                  <strong class="opponent" id="opponentName"></strong>
+                  <span id="opponentMore"></span>
+                  <button id="leave" type="button" class="btn ghostbtn">Leave</button>
+                </div>
+                <p class="room-role" id="roomRole"></p>
+                <p class="spectators" id="spectators" hidden></p>
+                <div
+                  class="reactions"
+                  id="reactions"
+                  role="group"
+                  aria-label="Send a reaction"
+                ></div>
+              </div>
+              <p class="net-msg" id="netMsg" role="alert"></p>
+              <p class="sr-only" id="reactionSaid" aria-live="polite"></p>
+            </section>
+          </div>
+          <div class="stage">
+            <p class="status" id="status" aria-live="polite"></p>
+            <p class="sr-only" id="moveSaid" aria-live="polite"></p>
+            <p class="turn-clock" id="turnClock" hidden>
+              <span class="clock-ring" id="clockRing" aria-hidden="true"></span>
+              <span id="clockText"></span>
+            </p>
+            <div class="puzzle-info" id="puzzleInfo" hidden>
+              <p class="puzzle-note" id="puzzleNote" role="status"></p>
+              <button id="puzzleAgain" type="button" class="btn ghostbtn" hidden>
+                Practice again
+              </button>
+            </div>
+
+            <div class="play-area">
+              <div class="board" id="board">
+                <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
+                  <path d="M101 6 C98 80 103 190 99 294" />
+                  <path d="M199 8 C202 100 197 210 201 292" />
+                  <path d="M6 100 C90 97 200 103 294 99" />
+                  <path d="M8 201 C110 203 190 197 292 200" />
+                </svg>
+                <svg class="winline" id="winline" viewBox="0 0 300 300" aria-hidden="true"></svg>
+                <svg class="confetti" id="confetti" viewBox="0 0 300 300" aria-hidden="true"></svg>
+              </div>
+              <div class="uboard-wrap" id="uboardWrap" hidden><div id="uboard"></div></div>
+              <div class="reaction-feed" id="reactionFeed" aria-hidden="true"></div>
+            </div>
+
+            <section class="scores" id="scores" aria-label="Score">
+              <div class="score sx">
+                <span class="who" id="lblX">You · X</span>
+                <div class="tally" id="tX"></div>
+              </div>
+              <div class="score so">
+                <span class="who" id="lblO">Computer · O</span>
+                <div class="tally" id="tO"></div>
+              </div>
+              <div class="score sd">
+                <span class="who">Cat's games</span>
+                <div class="tally" id="tD"></div>
+              </div>
+            </section>
+
+            <div class="actions">
+              <button id="next" type="button" class="primary">New round</button>
+              <button id="hintBtn" type="button" class="ghostbtn">Hint</button>
+              <button id="whyBtn" type="button" class="ghostbtn" hidden>🔍 Why did I lose?</button>
+              <button id="reset" type="button" class="ghostbtn">Wipe scores</button>
+            </div>
+            <p class="hint" data-i18n-html>
+              Tip: press <kbd>1</kbd>–<kbd>9</kbd> to play a square (keypad layout, <kbd>7</kbd> is
+              top-left), <kbd>N</kbd> for a new round, <kbd>H</kbd> for a hint.
+            </p>
+          </div>
         </div>
-
-        <div class="play-area">
-          <div class="board" id="board">
-            <svg class="gridlines" viewBox="0 0 300 300" aria-hidden="true">
-              <path d="M101 6 C98 80 103 190 99 294" />
-              <path d="M199 8 C202 100 197 210 201 292" />
-              <path d="M6 100 C90 97 200 103 294 99" />
-              <path d="M8 201 C110 203 190 197 292 200" />
-            </svg>
-            <svg class="winline" id="winline" viewBox="0 0 300 300" aria-hidden="true"></svg>
-            <svg class="confetti" id="confetti" viewBox="0 0 300 300" aria-hidden="true"></svg>
-          </div>
-          <div class="uboard-wrap" id="uboardWrap" hidden><div id="uboard"></div></div>
-          <div class="reaction-feed" id="reactionFeed" aria-hidden="true"></div>
-        </div>
-
-        <section class="scores" id="scores" aria-label="Score">
-          <div class="score sx">
-            <span class="who" id="lblX">You · X</span>
-            <div class="tally" id="tX"></div>
-          </div>
-          <div class="score so">
-            <span class="who" id="lblO">Computer · O</span>
-            <div class="tally" id="tO"></div>
-          </div>
-          <div class="score sd">
-            <span class="who">Cat's games</span>
-            <div class="tally" id="tD"></div>
-          </div>
-        </section>
-
-        <div class="actions">
-          <button id="next" type="button" class="primary">New round</button>
-          <button id="hintBtn" type="button" class="ghostbtn">Hint</button>
-          <button id="whyBtn" type="button" class="ghostbtn" hidden>🔍 Why did I lose?</button>
-          <button id="reset" type="button" class="ghostbtn">Wipe scores</button>
-        </div>
-        <p class="hint" data-i18n-html>
-          Tip: press <kbd>1</kbd>–<kbd>9</kbd> to play a square (keypad layout, <kbd>7</kbd> is
-          top-left), <kbd>N</kbd> for a new round, <kbd>H</kbd> for a hint.
-        </p>
       </div>
       <footer class="site-footer">
         <a href="#privacy">Privacy</a> · <a href="#terms">Terms</a>
@@ -717,6 +786,10 @@
       </div>
       <p class="lb-season" id="arenaDay"></p>
       <p class="lb-podium" id="arenaPodium" hidden></p>
+      <div class="skeletons" id="arenaLoading" role="status" hidden>
+        <span></span><span></span><span></span><span></span>
+        <span class="sr-only">Loading…</span>
+      </div>
       <table class="table" id="arenaTable" hidden>
         <thead>
           <tr>
@@ -743,6 +816,10 @@
         <button type="button" class="btn ghostbtn" data-close>Close</button>
       </div>
       <p class="form-msg" id="statsMsg" role="alert"></p>
+      <div class="skeletons" id="statsLoading" role="status" hidden>
+        <span></span><span></span><span></span><span></span>
+        <span class="sr-only">Loading…</span>
+      </div>
       <div id="statsBody" hidden>
         <h3>Achievements <span class="count" id="badgeCount"></span></h3>
         <ul class="badges" id="badgeList"></ul>
@@ -797,6 +874,10 @@
       <select id="lbCountry" class="filter">
         <option value="">🌍 Whole world</option>
       </select>
+      <div class="skeletons" id="lbLoading" role="status" hidden>
+        <span></span><span></span><span></span><span></span>
+        <span class="sr-only">Loading…</span>
+      </div>
       <p class="lb-me" id="lbMe"></p>
       <p class="form-msg" id="lbMsg" role="alert"></p>
       <table class="table" id="lbTable" hidden>

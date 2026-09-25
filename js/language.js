@@ -3,7 +3,16 @@
 // language menu. Text that scripts write is translated where it's written,
 // with t() from i18n.js.
 
-import { DEFAULT_LANG, LANGUAGES, isLang, lang, onLangChange, setLang, t } from './i18n.js';
+import {
+  DEFAULT_LANG,
+  LANGUAGES,
+  isLang,
+  lang,
+  loadDictionary,
+  onLangChange,
+  setLang,
+  t,
+} from './i18n.js';
 
 const KEY = 'pencil-ttt-lang';
 const ATTRS = ['aria-label', 'title', 'placeholder'];
@@ -71,8 +80,19 @@ function browserLang() {
   return DEFAULT_LANG;
 }
 
-// Call once, before anything is drawn
-export function initLanguage() {
+// Switches once the language's words have arrived (English needs none)
+async function switchTo(code) {
+  try {
+    await loadDictionary(code);
+    setLang(code);
+  } catch {
+    /* offline and not cached: stay in the current language */
+  }
+}
+
+// Call once, before anything is drawn (awaited: the first paint is in the
+// right language)
+export async function initLanguage() {
   collect();
   const select = /** @type {HTMLSelectElement} */ (document.getElementById('langSelect'));
   select.replaceChildren(
@@ -81,7 +101,7 @@ export function initLanguage() {
   onLangChange(translatePage);
   const start = isLang(saved()) ? saved() : browserLang();
   if (start === DEFAULT_LANG) translatePage();
-  else setLang(start);
+  else await switchTo(start);
   select.value = lang();
   select.addEventListener('change', () => {
     try {
@@ -89,6 +109,6 @@ export function initLanguage() {
     } catch {
       /* the choice just won't be remembered */
     }
-    setLang(select.value);
+    switchTo(select.value);
   });
 }

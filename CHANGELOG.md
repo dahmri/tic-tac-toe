@@ -6,6 +6,40 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-09-25
+
+### Added
+
+- **A wider layout on computers.** On wide screens the game choices and the
+  online lobby sit beside the board, and the board sizes itself so the
+  buttons under it stay in view.
+- **Light or dark, your choice.** A switch next to the language menu: automatic
+  (follows your device), light or dark. The choice is remembered.
+- **A welcome for new visitors.** A short intro above the log-in form, with
+  the guest button up front.
+- **Invite links.** "Share an invite link" in the online lobby opens your
+  phone's share sheet (or copies the link). Whoever opens it sees who
+  invited them, and once they have an account you're in their friends.
+- **Your move, at a glance.** In an online match the board lights up when
+  it's your move, the tab's title says so, and phones buzz once. The move
+  timer is now a ring that empties, and a round's points pop in.
+- **Addresses for the big windows.** Stats, Leaderboard, Profile, the arena
+  standings and Admin open from their own links (/#stats and so on), and
+  the back button closes them.
+
+### Changed
+
+- On phones, the account links (Leaderboard, Stats, Profile…) fold behind
+  a Menu button, and long usernames no longer push the bar onto two lines.
+- Lists show placeholders while they load (Stats, Leaderboard, arena
+  standings), and empty lists read as a friendly note.
+- The arena box in the lobby is a soft card instead of a second dashed box.
+- Faster first load: the French and Spanish words download only for
+  players who use them, and the how-to-play guides only when opened.
+- Screen readers hear each move ("O played row 2, column 3"), and the
+  accessibility checks now cover the arena standings, the guides, the
+  phone menu and a forced dark theme.
+
 ## [1.10.0] - 2026-09-25
 
 ### Added

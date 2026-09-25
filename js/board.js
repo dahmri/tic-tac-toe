@@ -34,15 +34,35 @@ function drawMark(i, p) {
   cells[i].innerHTML = markSVG(p, '');
 }
 
+// Says a move out loud for screen readers: "O played row 2, column 3"
+export function sayMove(text) {
+  $('moveSaid').textContent = text;
+}
+
 // Brings the squares in line with `board`: draws new marks (with the
-// pencil) and erases ones that vanished under the 3-mark rules
+// pencil) and erases ones that vanished under the 3-mark rules. A single
+// new mark is announced; a whole board (a reload, a new round) isn't.
 export function syncMarks(board) {
+  const added = [];
   board.forEach((v, i) => {
     if (!v && cells[i].dataset.mark) {
       delete cells[i].dataset.mark;
       cells[i].innerHTML = '';
-    } else if (v && cells[i].dataset.mark !== v) drawMark(i, v);
+    } else if (v && cells[i].dataset.mark !== v) {
+      drawMark(i, v);
+      added.push(i);
+    }
   });
+  if (added.length === 1) {
+    const i = added[0];
+    sayMove(
+      t('{mark} played row {row}, column {col}.', {
+        mark: board[i],
+        row: Math.floor(i / 3) + 1,
+        col: (i % 3) + 1,
+      }),
+    );
+  }
 }
 
 // Every square's state: who can click, the preview mark, the fading mark

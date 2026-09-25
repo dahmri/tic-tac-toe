@@ -10,6 +10,7 @@ import { onLangChange, t } from './i18n.js';
 import { checkAchievements } from './achievements-ui.js';
 import { menuButton } from './player-menu.js';
 import { refreshArena } from './arena-ui.js';
+import { shareInvite } from './share.js';
 
 // After a block or unblock: the lists change
 const reloadLists = () => {
@@ -28,8 +29,14 @@ const $ = (id) => /** @type {any} */ (document.getElementById(id));
 const incoming = new Map();
 const outgoing = new Map();
 
-/** @type {{ send: (msg: object) => void, message: (text: string) => void, variant: () => string, watch: (id: number) => void }} */
-let actions = { send() {}, message() {}, variant: () => 'classic', watch() {} };
+/** @type {{ send: (msg: object) => void, message: (text: string) => void, variant: () => string, watch: (id: number) => void, me: () => any }} */
+let actions = {
+  send() {},
+  message() {},
+  variant: () => 'classic',
+  watch() {},
+  me: () => null,
+};
 // A translated sentence with an element (a player's name) where {who} is,
 // wherever the language puts it
 function sentence(template, node, vars) {
@@ -494,6 +501,10 @@ export function initLobby(callbacks) {
   });
   $('morePlayers').addEventListener('click', () => load({ more: true }));
   $('addFriendForm').addEventListener('submit', addFriend);
+  $('shareInvite').addEventListener('click', async () => {
+    const me = actions.me?.();
+    if (me) $('friendMsg').textContent = await shareInvite(me);
+  });
   $('findMatch').addEventListener('click', () => {
     $('findMatch').disabled = true;
     actions.message('');

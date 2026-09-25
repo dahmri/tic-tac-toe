@@ -51,6 +51,12 @@ async function load(more) {
   if (country) query.set('country', country);
   if (rules !== 'classic') query.set('variant', rules);
   $('lbMsg').textContent = '';
+  // Placeholders while a new list loads (not when adding a page)
+  if (!more) {
+    $('lbTable').hidden = true;
+    $('lbEmpty').hidden = true;
+    $('lbLoading').hidden = false;
+  }
   try {
     const res = await api('GET', `/api/leaderboard?${query}`);
     if ($('lbCountry').value !== country || rules !== asked) return; // the choice changed meanwhile
@@ -79,6 +85,8 @@ async function load(more) {
           : t('Play an online game to get on the leaderboard.');
   } catch (err) {
     $('lbMsg').textContent = t(err.message);
+  } finally {
+    if ($('lbCountry').value === country && rules === asked) $('lbLoading').hidden = true;
   }
 }
 
