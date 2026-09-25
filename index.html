@@ -43,6 +43,7 @@
 
       <section class="auth" id="authView" aria-label="Account" hidden>
         <div class="welcome">
+          <p class="invited" id="invitedBy" hidden></p>
           <p class="welcome-lead">
             The classic pencil-and-paper game, three ways: against the computer, with a friend on
             the same screen, or with players around the world.
@@ -426,6 +427,9 @@
                     <button type="submit" class="btn">Add</button>
                   </form>
                   <p class="form-msg" id="friendMsg" role="alert"></p>
+                  <button type="button" class="btn ghostbtn share-btn" id="shareInvite">
+                    🔗 Share an invite link
+                  </button>
                 </div>
                 <div class="lobby-head">
                   <h2 class="panel-title">
@@ -473,7 +477,10 @@
           </div>
           <div class="stage">
             <p class="status" id="status" aria-live="polite"></p>
-            <p class="turn-clock" id="turnClock" hidden></p>
+            <p class="turn-clock" id="turnClock" hidden>
+              <span class="clock-ring" id="clockRing" aria-hidden="true"></span>
+              <span id="clockText"></span>
+            </p>
             <div class="puzzle-info" id="puzzleInfo" hidden>
               <p class="puzzle-note" id="puzzleNote" role="status"></p>
               <button id="puzzleAgain" type="button" class="btn ghostbtn" hidden>

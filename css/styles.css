@@ -1235,9 +1235,30 @@ kbd {
   font: 700 0.9rem/1 var(--body);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .turn-clock.low {
   color: var(--o);
+}
+/* A ring that empties as the time for the move runs out */
+.clock-ring {
+  --left: 1;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: conic-gradient(currentColor calc(var(--left) * 360deg), var(--chip) 0);
+  mask: radial-gradient(circle, transparent 5px, #000 6px);
+  transition: background 0.25s linear;
+}
+.turn-clock.low .clock-ring {
+  animation: tick 1s ease-in-out infinite;
+}
+@keyframes tick {
+  50% {
+    transform: scale(1.15);
+  }
 }
 .reactions {
   display: flex;
@@ -1803,4 +1824,52 @@ body.spectating .cell {
   border: 2px dashed var(--grid);
   border-radius: 10px;
   text-align: center;
+}
+
+/* Your move online: the board lights up */
+body.my-turn .play-area .board,
+body.my-turn .play-area .uboard-wrap {
+  border-radius: 14px;
+  box-shadow: 0 0 0 4px var(--hi);
+  transition: box-shadow 0.3s;
+}
+body.my-turn .status {
+  animation: nudge 0.5s ease-out;
+}
+@keyframes nudge {
+  30% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+}
+/* A round's points pop in */
+.status .delta {
+  display: inline-block;
+  animation: pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1);
+}
+@keyframes pop {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clock-ring,
+  body.my-turn .status,
+  .status .delta,
+  .turn-clock.low .clock-ring {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Invite links */
+.invited {
+  margin: 0;
+  font-weight: 700;
+}
+.share-btn {
+  justify-self: start;
 }

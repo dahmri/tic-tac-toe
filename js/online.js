@@ -230,6 +230,19 @@ export function renderOnline() {
   chip.hidden = !rating;
   chip.textContent = rating ? String(rating) : '';
   renderClock();
+  renderTurnCue();
+}
+
+// Your move in an online match: the board lights up, the tab's title says
+// so (handy when it's in the background), and phones buzz once
+let wasMyTurn = false;
+function renderTurnCue() {
+  const myTurn = inMatch() && !game.over && game.turn === mySymbol();
+  document.body.classList.toggle('my-turn', myTurn);
+  const name = t('Pencil Tic-Tac-Toe');
+  document.title = myTurn ? `● ${t('Your move')} · ${name}` : name;
+  if (myTurn && !wasMyTurn && match.moves.length > 0) navigator.vibrate?.(60);
+  wasMyTurn = myTurn;
 }
 
 // What stands between the player and online games
@@ -452,12 +465,16 @@ function renderClock() {
   el.hidden = !running;
   if (!running) return;
   const secs = Math.max(0, Math.ceil((turnEndsAt - Date.now()) / 1000));
-  el.textContent = watching()
-    ? t("⏱ {name}'s time: {secs}s", { name: watched.players[game.turn].username, secs })
+  $('clockText').textContent = watching()
+    ? t("{name}'s time: {secs}s", { name: watched.players[game.turn].username, secs })
     : game.turn === mySymbol()
-      ? t('⏱ Your time: {secs}s', { secs })
-      : t("⏱ {name}'s time: {secs}s", { name: opponent().username, secs });
+      ? t('Your time: {secs}s', { secs })
+      : t("{name}'s time: {secs}s", { name: opponent().username, secs });
   el.classList.toggle('low', secs <= 10);
+  // The ring empties as the time runs out
+  const total = onBoard().turnMs || 30_000;
+  const left = Math.max(0, Math.min(1, (turnEndsAt - Date.now()) / total));
+  $('clockRing').style.setProperty('--left', String(left));
 }
 
 function showReaction({ from, emoji }) {
