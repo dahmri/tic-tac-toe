@@ -18,7 +18,7 @@ try {
 function audio() {
   if (!on) return null;
   if (!ctx) {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const Ctx = window.AudioContext || /** @type {any} */ (window).webkitAudioContext;
     if (!Ctx) return null;
     ctx = new Ctx();
   }

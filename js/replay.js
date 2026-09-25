@@ -7,7 +7,8 @@ import { markSVG } from './marks.js';
 import { t } from './i18n.js';
 
 const STEP_MS = 800;
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 
 let game = null; // { squares, starter, variant, title }
 let step = 0;

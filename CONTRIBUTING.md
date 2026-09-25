@@ -119,6 +119,10 @@ Example: `fix(online): keep the guest's board locked until the host replies`
 
 ## Code style
 
+- `npm run typecheck` checks the JavaScript with TypeScript (no build
+  step, no TypeScript files): misspelt properties, wrong argument counts,
+  calls on the wrong type. Where it can't tell a type, a JSDoc comment says
+  it. Fastify's additions are declared in `types/fastify.d.ts`.
 - ESLint and Prettier are the source of truth. Run `npm run format` to fix
   formatting, `npm run lint` to catch mistakes.
 - Keep the game logic (`rules.js`, `ai.js`, `room.js`, `protocol.js`) free of

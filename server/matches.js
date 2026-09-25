@@ -27,6 +27,10 @@ export const withClock = (match, now = Date.now()) =>
 
 export class MatchError extends Error {}
 
+/**
+ * @param {any} redis
+ * @param {{ bus: any, onRoundFinished?: (finished: any) => Promise<any>, turnMs?: number }} options
+ */
 export function createMatches(redis, { bus, onRoundFinished = async () => {}, turnMs = TURN_MS }) {
   redis.defineCommand('ttCasSet', {
     numberOfKeys: 1,

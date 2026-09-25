@@ -9,7 +9,8 @@ import { openReplay } from './replay.js';
 import { lang, onLangChange, t } from './i18n.js';
 import { checkAchievements, renderBadges } from './achievements-ui.js';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 let nextCursor = null;
 
 const el = (tag, cls, text) => {
@@ -156,7 +157,7 @@ function historyItem(g) {
 }
 
 async function loadHistory(more) {
-  const query = new URLSearchParams({ limit: 10 });
+  const query = new URLSearchParams({ limit: '10' });
   if (more && nextCursor) query.set('cursor', nextCursor);
   const { games, next } = await api('GET', `/api/me/games?${query}`);
   nextCursor = next;

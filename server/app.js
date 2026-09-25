@@ -120,7 +120,7 @@ export async function buildApp({ config, db, redis }) {
   const parseJson = app.getDefaultJsonParser('error', 'error');
   app.removeContentTypeParser('application/json');
   app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) =>
-    body === '' ? done(null, undefined) : parseJson(req, body, done),
+    body === '' ? done(null, undefined) : parseJson(req, String(body), done),
   );
 
   // Requests that change something must come from this site's own pages
@@ -152,7 +152,7 @@ export async function buildApp({ config, db, redis }) {
   app.addHook('onRequest', async (req) => {
     req.lang = pickLang(req.headers['accept-language']);
   });
-  app.addHook('preSerialization', async (req, reply, payload) => {
+  app.addHook('preSerialization', async (req, reply, /** @type {any} */ payload) => {
     if (req.lang === 'en' || !payload || typeof payload !== 'object') return payload;
     if (typeof payload.error !== 'string' && !payload.fields) return payload;
     const out = { ...payload };
@@ -170,7 +170,7 @@ export async function buildApp({ config, db, redis }) {
     reply.header('X-Content-Type-Options', 'nosniff');
   });
 
-  app.setErrorHandler((err, req, reply) => {
+  app.setErrorHandler((/** @type {any} */ err, req, reply) => {
     const status = err.validation ? 400 : err.statusCode;
     if (status >= 400 && status < 500) {
       // Hidden or forbidden files look the same as missing ones
@@ -200,7 +200,7 @@ export async function buildApp({ config, db, redis }) {
   app.post('/api/client-errors', async (req, reply) => {
     const r = await app.ctx.rateLimit(`client-errors:${req.ip}`, 30, 3600);
     if (r.ok) {
-      const b = req.body || {};
+      const b = /** @type {any} */ (req.body) || {};
       req.log.error(
         {
           clientError: {

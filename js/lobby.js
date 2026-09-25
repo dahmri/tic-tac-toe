@@ -13,12 +13,14 @@ const PAGE = 20;
 const REFRESH_MS = 10_000;
 const FILTER_KEY = 'pencil-ttt-country-filter';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 
 // Invitations: id -> { id, from|to, expires (local ms) }
 const incoming = new Map();
 const outgoing = new Map();
 
+/** @type {{ send: (msg: object) => void, message: (text: string) => void, variant: () => string }} */
 let actions = { send() {}, message() {}, variant: () => 'classic' };
 // A translated sentence with an element (a player's name) where {who} is,
 // wherever the language puts it
@@ -71,8 +73,8 @@ async function load({ more = false } = {}) {
   const country = $('countryFilter').value;
   const offset = more ? players.length : 0;
   const query = new URLSearchParams({
-    offset,
-    limit: more ? PAGE : Math.max(PAGE, players.length),
+    offset: String(offset),
+    limit: String(more ? PAGE : Math.max(PAGE, players.length)),
   });
   if (country) query.set('country', country);
   loading = api('GET', `/api/players/online?${query}`)
@@ -284,7 +286,7 @@ function tick() {
     renderPlayers();
     return;
   }
-  document.querySelectorAll('#invites .invite').forEach((row) => {
+  document.querySelectorAll('#invites .invite').forEach((/** @type {HTMLElement} */ row) => {
     const inv = incoming.get(row.dataset.id) || outgoing.get(row.dataset.id);
     if (inv) row.querySelector('.timer').textContent = `${secondsLeft(inv)}s`;
   });

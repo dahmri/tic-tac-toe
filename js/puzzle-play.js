@@ -15,7 +15,8 @@ import { game } from './game.js';
 import { checkAchievements } from './achievements-ui.js';
 
 const LOCAL_KEY = 'pencil-ttt-puzzles';
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 
 let puzzle = null;
 let moves = [];
