@@ -16,6 +16,7 @@ import { initLobby } from './lobby.js';
 import { initArena } from './arena-ui.js';
 import { initTheme } from './theme.js';
 import { initMenu } from './menu.js';
+import { captureInvite, claimInvite } from './share.js';
 import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
 import { initGuide } from './guide.js';
 import { initLeaderboard } from './leaderboard.js';
@@ -447,6 +448,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 initTheme();
+captureInvite();
 initMenu();
 initStats();
 // Admins only, so its code loads when first opened
@@ -464,6 +466,7 @@ if ('serviceWorker' in navigator) {
 initLeaderboard(currentUser);
 initArena({ send: sendToLobby, message: setNetMessage, inMatch });
 initLobby({
+  me: currentUser,
   send: sendToLobby,
   variant: () => settings.variant,
   watch: watchPlayer,
@@ -479,7 +482,13 @@ onLangChange(() => {
 });
 
 initAccount({
-  onSignIn() {
+  onSignIn(user) {
+    // Came through a friend's invite link: they're a friend now
+    claimInvite(user).then((name) => {
+      if (name) {
+        setNetMessage(t('{name} is in your friends now: invite them from the lobby.', { name }));
+      }
+    });
     checkAchievements(); // takes note of what's already earned
     resetBoard();
     if (canPlayOnline()) goOnline();

@@ -15,6 +15,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
   (follows your device), light or dark. The choice is remembered.
 - **A welcome for new visitors.** A short intro above the log-in form, with
   the guest button up front.
+- **Invite links.** "Share an invite link" in the online lobby opens your
+  phone's share sheet (or copies the link). Whoever opens it sees who
+  invited them, and once they have an account you're in their friends.
+- **Your move, at a glance.** In an online match the board lights up when
+  it's your move, the tab's title says so, and phones buzz once. The move
+  timer is now a ring that empties, and a round's points pop in.
 
 ### Changed
 
