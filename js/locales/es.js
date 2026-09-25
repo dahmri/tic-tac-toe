@@ -368,6 +368,7 @@ export default {
   'Start: {mark} moves first': 'Inicio: {mark} juega primero',
   Stats: 'Estadísticas',
   'Stone Face': 'Cara de piedra',
+  'Stop watching': 'Dejar de mirar',
   'Taco Tuesday': 'Martes de tacos',
   Terms: 'Condiciones',
   'Terms of use': 'Condiciones de uso',
@@ -377,6 +378,8 @@ export default {
   'That date does not exist.': 'Esa fecha no existe.',
   'That doesn’t look like an email address.': 'Eso no parece una dirección de correo.',
   'That email is already used by another account.': 'Ese correo ya lo usa otra cuenta.',
+  'That game has ended.': 'Esa partida ha terminado.',
+  "That game isn't available.": 'Esa partida no está disponible.',
   'That invitation has expired.': 'Esa invitación ha caducado.',
   'That is not your current password.': 'Esa no es tu contraseña actual.',
   'That is not your password.': 'Esa no es tu contraseña.',
@@ -452,6 +455,8 @@ export default {
   'Vanishing act': 'Acto de desaparición',
   'Waiting for {who} (3 marks)…': 'Esperando a {who} (3 marcas)…',
   'Waiting for {who}…': 'Esperando a {who}…',
+  Watch: 'Mirar',
+  'Watch {name} play': 'Ver jugar a {name}',
   'We added your game as a guest to your stats.':
     'Añadimos tu partida como invitado a tus estadísticas.',
   'We added your {n} games as a guest to your stats.':
@@ -518,6 +523,7 @@ export default {
     'Seguirás conectado aquí y se cerrará la sesión en tus otros dispositivos.',
   "You're offline. You can still play as a guest.":
     'Estás sin conexión. Aun así puedes jugar como invitado.',
+  "You're playing this game.": 'Estás jugando esta partida.',
   "Your IP address, for a short time to stop abuse (too many attempts), and in the server's logs, which are deleted after a few weeks.":
     'Tu dirección IP, durante poco tiempo para frenar abusos (demasiados intentos), y en los registros del servidor, que se borran tras unas semanas.',
   'Your account': 'Tu cuenta',
@@ -567,6 +573,7 @@ export default {
   '{rate} of {n}': '{rate} de {n}',
   '{who} invites you to play': '{who} te invita a jugar',
   '{who} invites you to play (3 marks)': '{who} te invita a jugar (3 marcas)',
+  '{x} vs {o}': '{x} contra {o}',
   '⏱ Your time: {secs}s': '⏱ Tu tiempo: {secs} s',
   "⏱ {name}'s time: {secs}s": '⏱ Tiempo de {name}: {secs} s',
   '⏸ Pause': '⏸ Pausa',
@@ -574,6 +581,8 @@ export default {
   '✉️ Add your email to play online': '✉️ Añade tu correo para jugar en línea',
   '✉️ Confirm your email to play online': '✉️ Confirma tu correo para jugar en línea',
   '🌍 Whole world': '🌍 Todo el mundo',
+  '👀 Watching': '👀 Mirando',
+  '👀 {n} watching': '👀 {n} mirando',
   '🔍 Show my mistake': '🔍 Mostrar mi error',
   '🔍 Why did I lose?': '🔍 ¿Por qué perdí?',
   '🔒 Online games need a free account': '🔒 Las partidas en línea necesitan una cuenta gratis',

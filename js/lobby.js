@@ -27,8 +27,8 @@ const $ = (id) => /** @type {any} */ (document.getElementById(id));
 const incoming = new Map();
 const outgoing = new Map();
 
-/** @type {{ send: (msg: object) => void, message: (text: string) => void, variant: () => string }} */
-let actions = { send() {}, message() {}, variant: () => 'classic' };
+/** @type {{ send: (msg: object) => void, message: (text: string) => void, variant: () => string, watch: (id: number) => void }} */
+let actions = { send() {}, message() {}, variant: () => 'classic', watch() {} };
 // A translated sentence with an element (a player's name) where {who} is,
 // wherever the language puts it
 function sentence(template, node, vars) {
@@ -100,9 +100,19 @@ async function load({ more = false } = {}) {
   return loading;
 }
 
-// "Playing", "Invited", or an Invite button
+// "Watch" for a player in a game, "Invited", or an Invite button
 function inviteControl(p) {
-  if (p.playing) return el('span', 'tag', t('Playing'));
+  if (p.playing) {
+    const w = el('button', 'btn ghostbtn', t('Watch'));
+    w.type = 'button';
+    w.disabled = busy;
+    w.setAttribute('aria-label', t('Watch {name} play', { name: p.username }));
+    w.addEventListener('click', () => {
+      actions.message('');
+      actions.watch(p.id);
+    });
+    return w;
+  }
   if ([...outgoing.values()].some((i) => i.to.id === p.id)) return el('span', 'tag', t('Invited'));
   const b = el('button', 'btn', t('Invite'));
   b.type = 'button';

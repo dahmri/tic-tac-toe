@@ -45,6 +45,8 @@ import {
   inMatch,
   initOnline,
   lostRound,
+  watchPlayer,
+  watching,
   matchMoves,
   online,
   onlineLocked,
@@ -129,7 +131,7 @@ function render() {
   $('diff-hard').textContent = settings.variant === 'vanish' ? t('Hard') : t('Unbeatable');
   // An online match keeps the rules it started with
   const puzzle = settings.mode === 'puzzle';
-  $('rulesRow').hidden = inMatch() || onlineLocked() || puzzle;
+  $('rulesRow').hidden = inMatch() || watching() || onlineLocked() || puzzle;
   $('ruleNote').hidden = variant() !== 'vanish';
   document
     .querySelectorAll('[data-variant]')
@@ -150,11 +152,14 @@ function render() {
     );
 
   renderOnline();
-  $('board').hidden = online() && !inMatch();
-  $('scores').hidden = (online() && !inMatch()) || puzzle;
+  // Online, the board shows a match: one's own, or one being watched
+  const noBoard = online() && !inMatch() && !watching();
+  $('board').hidden = noBoard;
+  $('scores').hidden = noBoard || puzzle;
   $('next').disabled = (online() && !inMatch()) || (online() && !game.over);
   $('reset').hidden = online();
   $('next').closest('.actions').hidden = (online() && !inMatch()) || puzzle;
+  document.body.classList.toggle('spectating', watching());
   renderPuzzle(puzzle);
   $('whyBtn').hidden = !lostGame();
 
@@ -393,6 +398,7 @@ initLeaderboard(currentUser);
 initLobby({
   send: sendToLobby,
   variant: () => settings.variant,
+  watch: watchPlayer,
   message: setNetMessage,
 });
 

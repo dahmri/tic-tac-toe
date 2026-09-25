@@ -1,6 +1,7 @@
 // Online play: the live connection to the game server, the match exactly as
 // the server last sent it (the server is the referee), ratings, the move
-// clock and reactions. main.js draws the page; this module tells it when.
+// clock, reactions, and watching other players' games. main.js draws the
+// page; this module tells it when.
 
 import { other, replay } from './rules.js';
 import { connectLive } from './live.js';
@@ -30,6 +31,9 @@ const ratings = new Map();
 let lastRound = null;
 // When the player to move runs out of time (local clock), or null
 let turnEndsAt = null;
+// A match this player is watching (read-only), and how many watch theirs
+let watched = null;
+let spectators = 0;
 
 // What main.js does when the match changes: redraw, or clear the board
 let hooks = { render() {}, resetBoard() {} };
@@ -39,16 +43,19 @@ export const online = () => settings.mode === 'online';
 // but only see what they need to do first
 export const onlineLocked = () => online() && !canPlayOnline();
 export const inMatch = () => !!match && !match.ended;
+export const watching = () => !inMatch() && !!watched && !watched.ended;
+// The match on the board: this player's own, or the one they're watching
+const onBoard = () => (inMatch() ? match : watching() ? watched : null);
 export const isConnected = () => liveStatus === 'online';
 export const mySymbol = () => (match && match.players.O.id === me?.id ? 'O' : 'X');
 export const opponent = () => (match ? match.players[other(mySymbol())] : null);
-export const matchMoves = () => match?.moves.length ?? 0;
+export const matchMoves = () => onBoard()?.moves.length ?? 0;
 const ratingOf = (p) => ratings.get(p.id) ?? p.rating;
 // The rules on the board: an online match's own, otherwise the player's choice
 // (the daily puzzle is always classic)
 export const variant = () =>
-  online() && match
-    ? (match.variant ?? 'classic')
+  online() && onBoard()
+    ? (onBoard().variant ?? 'classic')
     : settings.mode === 'puzzle'
       ? 'classic'
       : settings.variant;
@@ -87,11 +94,26 @@ export function abandonMatch() {
 
 export const sendToLobby = (msg) => live?.send(msg);
 
+// Watching: the server sends the match now and after every move
+export function watchPlayer(userId) {
+  live?.send({ t: 'watch', user: userId });
+}
+
+export function stopWatching() {
+  if (!watched) return;
+  watched = null;
+  live?.send({ t: 'unwatch' });
+  setNetMessage('');
+  hooks.resetBoard();
+  hooks.render();
+}
+
 /* ---------- What the page shows ---------- */
 
 // The status line during an online match, or null to let main.js decide
 export function onlineStatus(w, tag) {
   if (onlineLocked()) return '';
+  if (watching()) return watchedStatus();
   if (!inMatch())
     return isConnected() ? t('Find an opponent, or invite a player.') : t('Connecting…');
   const rival = opponent().username;
@@ -121,7 +143,18 @@ export function onlineStatus(w, tag) {
     : t('{name} is thinking…', { name: rival });
 }
 
+// What a spectator reads: whose move it is, or how the round ended
+function watchedStatus() {
+  const name = (p) => watched.players[p].username;
+  if (watched.over) {
+    if (watched.result === 'D') return t("<mark>Cat's game.</mark> Nobody wins.");
+    return t('<mark>{name} wins.</mark>', { name: name(watched.result) });
+  }
+  return t('{name} is thinking…', { name: name(watched.turn) });
+}
+
 export function playerLabel(p) {
+  if (watching()) return `${watched.players[p].username} · ${p}`;
   if (!inMatch()) return t('Player {mark}', { mark: p });
   return p === mySymbol() ? t('You · {mark}', { mark: p }) : `${match.players[p].username} · ${p}`;
 }
@@ -141,8 +174,18 @@ function deltaHTML(n) {
 export function renderOnline() {
   renderLocked();
   $('onlinePanel').hidden = !online() || onlineLocked();
-  $('lobby').hidden = inMatch();
+  $('lobby').hidden = inMatch() || watching();
   $('roomInfo').hidden = !inMatch();
+  $('watchInfo').hidden = !watching();
+  if (watching()) {
+    const { X, O } = watched.players;
+    $('watchNames').textContent = t('{x} vs {o}', {
+      x: `${avatarEmoji(X.avatar)} ${X.username}`,
+      o: `${avatarEmoji(O.avatar)} ${O.username}`,
+    });
+  }
+  $('spectators').hidden = !inMatch() || spectators === 0;
+  $('spectators').textContent = t('👀 {n} watching', { n: spectators });
   if (inMatch()) {
     const rival = opponent();
     $('opponentName').textContent =
@@ -161,7 +204,10 @@ export function renderOnline() {
     $('roomRole').textContent = variant() === 'vanish' ? `${role} ${t('3-mark rules.')}` : role;
   }
   // The lobby refreshes its list only while it's on screen
-  setLobby({ visible: online() && !onlineLocked() && !$('gameView').hidden, inMatch: inMatch() });
+  setLobby({
+    visible: online() && !onlineLocked() && !watching() && !$('gameView').hidden,
+    inMatch: inMatch(),
+  });
   const chip = $('meRating');
   const rating = me ? ratingOf(me) : null;
   chip.hidden = !rating;
@@ -207,18 +253,11 @@ export function setNetMessage(text) {
 
 /* ---------- The match, as the server sends it ---------- */
 
-function showMatch(next) {
-  const newMatch = !match || match.id !== next.id;
-  const newRound = newMatch || match.round !== next.round;
-  const wasOver = !newRound && game.over;
-  // A single new mark is a move played live (a reload redraws them all)
-  const fresh = newRound ? next.moves.length : next.moves.length - match.moves.length;
-  if (newMatch && next.round === 1 && next.moves.length === 0) sound.matchFound();
-  match = next;
-  if (!online()) {
-    settings.mode = 'online';
-    saveSettings();
-  }
+// Draws a match on the board, from `before` (what was shown) to `next`.
+// Returns how many new marks there are (1 for a move played live).
+function drawMatch(before, next) {
+  const newRound = !before || before.id !== next.id || before.round !== next.round;
+  const fresh = newRound ? next.moves.length : next.moves.length - before.moves.length;
   if (newRound) hooks.resetBoard();
   turnEndsAt =
     next.turnLeft === null || next.turnLeft === undefined ? null : Date.now() + next.turnLeft;
@@ -231,6 +270,35 @@ function showMatch(next) {
   syncMarks(game.board);
   if (next.line && !isWon()) drawWin(next.line);
   if (fresh === 1) sound.mark(next.board[next.moves.at(-1)]);
+  return fresh;
+}
+
+// A watched match, as the server sends it: read-only, and quiet
+function showWatched(next) {
+  if (next.ended) {
+    watched = null;
+    setNetMessage(t('That game has ended.'));
+    hooks.resetBoard();
+    return;
+  }
+  const before = watched;
+  watched = next;
+  drawMatch(before, next);
+}
+
+function showMatch(next) {
+  if (watched) stopWatching(); // a game of their own comes first
+  const newMatch = !match || match.id !== next.id;
+  const wasOver = !newMatch && match.round === next.round && game.over;
+  if (newMatch && next.round === 1 && next.moves.length === 0) sound.matchFound();
+  if (newMatch) spectators = 0;
+  const before = match;
+  match = next;
+  if (!online()) {
+    settings.mode = 'online';
+    saveSettings();
+  }
+  const fresh = drawMatch(before, next);
   if (next.over && !wasOver && fresh <= 1) {
     if (next.result === 'D') sound.draw();
     else if (next.result === mySymbol()) {
@@ -267,6 +335,8 @@ function onMatch(next) {
 function onLiveMessage(msg) {
   switch (msg.t) {
     case 'hello':
+      // After a reconnect the server has forgotten what this page watched
+      if (watched) live.send({ t: 'watch', user: watched.players.X.id });
       me = msg.me;
       ratings.set(me.id, me.rating);
       if (msg.match && !msg.match.ended) showMatch(msg.match);
@@ -280,8 +350,20 @@ function onLiveMessage(msg) {
       onMatch(msg.match);
       return;
     case 'reaction':
-      if (msg.match === match?.id) showReaction(msg);
+      if (msg.match === match?.id || msg.match === watched?.id) showReaction(msg);
       return;
+    case 'watching':
+      watched = null;
+      setNetMessage('');
+      showWatched(msg.match);
+      break;
+    case 'watched':
+      if (msg.match.id !== watched?.id) return;
+      showWatched(msg.match);
+      break;
+    case 'watchers':
+      if (msg.match === match?.id) spectators = msg.count;
+      break;
     case 'ratings': {
       const change = {};
       for (const [id, r] of Object.entries(msg.ratings)) {
@@ -321,6 +403,8 @@ export function goOffline() {
   liveStatus = 'offline';
   me = null;
   match = null;
+  watched = null;
+  spectators = 0;
   ratings.clear();
   lastRound = null;
   resetLobby();
@@ -332,25 +416,32 @@ export function goOffline() {
 // when time is up, this is only the countdown
 function renderClock() {
   const el = $('turnClock');
-  const running = inMatch() && !game.over && turnEndsAt !== null && isConnected();
+  const running = !!onBoard() && !game.over && turnEndsAt !== null && isConnected();
   el.hidden = !running;
   if (!running) return;
   const secs = Math.max(0, Math.ceil((turnEndsAt - Date.now()) / 1000));
-  el.textContent =
-    game.turn === mySymbol()
+  el.textContent = watching()
+    ? t("⏱ {name}'s time: {secs}s", { name: watched.players[game.turn].username, secs })
+    : game.turn === mySymbol()
       ? t('⏱ Your time: {secs}s', { secs })
       : t("⏱ {name}'s time: {secs}s", { name: opponent().username, secs });
   el.classList.toggle('low', secs <= 10);
 }
 
 function showReaction({ from, emoji }) {
-  const mine = from === me?.id;
+  // Spectators see X's reactions on the left and O's on the right
+  const mine = watching() ? from === watched.players.X.id : from === me?.id;
   const bubble = document.createElement('span');
   bubble.className = `bubble ${mine ? 'mine' : 'theirs'}`;
   bubble.textContent = emoji;
   $('reactionFeed').append(bubble);
   setTimeout(() => bubble.remove(), 2400);
-  $('reactionSaid').textContent = `${mine ? t('You') : opponent()?.username}: ${emoji}`;
+  const who = watching()
+    ? (watched.players.X.id === from ? watched.players.X : watched.players.O).username
+    : mine
+      ? t('You')
+      : opponent()?.username;
+  $('reactionSaid').textContent = `${who}: ${emoji}`;
 }
 
 export function renderReactions() {
@@ -376,4 +467,5 @@ export function initOnline(callbacks) {
     if (!$('turnClock').hidden) renderClock();
   }, 250);
   $('leave').addEventListener('click', leaveMatch);
+  $('stopWatching').addEventListener('click', stopWatching);
 }
