@@ -706,6 +706,8 @@ export default {
   'vs Computer ({level})': "contre l'ordinateur ({level})",
   'you left': 'tu es parti',
   '{emoji} Achievement unlocked: {name}': '{emoji} Succès débloqué : {name}',
+  '{mark} played board {b}, square {c}.': '{mark} a joué grille {b}, case {c}.',
+  '{mark} played row {row}, column {col}.': '{mark} a joué ligne {row}, colonne {col}.',
   '{mark} to play': 'Au tour de {mark}',
   '{name} declined your invitation.': '{name} a refusé ton invitation.',
   "{name} didn't answer.": "{name} n'a pas répondu.",
