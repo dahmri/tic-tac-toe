@@ -18,7 +18,7 @@ export function createFriends(db, redis) {
                   THEN s.rating ELSE ${START_RATING} END AS rating
          FROM friends f
          JOIN users u ON u.id = f.friend_id
-         LEFT JOIN player_stats s ON s.user_id = u.id
+         LEFT JOIN player_ratings s ON s.user_id = u.id AND s.variant = 'classic'
          WHERE f.user_id = $1`,
         [userId],
       );

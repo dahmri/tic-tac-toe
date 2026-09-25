@@ -28,6 +28,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   and games by kind over the last 30 days. Counts only: which players were
   active isn't kept (Redis HyperLogLog), and nothing goes to an analytics
   company.
+- **A rating for each set of rules.** Classic, 3 marks and Ultimate each
+  have their own rating, monthly seasons, leaderboard and podium. Quick
+  match pairs you by your rating in the rules you chose, and your Stats
+  show all three. Ratings so far become the classic ones.
 
 ## [1.9.0] - 2026-09-25
 

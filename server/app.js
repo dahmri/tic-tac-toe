@@ -63,7 +63,10 @@ export async function buildApp({ config, db, redis }) {
       const msg = { t: 'ratings', match: finished.matchId, round: finished.round, ratings };
       await Promise.all(
         Object.entries(ratings).map(async ([id, { rating }]) => {
-          await presence.setRating(Number(id), rating);
+          // The lobby shows the classic rating
+          if ((finished.variant ?? 'classic') === 'classic') {
+            await presence.setRating(Number(id), rating);
+          }
           await bus.send(Number(id), msg);
         }),
       );
@@ -73,6 +76,8 @@ export async function buildApp({ config, db, redis }) {
   }
   const matches = createMatches(redis, {
     bus,
+    // Players show the rating for the match's rules
+    ratingOf: (id, variant) => stats.rating(id, variant),
     onRoundFinished: roundFinished,
     turnMs: config.turnMs,
   });

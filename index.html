@@ -684,6 +684,7 @@
 
         <h3>Rating</h3>
         <div class="tiles" id="ratingTiles"></div>
+        <dl class="facts" id="ratingFacts"></dl>
 
         <h3>Online</h3>
         <div class="tiles" id="onlineTiles"></div>
@@ -720,6 +721,11 @@
         <h2 id="leaderboardTitle">Leaderboard</h2>
         <button type="button" class="btn ghostbtn" data-close>Close</button>
       </div>
+      <div class="seg" role="group" aria-label="Rules" id="lbRules">
+        <button type="button" data-lb-variant="classic" aria-pressed="true">Classic</button>
+        <button type="button" data-lb-variant="vanish" aria-pressed="false">3 marks</button>
+        <button type="button" data-lb-variant="ultimate" aria-pressed="false">Ultimate</button>
+      </div>
       <p class="lb-season" id="lbSeason"></p>
       <p class="lb-podium" id="lbPodium" hidden></p>
       <label class="sr-only" for="lbCountry">Leaderboard for</label>
@@ -743,9 +749,9 @@
       <p class="empty" id="lbEmpty" hidden></p>
       <button type="button" class="btn ghostbtn" id="lbMore" hidden>Show more</button>
       <p class="note">
-        A new season starts on the 1st of every month, and everyone starts again at 1200. Each
-        online round moves your rating: beating a stronger player earns more. Games against the
-        computer don't count.
+        Each set of rules has its own rating. A new season starts on the 1st of every month, and
+        everyone starts again at 1200. Each online round moves your rating: beating a stronger
+        player earns more. Games against the computer don't count.
       </p>
     </dialog>
 

@@ -28,8 +28,6 @@ export default {
     'Un tres en raya dibujado a mano: juega contra la computadora, un amigo o jugadores en línea.',
   'A new address has to be confirmed again before you play online.':
     'Una dirección nueva debe confirmarse antes de jugar en línea.',
-  "A new season starts on the 1st of every month, and everyone starts again at 1200. Each online round moves your rating: beating a stronger player earns more. Games against the computer don't count.":
-    'Una nueva temporada empieza el día 1 de cada mes, y todos vuelven a empezar con 1200. Cada ronda en línea mueve tu puntuación: ganar a un jugador más fuerte da más puntos. Las partidas contra la computadora no cuentan.',
   Accept: 'Aceptar',
   Account: 'Cuenta',
   'Account deleted.': 'Cuenta eliminada.',
@@ -148,6 +146,8 @@ export default {
   'Drama Llama': 'Llama dramática',
   Draw: 'Empate',
   Drawn: 'Empates',
+  "Each set of rules has its own rating. A new season starts on the 1st of every month, and everyone starts again at 1200. Each online round moves your rating: beating a stronger player earns more. Games against the computer don't count.":
+    'Cada modalidad tiene su propia puntuación. Una nueva temporada empieza el día 1 de cada mes, y todos vuelven a empezar con 1200. Cada ronda en línea mueve tu puntuación: ganar a un jugador más fuerte da más puntos. Las partidas contra la computadora no cuentan.',
   Email: 'Correo electrónico',
   'Email confirmed. Log in to play online.':
     'Correo confirmado. Inicia sesión para jugar en línea.',
@@ -347,7 +347,7 @@ export default {
   'Privacy policy': 'Política de privacidad',
   Profile: 'Perfil',
   Puzzler: 'Rompecabezas',
-  Rank: 'Puesto',
+  'Rank this season': 'Puesto esta temporada',
   Rating: 'Puntuación',
   'Rating points': 'Puntos',
   'Reach a rating of 1400.': 'Alcanza una puntuación de 1400.',
@@ -461,7 +461,6 @@ export default {
   'This device': 'Este dispositivo',
   'This game has ended.': 'Esta partida ha terminado.',
   'This round is over.': 'Esta ronda ha terminado.',
-  'This season': 'Esta temporada',
   "Three in a row wins. Nobody wins? That's a cat's game.":
     'Tres en línea gana. ¿Nadie gana? Es un empate.',
   'Tiny Dragon': 'Dragoncito',

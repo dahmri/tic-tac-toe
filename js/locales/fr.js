@@ -28,8 +28,6 @@ export default {
     "Un morpion dessiné à la main : joue contre l'ordinateur, un ami ou des joueurs en ligne.",
   'A new address has to be confirmed again before you play online.':
     'Une nouvelle adresse doit être confirmée avant de jouer en ligne.',
-  "A new season starts on the 1st of every month, and everyone starts again at 1200. Each online round moves your rating: beating a stronger player earns more. Games against the computer don't count.":
-    "Une nouvelle saison commence le 1er de chaque mois, et tout le monde repart de 1200. Chaque manche en ligne fait bouger ta cote : battre un joueur plus fort rapporte plus. Les parties contre l'ordinateur ne comptent pas.",
   Accept: 'Accepter',
   Account: 'Compte',
   'Account deleted.': 'Compte supprimé.',
@@ -114,7 +112,7 @@ export default {
   'Copy it by hand: select the code above.': 'Copie-le à la main : sélectionne le code ci-dessus.',
   'Couch Potato': 'Patate de canapé',
   "Couldn't check you're not a robot. Try again.":
-    "Impossible de vérifier que vous n'êtes pas un robot. Réessayez.",
+    "Impossible de vérifier que tu n'es pas un robot. Réessaie.",
   Country: 'Pays',
   "Counts only: nobody's visits are recorded. Active means signed-in players who used the site that day.":
     'Des chiffres seulement : les visites de chacun ne sont pas enregistrées. Actifs : joueurs connectés qui ont utilisé le site ce jour-là.',
@@ -148,6 +146,8 @@ export default {
   'Drama Llama': 'Lama dramatique',
   Draw: 'Nul',
   Drawn: 'Nuls',
+  "Each set of rules has its own rating. A new season starts on the 1st of every month, and everyone starts again at 1200. Each online round moves your rating: beating a stronger player earns more. Games against the computer don't count.":
+    "Chaque règle du jeu a sa propre cote. Une nouvelle saison commence le 1er de chaque mois, et tout le monde repart de 1200. Chaque manche en ligne fait bouger ta cote : battre un joueur plus fort rapporte plus. Les parties contre l'ordinateur ne comptent pas.",
   Email: 'E-mail',
   'Email confirmed. Log in to play online.': 'E-mail confirmé. Connecte-toi pour jouer en ligne.',
   'Email confirmed. You can play online now!': 'E-mail confirmé. Tu peux jouer en ligne !',
@@ -346,7 +346,7 @@ export default {
   'Privacy policy': 'Politique de confidentialité',
   Profile: 'Profil',
   Puzzler: 'Casse-tête',
-  Rank: 'Rang',
+  'Rank this season': 'Rang cette saison',
   Rating: 'Cote',
   'Rating points': 'Points de cote',
   'Reach a rating of 1400.': 'Atteins une cote de 1400.',
@@ -461,7 +461,6 @@ export default {
   'This device': 'Cet appareil',
   'This game has ended.': 'Cette partie est terminée.',
   'This round is over.': 'Cette manche est terminée.',
-  'This season': 'Cette saison',
   "Three in a row wins. Nobody wins? That's a cat's game.":
     "Trois alignés, c'est gagné. Personne ne gagne ? C'est un match nul.",
   'Tiny Dragon': 'Petit dragon',

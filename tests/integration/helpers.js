@@ -136,12 +136,12 @@ export async function live(app, c) {
   };
 }
 
-// Starts a match: `x` invites `o`. play(squares) plays them in order, each
+// Starts a match: `x` invites `o`, to play by `variant`. play(squares) plays them in order, each
 // by whoever's turn it is.
-export async function startMatch(app, x, o) {
+export async function startMatch(app, x, o, variant = 'classic') {
   const a = await live(app, x);
   const b = await live(app, o);
-  a.send({ t: 'invite', to: o.user.id });
+  a.send({ t: 'invite', to: o.user.id, variant });
   const { invite } = await b.next('invite');
   b.send({ t: 'invite-accept', id: invite.id });
   const [{ match: m }] = await Promise.all([a.next('match'), b.next('match')]);
