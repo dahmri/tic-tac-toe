@@ -1624,3 +1624,23 @@ body.spectating .cell {
   justify-content: space-between;
   margin-top: 8px;
 }
+
+/* The weekly arena in the lobby */
+.arena {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 2px dashed var(--muted);
+  border-radius: 12px;
+}
+.arena p {
+  margin: 0;
+}
+.arena-me:empty {
+  display: none;
+}
+.arena-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

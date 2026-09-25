@@ -10,6 +10,7 @@ import { avatarEmoji } from './avatars.js';
 import { countryFlag } from './countries.js';
 import { canPlayOnline, currentUser } from './account.js';
 import { handleLobbyMessage, lobbyError, resetLobby, setLastOpponent, setLobby } from './lobby.js';
+import { refreshArena } from './arena-ui.js';
 import { signed } from './stats.js';
 import { sound } from './sound.js';
 import { REACTIONS } from './reactions.js';
@@ -84,7 +85,8 @@ export function sendMove(square) {
 }
 
 export function askNextRound() {
-  if (inMatch() && game.over) live.send({ t: 'next-round', match: match.id });
+  // In the arena, the next game comes with a new opponent
+  if (inMatch() && game.over && !match.arena) live.send({ t: 'next-round', match: match.id });
 }
 
 export function leaveMatch() {
@@ -207,7 +209,8 @@ export function renderOnline() {
     }
     const role = mySymbol() === 'X' ? t('You are X and open the first round.') : t('You are O.');
     const rules = { vanish: t('3-mark rules.'), ultimate: t('Ultimate rules.') }[variant()];
-    $('roomRole').textContent = rules ? `${role} ${rules}` : role;
+    const arena = match.arena ? t('Arena game: one round, then a new opponent.') : '';
+    $('roomRole').textContent = [role, rules, arena].filter(Boolean).join(' ');
   }
   // The lobby refreshes its list only while it's on screen
   setLobby({
@@ -339,9 +342,11 @@ function onMatch(next) {
       setNetMessage(
         next.leftBy === mine
           ? ''
-          : next.forfeit
-            ? t('{name} left the game. You win the round.', { name: rival })
-            : t('{name} left the game.', { name: rival }),
+          : next.arena && !next.leftBy
+            ? t('Arena game over. Your next opponent is on the way.')
+            : next.forfeit
+              ? t('{name} left the game. You win the round.', { name: rival })
+              : t('{name} left the game.', { name: rival }),
       );
       match = null;
       settings.scores = zeroScores();
@@ -386,6 +391,9 @@ function onLiveMessage(msg) {
       break;
     case 'watchers':
       if (msg.match === match?.id) spectators = msg.count;
+      break;
+    case 'arena':
+      refreshArena();
       break;
     case 'ratings': {
       const change = {};

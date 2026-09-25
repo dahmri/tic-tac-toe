@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyMove, leave, newMatch, nextRound, symbolOf } from '../../server/match.js';
+import { applyMove, close, leave, newMatch, nextRound, symbolOf } from '../../server/match.js';
 
 const ann = { id: 1, username: 'ann', country: 'FR' };
 const bob = { id: 2, username: 'bob', country: 'MA' };
@@ -62,6 +62,7 @@ test('a win ends the round, scores it, and produces a record', () => {
     moves: [0, 3, 1, 4, 2],
     variant: 'classic',
     starter: 'X',
+    arena: null,
     startedAt: 1000,
     endedAt: 2000,
   });
@@ -164,4 +165,16 @@ test('ultimate matches: 81 squares, and moves must go to the board the last one 
   assert.equal(applyMove(first.match, 2, 0, 2000).error, 'Play in the highlighted board.');
   assert.equal(applyMove(first.match, 2, 2 * 9 + 4, 2000).error, undefined);
   assert.equal(applyMove(first.match, 2, 81, 2000).error, 'Not a square.');
+});
+
+test('an arena game is one round, then closes without anyone leaving', () => {
+  const m = newMatch({ id: 'm2', x: ann, o: bob, arena: '2026-09-26', now: 1000 });
+  assert.match(close(m).error, /Finish this round/);
+  const { match, finished } = play(m, [0, 3, 1, 4, 2]);
+  assert.equal(finished.arena, '2026-09-26');
+  assert.match(nextRound(match, 1).error, /next opponent is found for you/);
+  const closed = close(match).match;
+  assert.equal(closed.ended, true);
+  assert.equal(closed.leftBy, undefined);
+  assert.equal(close(closed).match, closed, 'closing twice changes nothing');
 });

@@ -7,6 +7,7 @@
 //   | { t: 'leave', match } | { t: 'queue-join', variant? } | { t: 'queue-leave' }
 //   | { t: 'react', match, emoji } | { t: 'watch', user } | { t: 'unwatch' } | { t: 'ping' }
 //   | { t: 'visible', on } (the page is on screen or not: see server/push.js)
+//   | { t: 'arena-join' } | { t: 'arena-pause' } (the weekly arena: server/arena.js)
 // Server -> browser: { t: 'hello', me, match, invites, waiting } | { t: 'match', match }
 //   | { t: 'queue', waiting } | { t: 'ratings', match, round, ratings }
 //   | { t: 'invite', invite } | { t: 'invite-sent', invite }
@@ -14,10 +15,12 @@
 //   | { t: 'reaction', match, from, emoji }
 //   | { t: 'watching', match, count } then { t: 'watched', match } as it goes on
 //   | { t: 'watchers', match, count } (to the players and spectators)
+//   | { t: 'arena' } (your arena standing changed: fetch /api/arena)
 //   | { t: 'error', message } | { t: 'pong' }
 
 import { InviteError } from '../invites.js';
 import { MatchError } from '../matches.js';
+import { ArenaError } from '../arena.js';
 import { symbolOf } from '../match.js';
 import { isReaction } from '../../js/reactions.js';
 import { pickLang, translate } from '../../js/i18n.js';
@@ -168,6 +171,12 @@ export default async function liveRoutes(app) {
       case 'visible':
         await push.seen(me.id, msg.on === true);
         return null;
+      case 'arena-join':
+        await app.ctx.arena.join(me.id);
+        return null;
+      case 'arena-pause':
+        await app.ctx.arena.pause(me.id);
+        return null;
       case 'invite': {
         const sent = await invites.send(me, msg.to, msg.variant ?? 'classic');
         quietly(push.invited(msg.to, me));
@@ -309,7 +318,7 @@ export default async function liveRoutes(app) {
         const reply = await handle(me, msg, conn);
         if (reply?.t) send(reply);
       } catch (err) {
-        if (err instanceof InviteError || err instanceof MatchError) {
+        if (err instanceof InviteError || err instanceof MatchError || err instanceof ArenaError) {
           const { template, vars } = /** @type {any} */ (err);
           send({ t: 'error', message: err.message, template, vars, re: msg.t });
         } else {

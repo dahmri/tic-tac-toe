@@ -41,6 +41,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   on screen, including the installed app. Nothing is sent while the game
   is in front of you. Needs the server's VAPID keys (see
   docs/DEPLOYMENT.md).
+- **Weekend arena.** Every Saturday, 18:00 to 20:00 UTC, join the arena
+  from the online lobby and you're paired again and again with players
+  close to your score, one classic game at a time: 2 points for a win, 1
+  for a draw. Pause whenever you like; the standings show the top players
+  and last week's podium.
 
 ## [1.9.0] - 2026-09-25
 

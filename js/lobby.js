@@ -9,6 +9,7 @@ import { sound } from './sound.js';
 import { onLangChange, t } from './i18n.js';
 import { checkAchievements } from './achievements-ui.js';
 import { menuButton } from './player-menu.js';
+import { refreshArena } from './arena-ui.js';
 
 // After a block or unblock: the lists change
 const reloadLists = () => {
@@ -429,10 +430,12 @@ export function setLobby({ visible, inMatch }) {
   if (active) {
     load();
     loadFriends();
+    refreshArena();
     refreshTimer = setInterval(() => {
       if (document.hidden) return;
       load();
       loadFriends();
+      refreshArena();
     }, REFRESH_MS);
   }
 }

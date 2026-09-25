@@ -12,7 +12,16 @@
 // clicks can't both land.
 
 import { randomUUID } from 'node:crypto';
-import { applyMove, leave, newMatch, nextRound, symbolOf, timeUp, TURN_MS } from './match.js';
+import {
+  applyMove,
+  close,
+  leave,
+  newMatch,
+  nextRound,
+  symbolOf,
+  timeUp,
+  TURN_MS,
+} from './match.js';
 
 const TTL = 3600; // seconds
 const ENDED_TTL = 120; // keep a finished match briefly so a reload still shows the result
@@ -106,13 +115,14 @@ export function createMatches(
     get,
 
     // Starts a match between the inviter (X) and the invited player (O)
-    async start(x, o, variant = 'classic') {
+    // arena: the weekly arena's id, for its games
+    async start(x, o, variant = 'classic', { arena = null } = {}) {
       if (ratingOf && variant !== 'classic') {
         const [rx, ro] = await Promise.all([ratingOf(x.id, variant), ratingOf(o.id, variant)]);
         x = { ...x, rating: rx };
         o = { ...o, rating: ro };
       }
-      const match = newMatch({ id: randomUUID(), x, o, variant, turnMs });
+      const match = newMatch({ id: randomUUID(), x, o, variant, turnMs, arena });
       const claimed = await redis.ttClaimPlayers(playerKey(x.id), playerKey(o.id), match.id, TTL);
       if (!claimed) throw new MatchError('One of you is already in a game.');
       await redis.set(matchKey(match.id), JSON.stringify(match), 'EX', TTL);
@@ -135,6 +145,7 @@ export function createMatches(
     move: (id, userId, square) => update(id, (m) => applyMove(m, userId, square)),
     nextRound: (id, userId) => update(id, (m) => nextRound(m, userId)),
     leave: (id, userId) => update(id, (m) => leave(m, userId)),
+    close: (id) => update(id, (m) => close(m)),
 
     // Ends rounds whose player to move ran out of time
     async sweep(now = Date.now()) {
