@@ -57,9 +57,10 @@ jobs:
           TEST_REDIS_URL: redis://localhost:6379/15
       - run: npm run build
 
+  # Runs alongside the quality job, not after it: it doesn't need it, and
+  # a pull request waits for the slower of the two instead of both
   e2e:
     name: Browser tests
-    needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -69,7 +70,20 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # The browser download is cached per Playwright version; the system
+      # libraries it needs are installed either way
+      - name: Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       # Test the production images (nginx + game server + PostgreSQL + Redis)
       # with Docker Compose, not a dev server

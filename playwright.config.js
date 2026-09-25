@@ -10,6 +10,9 @@ const EXTERNAL_URL = process.env.E2E_BASE_URL;
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
+  // The tests mostly wait on the network, so CI's runners take more than
+  // one worker per core
+  workers: CI ? 4 : undefined,
   forbidOnly: CI,
   retries: CI ? 2 : 0,
   reporter: CI ? [['github'], ['html', { open: 'never' }]] : 'list',
