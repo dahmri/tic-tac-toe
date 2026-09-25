@@ -1453,3 +1453,21 @@ fieldset.field {
   margin: 0;
   padding: 0;
 }
+
+/* Game analysis: the move that went wrong */
+.cell.mistake {
+  outline: 3px solid var(--o);
+  outline-offset: -6px;
+  border-radius: 12px;
+}
+.replay-note {
+  margin: 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+.replay-note:empty {
+  display: none;
+}
+#replayWhy {
+  justify-self: center;
+}

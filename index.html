@@ -415,6 +415,7 @@
         <div class="actions">
           <button id="next" type="button" class="primary">New round</button>
           <button id="hintBtn" type="button" class="ghostbtn">Hint</button>
+          <button id="whyBtn" type="button" class="ghostbtn" hidden>🔍 Why did I lose?</button>
           <button id="reset" type="button" class="ghostbtn">Wipe scores</button>
         </div>
         <p class="hint" data-i18n-html>
@@ -674,6 +675,7 @@
         </svg>
       </div>
       <p class="replay-step" id="replayStep" aria-live="polite"></p>
+      <p class="replay-note" id="replayNote" role="status"></p>
       <div class="replay-controls">
         <button id="replayFirst" type="button" class="btn ghostbtn" aria-label="First move">
           ⏮
@@ -683,6 +685,7 @@
         <button id="replayNext" type="button" class="btn ghostbtn" aria-label="Next">▶</button>
         <button id="replayLast" type="button" class="btn ghostbtn" aria-label="Last move">⏭</button>
       </div>
+      <button id="replayWhy" type="button" class="btn" hidden>🔍 Show my mistake</button>
     </dialog>
 
     <dialog class="dialog legal" id="privacyDialog" aria-labelledby="privacyTitle">

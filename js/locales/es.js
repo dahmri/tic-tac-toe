@@ -219,6 +219,12 @@ export default {
   'More for {name}': 'Más opciones para {name}',
   'Most played opponents': 'Rivales más frecuentes',
   'Move {n} of {total}': 'Jugada {n} de {total}',
+  'Move {n}: row {row}, column {col} gave away the win. Row {bestRow}, column {bestCol} would have won.':
+    'Jugada {n}: fila {row}, columna {col} dejó escapar la victoria. Fila {bestRow}, columna {bestCol} habría ganado.',
+  'Move {n}: row {row}, column {col} lost the game. Row {bestRow}, column {bestCol} would have held the draw.':
+    'Jugada {n}: fila {row}, columna {col} perdió la partida. Fila {bestRow}, columna {bestCol} habría mantenido el empate.',
+  'Move {n}: row {row}, column {col} turned a win into a loss. Row {bestRow}, column {bestCol} would have won.':
+    'Jugada {n}: fila {row}, columna {col} convirtió una victoria en derrota. Fila {bestRow}, columna {bestCol} habría ganado.',
   'Moves after the end of the game.': 'Jugadas después del final de la partida.',
   'Mystery Guest': 'Invitado misterioso',
   'New code made. Your old one no longer works.':
@@ -237,6 +243,7 @@ export default {
   'No games yet.': 'Todavía no hay partidas.',
   "No harassment: don't use invitations or reactions to bother other players.":
     'Nada de acoso: no uses las invitaciones ni las reacciones para molestar a otros jugadores.',
+  'No mistakes: you played this one perfectly.': 'Ningún error: jugaste perfectamente.',
   'No one else is online right now. Invite a friend to sign up!':
     'No hay nadie más en línea ahora mismo. ¡Invita a un amigo a registrarse!',
   'No one from {country} is online right now.': 'No hay nadie de {country} en línea ahora mismo.',
@@ -521,6 +528,7 @@ export default {
   'Your email is already confirmed.': 'Tu correo ya está confirmado.',
   'Your games, ratings, statistics, friends and daily puzzle results.':
     'Tus partidas, puntuaciones, estadísticas, amigos y resultados del reto del día.',
+  'Your last game': 'Tu última partida',
   'Your move, {mark}': 'Te toca, {mark}',
   'Your new password is saved. Other devices have been logged out.':
     'Tu nueva contraseña está guardada. Se cerró la sesión en tus otros dispositivos.',
@@ -566,6 +574,8 @@ export default {
   '✉️ Add your email to play online': '✉️ Añade tu correo para jugar en línea',
   '✉️ Confirm your email to play online': '✉️ Confirma tu correo para jugar en línea',
   '🌍 Whole world': '🌍 Todo el mundo',
+  '🔍 Show my mistake': '🔍 Mostrar mi error',
+  '🔍 Why did I lose?': '🔍 ¿Por qué perdí?',
   '🔒 Online games need a free account': '🔒 Las partidas en línea necesitan una cuenta gratis',
   '🔥 Streak: {n} · Best: {best} · Solved: {total}':
     '🔥 Racha: {n} · Mejor: {best} · Resueltos: {total}',
