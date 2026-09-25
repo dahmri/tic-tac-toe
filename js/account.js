@@ -420,6 +420,67 @@ async function deleteAccount(e) {
   $('loginForm').querySelector('.form-msg').textContent = t('Your account has been deleted.');
 }
 
+/* ---------- Sessions, in the profile ---------- */
+
+const sessionTime = () =>
+  new Intl.DateTimeFormat(document.documentElement.lang, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+async function loadSessions() {
+  let list;
+  try {
+    ({ sessions: list } = await api('GET', '/api/me/sessions'));
+  } catch {
+    return;
+  }
+  $('logoutOthers').hidden = list.length < 2;
+  $('sessionList').replaceChildren(
+    ...list.map((s) => {
+      const li = document.createElement('li');
+      li.className = 'session';
+      const what = document.createElement('span');
+      what.className = 'session-what';
+      const device = document.createElement('strong');
+      device.textContent = s.device;
+      const when = document.createElement('small');
+      when.textContent = s.current
+        ? t('This device')
+        : t('Last active {when}', { when: sessionTime().format(new Date(s.seen)) });
+      what.append(device, when);
+      li.append(what);
+      if (!s.current) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn ghostbtn';
+        b.textContent = t('Log out');
+        b.setAttribute('aria-label', t('Log out {device}', { device: s.device }));
+        b.addEventListener('click', async () => {
+          b.disabled = true;
+          await api('DELETE', `/api/me/sessions/${s.id}`).catch(() => {});
+          loadSessions();
+        });
+        li.append(b);
+      }
+      return li;
+    }),
+  );
+}
+
+async function logoutOthers() {
+  $('logoutOthers').disabled = true;
+  try {
+    await api('DELETE', '/api/me/sessions');
+    $('sessionMsg').textContent = t('Logged out everywhere else.');
+    loadSessions();
+  } catch (err) {
+    $('sessionMsg').textContent = t(err.message);
+  } finally {
+    $('logoutOthers').disabled = false;
+  }
+}
+
 /* ---------- Blocked players, in the profile ---------- */
 
 async function loadBlocked() {
@@ -476,6 +537,8 @@ function openProfile() {
   }
   showErrors(form);
   loadBlocked();
+  $('sessionMsg').textContent = '';
+  loadSessions();
   $('profileDialog').showModal();
 }
 
@@ -576,6 +639,7 @@ export async function initAccount(callbacks) {
   });
 
   $('guestBtn').addEventListener('click', playAsGuest);
+  $('logoutOthers').addEventListener('click', logoutOthers);
   $('emailAction').addEventListener('click', emailAction);
   window.addEventListener('focus', refreshIfPending);
   document.addEventListener('visibilitychange', () => {

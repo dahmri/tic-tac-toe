@@ -14,6 +14,9 @@
 //   GET    /api/password-reset/token?token=  whether a link still works
 //   GET    /api/me/export    everything stored about you, as a JSON download
 //   DELETE /api/me           delete your account: { password }
+//   GET    /api/me/sessions  where you're logged in: [{ id, device, created, seen, current }]
+//   DELETE /api/me/sessions/:id   log out that one
+//   DELETE /api/me/sessions  log out everywhere else
 //   POST   /api/me/email/resend   send the confirmation email again
 //   POST   /api/email/verify      confirm an address: { token } from the emailed link
 //   GET    /api/test/outbox       browser tests only (MAIL_OUTBOX=on): ?to=address
@@ -81,7 +84,8 @@ export default async function accountRoutes(app) {
   };
 
   async function startSession(reply, userId) {
-    reply.setCookie(COOKIE, await sessions.create(userId), cookieOptions);
+    const token = await sessions.create(userId, reply.request.headers['user-agent']);
+    reply.setCookie(COOKIE, token, cookieOptions);
   }
 
   async function limit(reply, key, max, windowSeconds) {
@@ -353,6 +357,21 @@ export default async function accountRoutes(app) {
       emails: await mailer.outbox(String(req.query.to || '')),
     }));
   }
+
+  // Where the player is logged in, and logging out other devices
+  app.get('/api/me/sessions', { preHandler: app.requireUser }, async (req) => ({
+    sessions: await sessions.list(req.userId, req.cookies[COOKIE]),
+  }));
+
+  app.delete('/api/me/sessions/:id', { preHandler: app.requireUser }, async (req, reply) => {
+    await sessions.destroyById(req.userId, String(req.params.id).slice(0, 20));
+    return reply.code(204).send();
+  });
+
+  app.delete('/api/me/sessions', { preHandler: app.requireUser }, async (req, reply) => {
+    await sessions.destroyOthers(req.userId, req.cookies[COOKIE]);
+    return reply.code(204).send();
+  });
 
   app.delete('/api/me', { preHandler: app.requireUser }, async (req, reply) => {
     if (!(await limit(reply, `password:${req.userId}`, 10, 900))) return;

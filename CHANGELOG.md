@@ -6,6 +6,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Where you're logged in.** Your profile lists the devices you're logged
+  in on ("Firefox on Windows", last active...), so you can log one out, or
+  everywhere else at once. No IP addresses are kept.
+
 ## [1.9.0] - 2026-09-25
 
 ### Added
