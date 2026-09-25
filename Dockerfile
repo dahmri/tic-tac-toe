@@ -18,6 +18,7 @@ COPY index.html ./
 COPY css/ css/
 COPY js/ js/
 COPY icons/ icons/
+COPY fonts/ fonts/
 COPY manifest.webmanifest sw.js ./
 RUN node scripts/build.mjs
 

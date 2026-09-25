@@ -11,7 +11,8 @@ import { countryFlag, isCountryCode, sortedCountries } from './countries.js';
 import { MIN_AGE, passwordError, validateProfile, validateRegistration } from './validation.js';
 import { uploadGuestGames } from './stats.js';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 
 // Guests play on this device only, without an account; remembered so a
 // reload doesn't send them back to the log-in form
@@ -19,6 +20,7 @@ const GUEST_KEY = 'pencil-ttt-guest';
 
 let user = null;
 let guest = false;
+/** @type {{ onSignIn: (user?: any) => void, onSignOut: () => void, onGuest: () => void, onEmailState: (user?: any) => void }} */
 let handlers = { onSignIn() {}, onSignOut() {}, onGuest() {}, onEmailState() {} };
 
 export const currentUser = () => user;
@@ -87,6 +89,7 @@ function fillAvatars(form) {
   );
 }
 
+/** @returns {Record<string, any>} */
 const formData = (form) => Object.fromEntries(new FormData(form));
 
 function showErrors(form, fields = {}, message = '') {
@@ -128,7 +131,9 @@ function show(view) {
 function setAuthTab(tab) {
   document
     .querySelectorAll('[data-auth]')
-    .forEach((b) => b.setAttribute('aria-selected', String(b.dataset.auth === tab)));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.setAttribute('aria-selected', String(b.dataset.auth === tab)),
+    );
   $('loginForm').hidden = tab !== 'login';
   $('signupForm').hidden = tab !== 'signup';
   for (const id of ['resetForm', 'resetMailForm', 'newPasswordForm']) $(id).hidden = true;
@@ -143,8 +148,12 @@ function renderMe() {
   $('meAvatar').title = t(guest ? GUEST_AVATAR.name : avatarName(avatar));
   $('meName').textContent = guest ? t('Guest') : user.username;
   $('meFlag').textContent = guest ? '' : countryFlag(user.country);
-  document.querySelectorAll('[data-member]').forEach((b) => (b.hidden = guest));
-  document.querySelectorAll('[data-guest]').forEach((b) => (b.hidden = !guest));
+  document
+    .querySelectorAll('[data-member]')
+    .forEach((/** @type {HTMLElement} */ b) => (b.hidden = guest));
+  document
+    .querySelectorAll('[data-guest]')
+    .forEach((/** @type {HTMLElement} */ b) => (b.hidden = !guest));
   renderEmailNotice();
 }
 
@@ -411,6 +420,39 @@ async function deleteAccount(e) {
   $('loginForm').querySelector('.form-msg').textContent = t('Your account has been deleted.');
 }
 
+/* ---------- Blocked players, in the profile ---------- */
+
+async function loadBlocked() {
+  let list = [];
+  try {
+    ({ blocked: list } = await api('GET', '/api/blocks'));
+  } catch {
+    /* the section stays as it was */
+  }
+  $('blockedEmpty').hidden = list.length > 0;
+  $('blockedList').replaceChildren(
+    ...list.map((p) => {
+      const li = document.createElement('li');
+      li.className = 'player';
+      const name = document.createElement('span');
+      name.className = 'who-line';
+      name.textContent = `${avatarEmoji(p.avatar)} ${countryFlag(p.country)} ${p.username}`;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn';
+      b.textContent = t('Unblock');
+      b.setAttribute('aria-label', t('Unblock {name}', { name: p.username }));
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await api('DELETE', `/api/blocks/${p.id}`).catch(() => {});
+        loadBlocked();
+      });
+      li.append(name, b);
+      return li;
+    }),
+  );
+}
+
 /* ---------- Profile dialog ---------- */
 
 function openProfile() {
@@ -433,6 +475,7 @@ function openProfile() {
     showErrors($(id));
   }
   showErrors(form);
+  loadBlocked();
   $('profileDialog').showModal();
 }
 
@@ -494,13 +537,17 @@ export async function initAccount(callbacks) {
   for (const form of [$('signupForm'), $('profileForm')]) {
     fillAvatars(form);
     fillCountries(form.elements.country);
-    form.elements.birthDate.max = birthDateLimit();
+    // Sign-up needs the minimum age; the profile keeps older accounts' dates
+    form.elements.birthDate.max =
+      form.id === 'signupForm' ? birthDateLimit() : new Date().toISOString().slice(0, 10);
     form.elements.birthDate.min = '1900-01-01';
   }
 
   document
     .querySelectorAll('[data-auth]')
-    .forEach((b) => b.addEventListener('click', () => setAuthTab(b.dataset.auth)));
+    .forEach((/** @type {HTMLElement} */ b) =>
+      b.addEventListener('click', () => setAuthTab(b.dataset.auth)),
+    );
 
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();

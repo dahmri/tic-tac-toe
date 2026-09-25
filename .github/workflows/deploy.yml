@@ -83,3 +83,55 @@ jobs:
           # Release notes: this version's section of CHANGELOG.md
           notes=$(awk -v v="$version" 'index($0, "## [" v "]") == 1 { on = 1; next } /^## \[/ { on = 0 } on' CHANGELOG.md)
           gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes "${notes:-Release $tag}"
+
+  # After a release, main has a merge commit that test doesn't, and branch
+  # protection wants PRs up to date with their base: the next test -> main
+  # PR would be stuck until test catches up. This brings main back into
+  # test straight away, through a PR like any other change.
+  #
+  # Needs the repository setting "Allow GitHub Actions to create and approve
+  # pull requests" (Settings > Actions > General). Without it, the job
+  # leaves a notice and the sync is done by hand.
+  sync-test:
+    name: Bring the release into test
+    needs: release
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Open and merge main -> test
+        run: |
+          git fetch -q origin test
+          if git merge-base --is-ancestor "$GITHUB_SHA" origin/test; then
+            echo "test already has this release."
+            exit 0
+          fi
+          manual="gh pr create --base test --head main --title 'chore: merge main into test' --body 'After the release.'"
+          # The PR's head is main's commit: the required checks must run there
+          if ! gh workflow run ci.yml --ref main; then
+            echo "::notice title=Bring main into test by hand::Could not start CI on main. Run: $manual"
+            exit 0
+          fi
+          if ! url=$(gh pr create --base test --head main --title "chore: merge main into test" \
+              --body "Brings the release's merge commit into test (no file changes), so the next test → main PR is up to date. Opened by the Deploy workflow."); then
+            echo "::notice title=Bring main into test by hand::GitHub Actions may not open pull requests yet (see the comment on this job). Run: $manual"
+            exit 0
+          fi
+          echo "Opened $url; merging once its checks pass."
+          for _ in $(seq 1 80); do
+            if gh pr merge "$url" --merge 2>/dev/null; then
+              echo "Merged $url"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::warning title=Not merged::$url is still open: merge it once its checks pass."

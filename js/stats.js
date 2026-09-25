@@ -9,7 +9,8 @@ import { openReplay } from './replay.js';
 import { lang, onLangChange, t } from './i18n.js';
 import { checkAchievements, renderBadges } from './achievements-ui.js';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 let nextCursor = null;
 
 const el = (tag, cls, text) => {
@@ -128,12 +129,14 @@ function historyItem(g) {
   if (g.opponent) who.append(`${t('vs')} `, playerName(g.opponent));
   else {
     // In the 3-mark game the top level is "Hard": it isn't unbeatable there
-    const level = g.variant === 'vanish' && g.difficulty === 'hard' ? 'Hard' : LEVEL[g.difficulty];
+    // Only the classic computer is unbeatable
+    const level = g.variant !== 'classic' && g.difficulty === 'hard' ? 'Hard' : LEVEL[g.difficulty];
     who.append(t('vs Computer ({level})', { level: t(level ?? 'Casual') }));
   }
   const outcome = el('strong', `outcome o-${g.outcome}`, t(OUTCOME[g.outcome]));
   const detail = [t('as {mark}', { mark: g.symbol }), t('{n} moves', { n: g.moves })];
   if (g.variant === 'vanish') detail.unshift(t('3 marks'));
+  if (g.variant === 'ultimate') detail.unshift(t('Ultimate'));
   if (g.forfeit) detail.push(g.outcome === 'W' ? t('they left') : t('you left'));
   const meta = el(
     'span',
@@ -156,7 +159,7 @@ function historyItem(g) {
 }
 
 async function loadHistory(more) {
-  const query = new URLSearchParams({ limit: 10 });
+  const query = new URLSearchParams({ limit: '10' });
   if (more && nextCursor) query.set('cursor', nextCursor);
   const { games, next } = await api('GET', `/api/me/games?${query}`);
   nextCursor = next;

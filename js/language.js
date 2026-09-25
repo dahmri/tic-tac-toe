@@ -74,7 +74,7 @@ function browserLang() {
 // Call once, before anything is drawn
 export function initLanguage() {
   collect();
-  const select = document.getElementById('langSelect');
+  const select = /** @type {HTMLSelectElement} */ (document.getElementById('langSelect'));
   select.replaceChildren(
     ...Object.entries(LANGUAGES).map(([code, name]) => new Option(name, code)),
   );

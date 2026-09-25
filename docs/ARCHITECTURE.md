@@ -272,6 +272,10 @@ sentence to its translation, and anything missing falls back to English.
 | `GET`    | `/api/friends`              | Your friends, with whether they're online or playing      |
 | `POST`   | `/api/friends`              | Add a friend: `{ id }` or `{ username }`                  |
 | `DELETE` | `/api/friends/:id`          | Remove a friend                                           |
+| `GET`    | `/api/blocks`               | Players you blocked                                       |
+| `POST`   | `/api/blocks`               | Block one: `{ id }` (works both ways)                     |
+| `DELETE` | `/api/blocks/:id`           | Unblock                                                   |
+| `POST`   | `/api/reports`              | Report one: `{ id, reason, details? }`                    |
 | `GET`    | `/api/me/stats`             | Your totals, streaks and most played opponents            |
 | `GET`    | `/api/me/games`             | Your game history, newest first: `?cursor=&limit=20`      |
 | `GET`    | `/api/me/achievements`      | Your achievements, with progress towards goals            |

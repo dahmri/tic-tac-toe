@@ -12,7 +12,8 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 const PAGE = 20;
 const FILTER_KEY = 'pencil-ttt-leaderboard-country';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 let shown = 0;
 let meId = null;
 
@@ -42,7 +43,7 @@ function row(p) {
 
 async function load(more) {
   const country = $('lbCountry').value;
-  const query = new URLSearchParams({ offset: more ? shown : 0, limit: PAGE });
+  const query = new URLSearchParams({ offset: String(more ? shown : 0), limit: String(PAGE) });
   if (country) query.set('country', country);
   $('lbMsg').textContent = '';
   try {
@@ -79,7 +80,7 @@ async function load(more) {
 // The season on show, how long it has left, and the last one's podium
 function renderSeason({ season, lastSeason }) {
   if (!season) return;
-  const days = Math.ceil((new Date(season.endsAt) - Date.now()) / 86_400_000);
+  const days = Math.ceil((new Date(season.endsAt).getTime() - Date.now()) / 86_400_000);
   const name = seasonName(season.id, lang());
   $('lbSeason').textContent =
     days <= 1

@@ -6,6 +6,51 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-09-25
+
+### Added
+
+- **Ultimate tic-tac-toe.** A third set of rules, next to Classic and 3
+  marks: nine small boards in a big one. The square you play sends your
+  opponent to the matching small board; win three small boards in a row
+  to win. Play it against the computer (Casual, Medium or Hard), on the
+  same screen, or online (invitations and quick match), with hints,
+  replays and stats. The board you must play in is highlighted, and the
+  number keys play in it.
+- **Load test** (`npm run load-test`): many players playing online at
+  once, with how fast moves are answered. One server handled 4,000
+  players (2,000 matches) with 99% of moves answered within 10 ms on a
+  laptop; see docs/DEPLOYMENT.md.
+- **Watch live games.** Players in a game have a Watch button in the
+  lobby (and in your friends list): you see their board move by move, with
+  their reactions, until you stop or the game ends. The players see how
+  many are watching. Players who blocked you can't be watched.
+- **Privacy policy and terms of use**, linked at the bottom of every page
+  and from the sign-up form (also at `/#privacy` and `/#terms`), in all
+  three languages. They're drafts: the site owner's name, contact email,
+  country and backup period are placeholders to fill in before launch.
+- **Block and report.** The ⋯ next to a player (in the lobby, your
+  friends, your last opponent, or the player you're facing) lets you
+  block or report them. Blocked players can't invite you or be matched
+  with you, and you don't see each other online; they aren't told.
+  Reports say what's wrong (username, cheating, harassment, something
+  else) and go to whoever runs the site. Unblock anyone from your profile.
+- **Username filter.** New usernames (and renames) can't contain
+  offensive words in English, French or Spanish, even written with
+  look-alike digits, or pretend to be staff ("admin", "support"...).
+- **Why did I lose?** After losing a classic game against the computer or
+  online, one tap shows the move that cost you the game, and the move
+  that would have saved it. In any replay, **Show my mistake** does the
+  same (a perfect computer checks every move you made).
+
+### Changed
+
+- **New accounts need you to be 16** (was 13): the age of digital consent
+  everywhere in the EU. Accounts created before keep working.
+- **Fonts are served by the site itself** instead of Google Fonts, so
+  visitors' IP addresses no longer go to Google. The site now loads
+  nothing from other companies.
+
 ## [1.8.0] - 2026-09-24
 
 ### Fixed

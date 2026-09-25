@@ -39,7 +39,15 @@ export default {
   'Against Unbeatable: {drawn} draws in {n} games. Nobody beats it.':
     'Contra Imbatible: {drawn} empates en {n} partidas. Nadie le gana.',
   'Against the computer': 'Contra la computadora',
+  Age: 'Edad',
   'All countries': 'Todos los países',
+  'Also block this player': 'Bloquear también a este jugador',
+  'An offensive username': 'Un nombre de usuario ofensivo',
+  'Anything to add?': '¿Algo que añadir?',
+  "As far as the law allows, we aren't responsible for lost games, ratings or data, or for the site being unavailable.":
+    'En la medida en que la ley lo permita, no somos responsables de partidas, puntuaciones o datos perdidos, ni de que el sitio no esté disponible.',
+  'As long as you have an account. When you delete it in your profile, your data is deleted at once; your online games stay in your opponents\' histories as "Deleted player". Backups are kept for up to [30] days.':
+    'Mientras tengas una cuenta. Cuando la eliminas desde tu perfil, tus datos se eliminan de inmediato; tus partidas en línea quedan en el historial de tus rivales como «Jugador eliminado». Las copias de seguridad se guardan [30] días como máximo.',
   'At least 10 characters. A few random words work well.':
     'Al menos 10 caracteres. Unas cuantas palabras al azar funcionan bien.',
   Avatar: 'Avatar',
@@ -53,17 +61,27 @@ export default {
   'Best ever': 'Mejor de siempre',
   'Big Brain': 'Cerebrito',
   'Big Cheese': 'Queso gordo',
+  Block: 'Bloquear',
+  'Blocked players': 'Jugadores bloqueados',
+  "Blocked players can't invite you or be matched with you, and you won't see each other online.":
+    'Los jugadores bloqueados no pueden invitarte ni emparejarse contigo, y no se verán en línea.',
+  'Blocked.': 'Bloqueado.',
+  'Board {b}, square {c}: {value}': 'Tablero {b}, casilla {c}: {value}',
+  'By creating an account you accept the <a href="#terms">terms of use</a> and the <a href="#privacy">privacy policy</a>. You must be at least 16.':
+    'Al crear una cuenta aceptas las <a href="#terms">condiciones de uso</a> y la <a href="#privacy">política de privacidad</a>. Debes tener al menos 16 años.',
   "Can't reach the server. Check your connection.":
     'No se puede conectar con el servidor. Revisa tu conexión.',
   Cancel: 'Cancelar',
   Casual: 'Relajado',
   "Cat's games": 'Empates',
   'Change password': 'Cambiar la contraseña',
+  'Cheating (bots, scripts)': 'Trampas (bots, scripts)',
   'Check the code, or the username.': 'Revisa el código o el nombre de usuario.',
   'Check the highlighted fields.': 'Revisa los campos marcados.',
   'Cheeky Monkey': 'Mono pícaro',
   'Choose a new password': 'Elegir una contraseña nueva',
   'Choose a new password for your account.': 'Elige una contraseña nueva para tu cuenta.',
+  'Choose a reason.': 'Elige un motivo.',
   'Choose another player to invite.': 'Elige a otro jugador para invitar.',
   'Choose your country.': 'Elige tu país.',
   'Choose…': 'Elegir…',
@@ -82,6 +100,7 @@ export default {
   'Confirm your email to play online: click the link we sent to {email}.':
     'Confirma tu correo para jugar en línea: haz clic en el enlace que enviamos a {email}.',
   'Connecting…': 'Conectando…',
+  'Cookies and storage': 'Cookies y almacenamiento',
   'Copied.': 'Copiado.',
   Copy: 'Copiar',
   'Copy it by hand: select the code above.': 'Cópialo a mano: selecciona el código de arriba.',
@@ -107,6 +126,8 @@ export default {
   'Download everything we keep about you: your profile, stats and every game, as a JSON file.':
     'Descarga todo lo que guardamos sobre ti: tu perfil, tus estadísticas y todas tus partidas, en un archivo JSON.',
   'Download my data': 'Descargar mis datos',
+  'Draft: the name and contact details of the person running the site are still to be added.':
+    'Borrador: aún faltan el nombre y los datos de contacto de la persona que gestiona el sitio.',
   'Drama Llama': 'Llama dramática',
   Draw: 'Empate',
   Drawn: 'Empates',
@@ -128,6 +149,8 @@ export default {
   'Enter your username or email address.': 'Escribe tu nombre de usuario o tu dirección de correo.',
   "Enter your username or email. If your email is confirmed, we'll send you a link to choose a new password.":
     'Escribe tu nombre de usuario o tu correo. Si tu correo está confirmado, te enviaremos un enlace para elegir una contraseña nueva.',
+  'Error reports from your browser: the error and the page, nothing personal.':
+    'Los informes de error de tu navegador: el error y la página, nada personal.',
   'Fancy Flamingo': 'Flamenco elegante',
   'Fastest win': 'Victoria más rápida',
   'Find an opponent, or invite a player.': 'Busca un rival o invita a un jugador.',
@@ -142,6 +165,7 @@ export default {
   Friends: 'Amigos',
   'Grumpy Frog': 'Rana gruñona',
   Guest: 'Invitado',
+  Harassment: 'Acoso',
   Hard: 'Difícil',
   'Have 5 friends.': 'Ten 5 amigos.',
   'Held the line': 'Resistencia total',
@@ -149,11 +173,13 @@ export default {
   Hint: 'Pista',
   'Hold Unbeatable to a draw.': 'Empata contra Imbatible.',
   'Hot Diggity Dog': 'Hot dog loco',
+  'How long': 'Durante cuánto tiempo',
   'Hug Me Cactus': 'Cactus abrazable',
   'Hundred club': 'Club de los cien',
   "I've saved it": 'Ya lo guardé',
   "If an account with a confirmed email matches, we've sent it a link. It works for 1 hour.":
     'Si coincide una cuenta con un correo confirmado, le hemos enviado un enlace. Funciona durante 1 hora.',
+  'If you break the rules': 'Si incumples las reglas',
   "If you ever forget your password, this code lets you set a new one. We can't show it again, so write it down or keep it in a password manager.":
     'Si alguna vez olvidas tu contraseña, este código te permite elegir una nueva. No podremos mostrarlo otra vez, así que anótalo o guárdalo en un gestor de contraseñas.',
   'If you forget your password, a recovery code lets you set a new one. Making a new code replaces your old one.':
@@ -172,6 +198,8 @@ export default {
   'Last game: vs {who}': 'Última partida: contra {who}',
   'Last move': 'Última jugada',
   'Last name': 'Apellido',
+  'Last updated: 24 September 2026.': 'Última actualización: 24 de septiembre de 2026.',
+  Law: 'Ley aplicable',
   Leaderboard: 'Clasificación',
   'Leaderboard for': 'Clasificación de',
   Leave: 'Salir',
@@ -189,8 +217,15 @@ export default {
     'Crea una cuenta gratis y juega en línea para entrar en la clasificación.',
   'Make a new recovery code': 'Crear un nuevo código de recuperación',
   Medium: 'Medio',
+  'More for {name}': 'Más opciones para {name}',
   'Most played opponents': 'Rivales más frecuentes',
   'Move {n} of {total}': 'Jugada {n} de {total}',
+  'Move {n}: row {row}, column {col} gave away the win. Row {bestRow}, column {bestCol} would have won.':
+    'Jugada {n}: fila {row}, columna {col} dejó escapar la victoria. Fila {bestRow}, columna {bestCol} habría ganado.',
+  'Move {n}: row {row}, column {col} lost the game. Row {bestRow}, column {bestCol} would have held the draw.':
+    'Jugada {n}: fila {row}, columna {col} perdió la partida. Fila {bestRow}, columna {bestCol} habría mantenido el empate.',
+  'Move {n}: row {row}, column {col} turned a win into a loss. Row {bestRow}, column {bestCol} would have won.':
+    'Jugada {n}: fila {row}, columna {col} convirtió una victoria en derrota. Fila {bestRow}, columna {bestCol} habría ganado.',
   'Moves after the end of the game.': 'Jugadas después del final de la partida.',
   'Mystery Guest': 'Invitado misterioso',
   'New code made. Your old one no longer works.':
@@ -202,9 +237,14 @@ export default {
   'Night Owl': 'Búho nocturno',
   'No account needed: play the computer or a friend on this screen. Online games and stats need a free account; sign up later and your games come with you.':
     'No necesitas cuenta: juega contra la computadora o un amigo en esta pantalla. Las partidas en línea y las estadísticas necesitan una cuenta gratis; regístrate más tarde y tus partidas vienen contigo.',
+  'No bots, scripts or other tricks to win games or climb the leaderboard.':
+    'Nada de bots, scripts ni otros trucos para ganar partidas o subir en la clasificación.',
   'No friends yet. Add players you like with the ☆ next to their name, or by username.':
     'Todavía no tienes amigos. Añade a los jugadores que te gusten con la ☆ junto a su nombre, o por su nombre de usuario.',
   'No games yet.': 'Todavía no hay partidas.',
+  "No harassment: don't use invitations or reactions to bother other players.":
+    'Nada de acoso: no uses las invitaciones ni las reacciones para molestar a otros jugadores.',
+  'No mistakes: you played this one perfectly.': 'Ningún error: jugaste perfectamente.',
   'No one else is online right now. Invite a friend to sign up!':
     'No hay nadie más en línea ahora mismo. ¡Invita a un amigo a registrarse!',
   'No one from {country} is online right now.': 'No hay nadie de {country} en línea ahora mismo.',
@@ -222,6 +262,8 @@ export default {
   Offline: 'Desconectado',
   'On fire': 'En racha',
   'On the podium': 'En el podio',
+  "One cookie keeps you logged in; the site can't work without it. Your browser also keeps your settings (language, sound, game mode) and, if you play as a guest, your games. Nothing is used to follow you around.":
+    'Una cookie mantiene tu sesión iniciada; el sitio no funciona sin ella. Tu navegador también guarda tus ajustes (idioma, sonido, modo de juego) y, si juegas como invitado, tus partidas. Nada se usa para seguirte.',
   'One of you is already in a game.': 'Uno de ustedes ya está en una partida.',
   Online: 'En línea',
   'Online game': 'Partida en línea',
@@ -230,13 +272,21 @@ export default {
   Opponents: 'Rivales',
   'Other players only see your username, avatar and country. Your name, date of birth and phone number stay private and are stored encrypted.':
     'Los demás jugadores solo ven tu nombre de usuario, tu avatar y tu país. Tu nombre, tu fecha de nacimiento y tu teléfono son privados y se guardan cifrados.',
+  'Other players see your username, avatar, country, rating and results. Your name, email, date of birth and phone number are never shown to anyone. Our hosting provider stores the data, and our email provider sends the emails you ask for (confirmation, password reset).':
+    'Los demás jugadores ven tu nombre de usuario, tu avatar, tu país, tu puntuación y tus resultados. Tu nombre, tu correo, tu fecha de nacimiento y tu teléfono nunca se muestran a nadie. Nuestro proveedor de alojamiento guarda los datos, y nuestro proveedor de correo envía los correos que pides (confirmación, restablecer la contraseña).',
   'Panicky Chicken': 'Pollo en pánico',
   Password: 'Contraseña',
   'Password changed. Other devices have been logged out.':
     'Contraseña cambiada. Se cerró la sesión en tus otros dispositivos.',
   Pause: 'Pausa',
   'Pencil Tic-Tac-Toe': 'Tres en raya a lápiz',
+  'Pencil Tic-Tac-Toe is free. We do our best to keep it running, but it comes as it is, without any guarantee.':
+    'Tres en raya a lápiz es gratis. Hacemos lo posible para que funcione, pero se ofrece tal cual, sin ninguna garantía.',
+  'Pencil Tic-Tac-Toe is run by [Your name]. For any question about your data, write to [contact email].':
+    'Tres en raya a lápiz lo gestiona [Your name]. Para cualquier pregunta sobre tus datos, escribe a [contact email].',
   'Phone number': 'Número de teléfono',
+  "Pick a username that isn't offensive, hateful, or pretending to be someone else.":
+    'Elige un nombre de usuario que no sea ofensivo ni de odio, y que no se haga pasar por otra persona.',
   'Pick an avatar.': 'Elige un avatar.',
   'Pick your avatar': 'Elige tu avatar',
   'Piggy Bank': 'Alcancía cerdito',
@@ -246,6 +296,8 @@ export default {
   'Play an online game to get on the leaderboard.':
     'Juega una partida en línea para entrar en la clasificación.',
   'Play as a guest 👻': 'Jugar como invitado 👻',
+  'Play fair and be kind': 'Juega limpio y sé amable',
+  'Play in the highlighted board.': 'Juega en el tablero resaltado.',
   Played: 'Jugadas',
   Player: 'Jugador',
   'Player {mark}': 'Jugador {mark}',
@@ -257,6 +309,8 @@ export default {
   'Practice again': 'Practicar otra vez',
   "Practice: only the day's first try counts. New puzzle tomorrow!":
     'Práctica: solo cuenta el primer intento del día. ¡Nuevo reto mañana!',
+  Privacy: 'Privacidad',
+  'Privacy policy': 'Política de privacidad',
   Profile: 'Perfil',
   Puzzler: 'Rompecabezas',
   Rank: 'Puesto',
@@ -271,8 +325,10 @@ export default {
   Replay: 'Repetición',
   'Replay board': 'Tablero de la repetición',
   'Replay: {title}': 'Repetición: {title}',
+  'Report…': 'Denunciar…',
   'Request too large.': 'Solicitud demasiado grande.',
   'Reset your Pencil Tic-Tac-Toe password': 'Restablece tu contraseña de Tres en raya a lápiz',
+  Responsibility: 'Responsabilidad',
   'Rising star': 'Estrella en ascenso',
   'Row {row}, column {col}: {value}': 'Fila {row}, columna {col}: {value}',
   Rules: 'Reglas',
@@ -288,6 +344,7 @@ export default {
   'Season {name}: {days} days left': 'Temporada {name}: quedan {days} días',
   'Send a reaction': 'Enviar una reacción',
   'Send it again': 'Enviarlo de nuevo',
+  'Send report': 'Enviar la denuncia',
   'Sent! Check your inbox for {email} (and the spam folder).':
     '¡Enviado! Revisa la bandeja de entrada de {email} (y la carpeta de spam).',
   'Set new password': 'Guardar la nueva contraseña',
@@ -301,6 +358,7 @@ export default {
   'Solve the daily puzzle 7 days in a row.': 'Resuelve el reto del día 7 días seguidos.',
   'Someone asked to reset the password of your account. To choose a new one:':
     'Alguien pidió restablecer la contraseña de tu cuenta. Para elegir una nueva:',
+  'Something else': 'Otra cosa',
   'Something went wrong on our side. Try again.':
     'Algo salió mal por nuestra parte. Inténtalo de nuevo.',
   'Something went wrong. Try again.': 'Algo salió mal. Inténtalo de nuevo.',
@@ -312,29 +370,44 @@ export default {
   'Start: {mark} moves first': 'Inicio: {mark} juega primero',
   Stats: 'Estadísticas',
   'Stone Face': 'Cara de piedra',
+  'Stop watching': 'Dejar de mirar',
   'Taco Tuesday': 'Martes de tacos',
+  Terms: 'Condiciones',
+  'Terms of use': 'Condiciones de uso',
+  'Thanks: your report has been sent.': 'Gracias: tu denuncia se ha enviado.',
   'That confirmation link has expired or was already used.':
     'Ese enlace de confirmación caducó o ya se usó.',
   'That date does not exist.': 'Esa fecha no existe.',
   'That doesn’t look like an email address.': 'Eso no parece una dirección de correo.',
   'That email is already used by another account.': 'Ese correo ya lo usa otra cuenta.',
+  'That game has ended.': 'Esa partida ha terminado.',
+  "That game isn't available.": 'Esa partida no está disponible.',
   'That invitation has expired.': 'Esa invitación ha caducado.',
   'That is not your current password.': 'Esa no es tu contraseña actual.',
   'That is not your password.': 'Esa no es tu contraseña.',
   'That player is no longer online.': 'Ese jugador ya no está en línea.',
+  "That player isn't available.": 'Ese jugador no está disponible.',
+  'That player no longer exists.': 'Ese jugador ya no existe.',
   'That reset link has expired or was already used. Ask for a new one.':
     'Ese enlace para restablecer caducó o ya se usó. Pide uno nuevo.',
   'That square is taken.': 'Esa casilla ya está ocupada.',
   'That username and recovery code don’t match.':
     'Ese nombre de usuario y ese código de recuperación no coinciden.',
+  'That username is reserved. Try another.':
+    'Ese nombre de usuario está reservado. Prueba con otro.',
   'That username is taken. Try another.': 'Ese nombre de usuario ya existe. Prueba con otro.',
+  "That username isn't allowed. Try another.":
+    'Ese nombre de usuario no está permitido. Prueba con otro.',
   "That's you!": '¡Eres tú!',
   'The GOAT': 'El GOAT',
+  'The game': 'El juego',
   'The game is busy. Try again.': 'La partida está ocupada. Inténtalo de nuevo.',
   'The link works for 1 hour. If you didn’t ask for this, ignore this email: your password stays the same.':
     'El enlace funciona durante 1 hora. Si no lo pediste, ignora este correo: tu contraseña no cambia.',
   'The link works for 24 hours. If you didn’t sign up, you can ignore this email.':
     'El enlace funciona durante 24 horas. Si no te registraste, puedes ignorar este correo.',
+  'These terms are governed by the law of [country]. Questions: [contact email].':
+    'Estas condiciones se rigen por la ley de [country]. Preguntas: [contact email].',
   'This deletes your profile, stats and games against the computer for good. Your online games stay in your opponents\' histories as "Deleted player".':
     'Esto elimina para siempre tu perfil, tus estadísticas y tus partidas contra la computadora. Tus partidas en línea quedan en el historial de tus rivales como «Jugador eliminado».',
   'This game has ended.': 'Esta partida ha terminado.',
@@ -346,16 +419,24 @@ export default {
   'Tiny T-Rex': 'Mini T-Rex',
   'Tip: press <kbd>1</kbd>–<kbd>9</kbd> to play a square (keypad layout, <kbd>7</kbd> is top-left), <kbd>N</kbd> for a new round, <kbd>H</kbd> for a hint.':
     'Consejo: presiona <kbd>1</kbd>–<kbd>9</kbd> para jugar una casilla (como el teclado numérico, <kbd>7</kbd> arriba a la izquierda), <kbd>N</kbd> para una nueva ronda, <kbd>H</kbd> para una pista.',
+  "To run your account and the game (our agreement with you), and to keep the site secure and working (our legitimate interest). We don't sell your data, show ads or use trackers, and the site loads nothing from other companies.":
+    'Para que funcionen tu cuenta y el juego (nuestro acuerdo contigo), y para mantener el sitio seguro y en marcha (nuestro interés legítimo). No vendemos tus datos, no mostramos anuncios ni usamos rastreadores, y el sitio no carga nada de otras empresas.',
   'Too many attempts. Wait a few minutes and try again.':
     'Demasiados intentos. Espera unos minutos y vuelve a intentarlo.',
   'Too many games. Take a break!': 'Demasiadas partidas. ¡Tómate un descanso!',
   'Top Banana': 'Plátano jefe',
   'Trash Panda': 'Mapache basurero',
   'Try Unbeatable: nobody has ever beaten it.': 'Prueba Imbatible: nadie le ha ganado nunca.',
+  'Try board {b}, square {c}.': 'Prueba el tablero {b}, casilla {c}.',
   'Try row {row}, column {col}.': 'Prueba la fila {row}, columna {col}.',
   'Turbo Snail': 'Caracol turbo',
   'Tuxedo Penguin': 'Pingüino de esmoquin',
+  Ultimate: 'Ultimate',
+  'Ultimate rules.': 'Reglas Ultimate.',
   Unbeatable: 'Imbatible',
+  Unblock: 'Desbloquear',
+  'Unblock {name}': 'Desbloquear a {name}',
+  'Unblocked.': 'Desbloqueado.',
   'Unknown country.': 'País desconocido.',
   'Unknown difficulty.': 'Dificultad desconocida.',
   'Unknown first player.': 'Primer jugador desconocido.',
@@ -378,7 +459,10 @@ export default {
   'Usernames are 3 to 20 characters.': 'Los nombres de usuario tienen de 3 a 20 caracteres.',
   'Vanishing act': 'Acto de desaparición',
   'Waiting for {who} (3 marks)…': 'Esperando a {who} (3 marcas)…',
+  'Waiting for {who} (Ultimate)…': 'Esperando a {who} (Ultimate)…',
   'Waiting for {who}…': 'Esperando a {who}…',
+  Watch: 'Mirar',
+  'Watch {name} play': 'Ver jugar a {name}',
   'We added your game as a guest to your stats.':
     'Añadimos tu partida como invitado a tus estadísticas.',
   'We added your {n} games as a guest to your stats.':
@@ -387,6 +471,8 @@ export default {
     'Pedimos a cada jugador un correo confirmado antes de jugar en línea.',
   "We couldn't send the email. Try again later.":
     'No pudimos enviar el correo. Inténtalo más tarde.',
+  'We may rename, suspend or delete an account that breaks these rules, and remove ratings won unfairly.':
+    'Podemos cambiar el nombre, suspender o eliminar una cuenta que incumpla estas reglas, y quitar los puntos ganados de forma injusta.',
   "We'll pair you with a player near your rating.":
     'Te emparejamos con un jugador de puntuación parecida.',
   "We'll send you a link to confirm it. Other players never see it.":
@@ -394,6 +480,11 @@ export default {
   'Week of puzzles': 'Semana de retos',
   'What other players see. Letters, numbers and _.':
     'Lo que ven los demás jugadores. Letras, números y _.',
+  'What we keep': 'Qué guardamos',
+  "What's wrong?": '¿Cuál es el problema?',
+  'Who can see it': 'Quién puede verlo',
+  'Who runs this site': 'Quién gestiona este sitio',
+  Why: 'Por qué',
   'Win 10 online games in a row.': 'Gana 10 partidas en línea seguidas.',
   'Win 3 online games in a row.': 'Gana 3 partidas en línea seguidas.',
   'Win a game online.': 'Gana una partida en línea.',
@@ -402,6 +493,8 @@ export default {
   'Win rate as O': 'Porcentaje de victorias con O',
   'Win rate as X': 'Porcentaje de victorias con X',
   'Win streak': 'Racha de victorias',
+  'Win three small boards in a row. The square you play sends your opponent to that board.':
+    'Gana tres tableros pequeños en línea. La casilla donde juegas manda a tu rival al tablero correspondiente.',
   'Wipe scores': 'Borrar el marcador',
   'With an account you can play people around the world, get a rating, climb the leaderboard, keep your stats, and pick a funny avatar.':
     'Con una cuenta puedes jugar con gente de todo el mundo, obtener una puntuación, subir en la clasificación, guardar tus estadísticas y elegir un avatar divertido.',
@@ -416,19 +509,40 @@ export default {
   'You are O.': 'Juegas con O.',
   'You are X and open the first round.': 'Juegas con X y abres la primera ronda.',
   'You are not in this game.': 'No estás en esta partida.',
+  "You blocked this player. You don't see each other online.":
+    'Bloqueaste a este jugador. No se ven en línea.',
+  'You can block players, and report the ones who break these rules.':
+    'Puedes bloquear a jugadores y denunciar a los que incumplan estas reglas.',
   'You can have up to 200 friends.': 'Puedes tener hasta 200 amigos.',
+  "You can see and download your data (Profile, Download my data), correct it (Profile), delete it (Profile, Delete account) and object to how it's used. Write to [contact email] for anything else. You can also complain to your data protection authority (in France, the CNIL).":
+    'Puedes ver y descargar tus datos (Perfil, Descargar mis datos), corregirlos (Perfil), eliminarlos (Perfil, Eliminar la cuenta) y oponerte a su uso. Escribe a [contact email] para cualquier otra cosa. También puedes reclamar ante tu autoridad de protección de datos (en España, la AEPD).',
+  "You haven't blocked anyone.": 'No has bloqueado a nadie.',
   'You keep only your last 3 marks: the faded one vanishes when you play again.':
     'Solo conservas tus 3 últimas marcas: la más tenue desaparece cuando vuelves a jugar.',
-  'You must be at least 13 to play.': 'Debes tener al menos 13 años para jugar.',
+  'You must be at least 16 to create an account.':
+    'Debes tener al menos 16 años para crear una cuenta.',
+  'You must be at least 16 to create an account. Anyone can play as a guest.':
+    'Debes tener al menos 16 años para crear una cuenta. Cualquiera puede jugar como invitado.',
+  "You must be at least 16. Keep your password to yourself: you're responsible for what's done with your account. One account per person.":
+    'Debes tener al menos 16 años. No compartas tu contraseña: eres responsable de lo que se haga con tu cuenta. Una cuenta por persona.',
   'You · X': 'Tú · X',
   'You · {mark}': 'Tú · {mark}',
   "You'll stay logged in here and be logged out on other devices.":
     'Seguirás conectado aquí y se cerrará la sesión en tus otros dispositivos.',
   "You're offline. You can still play as a guest.":
     'Estás sin conexión. Aun así puedes jugar como invitado.',
+  "You're playing this game.": 'Estás jugando esta partida.',
+  "Your IP address, for a short time to stop abuse (too many attempts), and in the server's logs, which are deleted after a few weeks.":
+    'Tu dirección IP, durante poco tiempo para frenar abusos (demasiados intentos), y en los registros del servidor, que se borran tras unas semanas.',
+  'Your account': 'Tu cuenta',
   'Your account has been deleted.': 'Tu cuenta ha sido eliminada.',
+  'Your account: first and last name, username, email address, date of birth, country, avatar, and your phone number if you give it. Your name, email, date of birth and phone number are stored encrypted.':
+    'Tu cuenta: nombre y apellido, nombre de usuario, correo, fecha de nacimiento, país, avatar y tu teléfono si lo das. Tu nombre, tu correo, tu fecha de nacimiento y tu teléfono se guardan cifrados.',
   'Your data': 'Tus datos',
   'Your email is already confirmed.': 'Tu correo ya está confirmado.',
+  'Your games, ratings, statistics, friends and daily puzzle results.':
+    'Tus partidas, puntuaciones, estadísticas, amigos y resultados del reto del día.',
+  'Your last game': 'Tu última partida',
   'Your move, {mark}': 'Te toca, {mark}',
   'Your new password is saved. Other devices have been logged out.':
     'Tu nueva contraseña está guardada. Se cerró la sesión en tus otros dispositivos.',
@@ -437,8 +551,11 @@ export default {
     'Tu contraseña no puede contener tu nombre de usuario.',
   'Your password is changed and your old code no longer works. Here is your new one.':
     'Tu contraseña ha cambiado y tu código anterior ya no funciona. Este es el nuevo.',
+  "Your password, only as a secure hash that can't be turned back into the password.":
+    'Tu contraseña, solo como un hash seguro que no permite recuperarla.',
   'Your profile': 'Tu perfil',
   'Your rating': 'Tu puntuación',
+  'Your rights': 'Tus derechos',
   'Your stats': 'Tus estadísticas',
   'as {mark}': 'como {mark}',
   earned: 'conseguido',
@@ -464,6 +581,8 @@ export default {
   '{rate} of {n}': '{rate} de {n}',
   '{who} invites you to play': '{who} te invita a jugar',
   '{who} invites you to play (3 marks)': '{who} te invita a jugar (3 marcas)',
+  '{who} invites you to play (Ultimate)': '{who} te invita a jugar (Ultimate)',
+  '{x} vs {o}': '{x} contra {o}',
   '⏱ Your time: {secs}s': '⏱ Tu tiempo: {secs} s',
   "⏱ {name}'s time: {secs}s": '⏱ Tiempo de {name}: {secs} s',
   '⏸ Pause': '⏸ Pausa',
@@ -471,6 +590,10 @@ export default {
   '✉️ Add your email to play online': '✉️ Añade tu correo para jugar en línea',
   '✉️ Confirm your email to play online': '✉️ Confirma tu correo para jugar en línea',
   '🌍 Whole world': '🌍 Todo el mundo',
+  '👀 Watching': '👀 Mirando',
+  '👀 {n} watching': '👀 {n} mirando',
+  '🔍 Show my mistake': '🔍 Mostrar mi error',
+  '🔍 Why did I lose?': '🔍 ¿Por qué perdí?',
   '🔒 Online games need a free account': '🔒 Las partidas en línea necesitan una cuenta gratis',
   '🔥 Streak: {n} · Best: {best} · Solved: {total}':
     '🔥 Racha: {n} · Mejor: {best} · Resueltos: {total}',

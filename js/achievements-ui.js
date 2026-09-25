@@ -8,7 +8,8 @@ import { currentUser } from './account.js';
 import { t } from './i18n.js';
 import { sound } from './sound.js';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 const seenKey = (userId) => `pencil-ttt-achievements-${userId}`;
 
 const el = (tag, cls, text) => {
@@ -42,6 +43,8 @@ export function renderBadges(list) {
   );
 }
 
+let toastTimer = null;
+
 function toast(a) {
   const box = $('toast');
   box.textContent = t('{emoji} Achievement unlocked: {name}', { emoji: a.emoji, name: t(a.name) });
@@ -49,8 +52,8 @@ function toast(a) {
   box.classList.remove('show');
   void box.offsetWidth; // restart the animation
   box.classList.add('show');
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => (box.hidden = true), 4500);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (box.hidden = true), 4500);
 }
 
 let pending = null;

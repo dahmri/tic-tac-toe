@@ -3,9 +3,13 @@
 // a map of field -> message for anything that isn't acceptable.
 
 import { isAvatar } from './avatars.js';
+import { usernameProblem } from './username-filter.js';
 import { isCountryCode } from './countries.js';
 
-export const MIN_AGE = 13;
+// The youngest age to create an account: 16, the age of digital consent
+// everywhere in the EU (GDPR art. 8), so no parental consent is needed.
+// Only checked at sign-up: accounts made when it was 13 keep working.
+export const MIN_AGE = 16;
 export const PASSWORD_MIN = 10;
 export const PASSWORD_MAX = 128;
 export const USERNAME_MIN = 3;
@@ -55,7 +59,7 @@ function checkUsername(value) {
     return [v, 'Usernames are 3 to 20 characters.'];
   }
   if (!USERNAME_RE.test(v)) return [v, 'Use letters, numbers and _ only.'];
-  return [v, null];
+  return [v, usernameProblem(v)];
 }
 
 // Age in whole years on `today`, from a YYYY-MM-DD string
@@ -76,8 +80,10 @@ function checkBirthDate(value, today) {
   if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) {
     return [v, 'That date does not exist.'];
   }
-  if (y < 1900 || date > today) return [v, 'Enter your real date of birth.'];
-  if (ageOn(v, today) < MIN_AGE) return [v, 'You must be at least 13 to play.'];
+  // Under 13 isn't believable for anyone here (the minimum was 13 before 16)
+  if (y < 1900 || date > today || ageOn(v, today) < 13) {
+    return [v, 'Enter your real date of birth.'];
+  }
   return [v, null];
 }
 
@@ -149,6 +155,9 @@ const ok = (result) => ({ ...result, ok: Object.keys(result.errors).length === 0
 
 export function validateRegistration(input, today = new Date()) {
   const result = run(input, Object.keys(PROFILE_CHECKS), today);
+  if (!result.errors.birthDate && ageOn(result.value.birthDate, today) < MIN_AGE) {
+    result.errors.birthDate = 'You must be at least 16 to create an account.';
+  }
   const pwError = passwordError(input?.password, result.value.username);
   if (pwError) result.errors.password = pwError;
   else result.value.password = input.password;

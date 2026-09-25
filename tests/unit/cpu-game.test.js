@@ -113,3 +113,32 @@ test('medium always blocks in classic games', () => {
   const r = checkCpuGame({ difficulty: 'medium', starter: 'X', moves: [0, 4, 1, 8, 2] });
   assert.equal(r.error, 'Not a move the computer makes.');
 });
+
+test('ultimate games: real ones are accepted, illegal moves refused', async () => {
+  const { emptyUltimate, pickUltimateMove, playUltimate } = await import('../../js/ultimate.js');
+  for (let n = 0; n < 5; n++) {
+    let pos = emptyUltimate('X');
+    const moves = [];
+    while (!pos.result) {
+      const m = pickUltimateMove(pos, pos.turn === 'X' ? 'casual' : 'medium');
+      pos = playUltimate(pos, m);
+      moves.push(m);
+    }
+    const checked = checkCpuGame({
+      difficulty: 'medium',
+      starter: 'X',
+      moves,
+      variant: 'ultimate',
+    });
+    assert.equal(checked.error, undefined);
+    assert.equal(checked.result, pos.result.p);
+  }
+  // O answers in the wrong board
+  const bad = checkCpuGame({
+    difficulty: 'casual',
+    starter: 'X',
+    moves: [40, 0, 1, 2, 3],
+    variant: 'ultimate',
+  });
+  assert.equal(bad.error, 'Illegal move.');
+});

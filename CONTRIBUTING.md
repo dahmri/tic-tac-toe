@@ -60,6 +60,12 @@ gitGraph
 3. Open a PR **`test → main`**. When it merges, the site deploys to
    **production** and the `vN.N.N` tag and GitHub release are created from
    the changelog.
+4. The Deploy workflow then opens and merges a PR **`main → test`**, so
+   test has the release's merge commit and the next `test → main` PR is up
+   to date (branch protection requires it). This needs "Allow GitHub
+   Actions to create and approve pull requests" (Settings → Actions →
+   General); without it the job leaves a notice, and you open that PR by
+   hand.
 
 Use **merge commits** (not squash) for `dev → test` and `test → main`, so the
 three branches share the same history.
@@ -113,6 +119,10 @@ Example: `fix(online): keep the guest's board locked until the host replies`
 
 ## Code style
 
+- `npm run typecheck` checks the JavaScript with TypeScript (no build
+  step, no TypeScript files): misspelt properties, wrong argument counts,
+  calls on the wrong type. Where it can't tell a type, a JSDoc comment says
+  it. Fastify's additions are declared in `types/fastify.d.ts`.
 - ESLint and Prettier are the source of truth. Run `npm run format` to fix
   formatting, `npm run lint` to catch mistakes.
 - Keep the game logic (`rules.js`, `ai.js`, `room.js`, `protocol.js`) free of

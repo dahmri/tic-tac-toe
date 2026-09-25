@@ -8,18 +8,27 @@ import { countryFlag, countryName, sortedCountries } from './countries.js';
 import { sound } from './sound.js';
 import { onLangChange, t } from './i18n.js';
 import { checkAchievements } from './achievements-ui.js';
+import { menuButton } from './player-menu.js';
+
+// After a block or unblock: the lists change
+const reloadLists = () => {
+  load();
+  loadFriends();
+};
 
 const PAGE = 20;
 const REFRESH_MS = 10_000;
 const FILTER_KEY = 'pencil-ttt-country-filter';
 
-const $ = (id) => document.getElementById(id);
+// Any element by id, typed loosely: the pages hold forms, dialogs and inputs
+const $ = (id) => /** @type {any} */ (document.getElementById(id));
 
 // Invitations: id -> { id, from|to, expires (local ms) }
 const incoming = new Map();
 const outgoing = new Map();
 
-let actions = { send() {}, message() {}, variant: () => 'classic' };
+/** @type {{ send: (msg: object) => void, message: (text: string) => void, variant: () => string, watch: (id: number) => void }} */
+let actions = { send() {}, message() {}, variant: () => 'classic', watch() {} };
 // A translated sentence with an element (a player's name) where {who} is,
 // wherever the language puts it
 function sentence(template, node, vars) {
@@ -71,8 +80,8 @@ async function load({ more = false } = {}) {
   const country = $('countryFilter').value;
   const offset = more ? players.length : 0;
   const query = new URLSearchParams({
-    offset,
-    limit: more ? PAGE : Math.max(PAGE, players.length),
+    offset: String(offset),
+    limit: String(more ? PAGE : Math.max(PAGE, players.length)),
   });
   if (country) query.set('country', country);
   loading = api('GET', `/api/players/online?${query}`)
@@ -91,9 +100,19 @@ async function load({ more = false } = {}) {
   return loading;
 }
 
-// "Playing", "Invited", or an Invite button
+// "Watch" for a player in a game, "Invited", or an Invite button
 function inviteControl(p) {
-  if (p.playing) return el('span', 'tag', t('Playing'));
+  if (p.playing) {
+    const w = el('button', 'btn ghostbtn', t('Watch'));
+    w.type = 'button';
+    w.disabled = busy;
+    w.setAttribute('aria-label', t('Watch {name} play', { name: p.username }));
+    w.addEventListener('click', () => {
+      actions.message('');
+      actions.watch(p.id);
+    });
+    return w;
+  }
   if ([...outgoing.values()].some((i) => i.to.id === p.id)) return el('span', 'tag', t('Invited'));
   const b = el('button', 'btn', t('Invite'));
   b.type = 'button';
@@ -147,6 +166,7 @@ function renderPlayers() {
         el('span', 'where', countryName(p.country)),
         starButton(p),
         inviteControl(p),
+        menuButton(p, reloadLists),
       );
       return li;
     }),
@@ -181,6 +201,7 @@ function renderFriends() {
       const status = f.playing ? t('Playing') : f.online ? t('Online') : t('Offline');
       li.append(who(f), el('span', 'where', status), starButton(f));
       if (f.online) li.append(inviteControl(f));
+      li.append(menuButton(f, reloadLists));
       return li;
     }),
   );
@@ -219,7 +240,9 @@ function renderInvites() {
         ...sentence(
           inv.variant === 'vanish'
             ? '{who} invites you to play (3 marks)'
-            : '{who} invites you to play',
+            : inv.variant === 'ultimate'
+              ? '{who} invites you to play (Ultimate)'
+              : '{who} invites you to play',
           who(inv.from),
         ),
       );
@@ -245,7 +268,11 @@ function renderInvites() {
     const text = el('span', 'invite-text');
     text.append(
       ...sentence(
-        inv.variant === 'vanish' ? 'Waiting for {who} (3 marks)…' : 'Waiting for {who}…',
+        inv.variant === 'vanish'
+          ? 'Waiting for {who} (3 marks)…'
+          : inv.variant === 'ultimate'
+            ? 'Waiting for {who} (Ultimate)…'
+            : 'Waiting for {who}…',
         who(inv.to),
       ),
     );
@@ -284,7 +311,7 @@ function tick() {
     renderPlayers();
     return;
   }
-  document.querySelectorAll('#invites .invite').forEach((row) => {
+  document.querySelectorAll('#invites .invite').forEach((/** @type {HTMLElement} */ row) => {
     const inv = incoming.get(row.dataset.id) || outgoing.get(row.dataset.id);
     if (inv) row.querySelector('.timer').textContent = `${secondsLeft(inv)}s`;
   });
@@ -323,6 +350,7 @@ function renderQuick() {
       ...sentence('Last game: vs {who}', who(lastOpponent)),
       ' ',
       starButton(lastOpponent),
+      menuButton(lastOpponent, reloadLists),
     );
     const invited = [...outgoing.values()].some((i) => i.to.id === lastOpponent.id);
     $('inviteAgain').disabled = invited;

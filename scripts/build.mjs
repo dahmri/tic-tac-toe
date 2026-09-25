@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
 const OUT = 'dist';
-const FILES = ['index.html', 'css', 'js', 'icons', 'manifest.webmanifest', 'sw.js'];
+const FILES = ['index.html', 'css', 'js', 'icons', 'fonts', 'manifest.webmanifest', 'sw.js'];
 
 const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
 const commit = currentCommit();

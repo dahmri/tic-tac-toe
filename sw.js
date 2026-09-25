@@ -9,7 +9,6 @@
 const VERSION = 'dev';
 const PRECACHE = ['./'];
 const CACHE = `pencil-ttt-${VERSION}`;
-const FONTS = 'pencil-ttt-fonts';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -24,9 +23,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE && k !== FONTS).map((k) => caches.delete(k))),
-      )
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -46,16 +43,6 @@ async function networkFirst(request) {
   }
 }
 
-// Google Fonts never change at a given URL: cache first
-async function cacheFirst(request) {
-  const cache = await caches.open(FONTS);
-  const cached = await cache.match(request);
-  if (cached) return cached;
-  const response = await fetch(request);
-  if (response.ok || response.type === 'opaque') cache.put(request, response.clone());
-  return response;
-}
-
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -64,7 +51,5 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname.startsWith('/api/') || url.pathname === '/ws') return;
     if (url.pathname === '/version.json') return;
     event.respondWith(networkFirst(request));
-  } else if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
-    event.respondWith(cacheFirst(request));
   }
 });
