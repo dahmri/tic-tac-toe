@@ -216,6 +216,10 @@
             By creating an account you accept the <a href="#terms">terms of use</a> and the
             <a href="#privacy">privacy policy</a>. You must be at least 16.
           </p>
+          <!-- For bots only: people never see it, so it stays empty -->
+          <div class="trap" aria-hidden="true">
+            <label>Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
           <p class="form-msg" role="alert"></p>
           <button type="submit" class="btn primary">Create account</button>
         </form>

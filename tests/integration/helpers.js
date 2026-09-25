@@ -7,6 +7,7 @@ import { createDb } from '../../server/db.js';
 import { createRedis } from '../../server/redis.js';
 import { migrate } from '../../server/migrate.js';
 import { buildApp } from '../../server/app.js';
+import { solves } from '../../server/challenge.js';
 
 export async function setup(env = {}) {
   const config = loadConfig({
@@ -15,6 +16,8 @@ export async function setup(env = {}) {
     LOG_LEVEL: 'silent',
     RATE_LIMITS: 'off', // rate-limit.test.js turns them back on
     MAIL_OUTBOX: 'on', // emails land in Redis, where tests read them
+    SIGNUP_CHALLENGE_BITS: '4', // an easy sign-up puzzle (solved below)
+    SIGNUP_CHALLENGE_MIN_MS: '0',
     ...env,
   });
   const db = createDb(config);
@@ -55,10 +58,22 @@ export function newPlayer(overrides = {}) {
   };
 }
 
+// The sign-up check's puzzle, fetched and solved (tests make it easy)
+export async function answerChallenge(app) {
+  const { challenge, bits } = (await app.inject({ method: 'GET', url: '/api/challenge' })).json();
+  let nonce = 0;
+  while (!solves(challenge, String(nonce), bits)) nonce++;
+  return { challenge, nonce: String(nonce) };
+}
+
 // A tiny client that keeps the session cookie between requests, like a browser
 export function client(app) {
   let cookie = '';
   const request = async (method, url, payload, headers = {}) => {
+    // Sign-ups answer the sign-up check first, like the page does
+    if (method === 'POST' && url === '/api/account' && payload && !('challenge' in payload)) {
+      payload = { ...payload, ...(await answerChallenge(app)) };
+    }
     const res = await app.inject({
       method,
       url,

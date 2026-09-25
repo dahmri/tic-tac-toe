@@ -75,6 +75,11 @@ can. Emails are then only written to the api's log (`docker compose logs
 api`). Send from a domain you control, and add the SPF and DKIM records
 your provider gives you, or the emails will land in spam.
 
+Sign-ups carry a small puzzle the browser solves while the form is filled
+in (no CAPTCHA service). `SIGNUP_CHALLENGE_BITS` sets how hard it is:
+18, the default, takes about a second on a phone; each extra bit doubles
+it. Raise it if bots get through, lower it if players complain.
+
 **Back up `DATA_ENCRYPTION_KEY` somewhere safe** (a password manager). It
 encrypts players' names, email addresses, birth dates and phone numbers; without it that data
 can't be read, and changing it makes existing accounts unreadable.
@@ -155,13 +160,15 @@ online matches (invitations, moves every ~0.3 s, new rounds) while their
 lobbies poll the player list, then reports how quickly moves are answered:
 
 ```sh
-# a test server: no rate limits, and emails readable by the script
-RATE_LIMITS=off MAIL_OUTBOX=on PORT=4280 node server/index.js
+# a test server: no rate limits, emails readable by the script, an easy
+# sign-up puzzle
+RATE_LIMITS=off MAIL_OUTBOX=on SIGNUP_CHALLENGE_BITS=4 SIGNUP_CHALLENGE_MIN_MS=0 \
+  PORT=4280 node server/index.js
 npm run load-test -- --url http://127.0.0.1:4280 --players 1000 --seconds 60
 ```
 
 Never point it at production: it creates accounts. On staging, start the
-api with `RATE_LIMITS=off MAIL_OUTBOX=on` for the test only.
+api with those settings for the test only.
 
 Measured on 25 September 2026, on a laptop (Apple Silicon) running one
 game server, PostgreSQL, Redis and the load test itself:

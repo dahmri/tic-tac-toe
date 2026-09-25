@@ -105,6 +105,8 @@ export default {
   Copy: 'Copier',
   'Copy it by hand: select the code above.': 'Copie-le à la main : sélectionne le code ci-dessus.',
   'Couch Potato': 'Patate de canapé',
+  "Couldn't check you're not a robot. Try again.":
+    "Impossible de vérifier que vous n'êtes pas un robot. Réessayez.",
   Country: 'Pays',
   'Crabby Pants': 'Crabe grognon',
   'Create a free account': 'Créer un compte gratuit',
@@ -481,6 +483,7 @@ export default {
   "We'll pair you with a player near your rating.": 'On te trouve un joueur de niveau proche.',
   "We'll send you a link to confirm it. Other players never see it.":
     "Nous t'enverrons un lien pour la confirmer. Les autres joueurs ne la voient jamais.",
+  Website: 'Site web',
   'Week of puzzles': 'Semaine de défis',
   'What other players see. Letters, numbers and _.':
     'Ce que voient les autres joueurs. Lettres, chiffres et _.',

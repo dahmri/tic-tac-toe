@@ -1,6 +1,8 @@
 // Accounts: sign up, log in and out, read and edit your profile, change password.
 //
-//   POST   /api/account      create an account and log in
+//   GET    /api/challenge    the sign-up check's puzzle: { challenge, bits }
+//   POST   /api/account      create an account and log in (with the puzzle's
+//                            answer: challenge and nonce)
 //   POST   /api/session      log in
 //   DELETE /api/session      log out
 //   GET    /api/me           your profile
@@ -98,8 +100,23 @@ export default async function accountRoutes(app) {
     return false;
   }
 
+  // The sign-up check: a puzzle for the browser (server/challenge.js)
+  app.get('/api/challenge', async (req, reply) => {
+    if (!(await limit(reply, `challenge:${req.ip}`, 60, 3600))) return;
+    return app.ctx.challenges.issue();
+  });
+
   app.post('/api/account', async (req, reply) => {
     if (!(await limit(reply, `signup:${req.ip}`, 10, 3600))) return;
+    // A form field people never see (bots fill everything in), and the
+    // puzzle's answer
+    const notRobot = "Couldn't check you're not a robot. Try again.";
+    if (req.body?.website) return reply.code(400).send({ error: notRobot });
+    const problem = await app.ctx.challenges.verify(req.body?.challenge, req.body?.nonce);
+    if (problem) {
+      req.log.info({ problem }, 'Sign-up check failed');
+      return reply.code(400).send({ error: notRobot, check: problem });
+    }
     const { ok, value, errors } = validateRegistration(req.body);
     if (!ok)
       return reply.code(400).send({ error: 'Check the highlighted fields.', fields: errors });
