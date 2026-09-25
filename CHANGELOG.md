@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-09-25
+
 ### Added
 
 - **Ultimate tic-tac-toe.** A third set of rules, next to Classic and 3
