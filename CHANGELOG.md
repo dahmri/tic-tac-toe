@@ -8,6 +8,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Watch live games.** Players in a game have a Watch button in the
+  lobby (and in your friends list): you see their board move by move, with
+  their reactions, until you stop or the game ends. The players see how
+  many are watching. Players who blocked you can't be watched.
 - **Privacy policy and terms of use**, linked at the bottom of every page
   and from the sign-up form (also at `/#privacy` and `/#terms`), in all
   three languages. They're drafts: the site owner's name, contact email,

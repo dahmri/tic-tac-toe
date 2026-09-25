@@ -5,12 +5,14 @@
 //   | { t: 'invite-decline', id } | { t: 'invite-cancel', id }
 //   | { t: 'move', match, square } | { t: 'next-round', match }
 //   | { t: 'leave', match } | { t: 'queue-join', variant? } | { t: 'queue-leave' }
-//   | { t: 'react', match, emoji } | { t: 'ping' }
+//   | { t: 'react', match, emoji } | { t: 'watch', user } | { t: 'unwatch' } | { t: 'ping' }
 // Server -> browser: { t: 'hello', me, match, invites, waiting } | { t: 'match', match }
 //   | { t: 'queue', waiting } | { t: 'ratings', match, round, ratings }
 //   | { t: 'invite', invite } | { t: 'invite-sent', invite }
 //   | { t: 'invite-declined', id, by } | { t: 'invite-gone', id }
 //   | { t: 'reaction', match, from, emoji }
+//   | { t: 'watching', match, count } then { t: 'watched', match } as it goes on
+//   | { t: 'watchers', match, count } (to the players and spectators)
 //   | { t: 'error', message } | { t: 'pong' }
 
 import { InviteError } from '../invites.js';
@@ -89,6 +91,52 @@ export default async function liveRoutes(app) {
 
   // Relays a reaction to both players of the match (the sender's other
   // tabs show it too). Extra ones inside the gap are quietly dropped.
+  /* ---------- Spectators ---------- */
+  // A connection watches at most one match. watchers:<match id> is the set
+  // of players watching it, for the count the players see.
+
+  const watchersKey = (matchId) => `watchers:${matchId}`;
+
+  async function announceWatchers(match) {
+    const count = await app.ctx.redis.scard(watchersKey(match.id));
+    const msg = { t: 'watchers', match: match.id, count };
+    await Promise.all([
+      bus.send(match.players.X.id, msg),
+      bus.send(match.players.O.id, msg),
+      bus.toWatchers(match.id, msg),
+    ]);
+    return count;
+  }
+
+  async function watch(me, msg, conn) {
+    const match = Number.isInteger(msg.user) ? await matches.current(msg.user) : null;
+    if (!match || match.ended) throw new MatchError('That game has ended.');
+    const { X, O } = match.players;
+    if (X.id === me.id || O.id === me.id) throw new MatchError("You're playing this game.");
+    if ((await app.ctx.safety.apart(me.id, X.id)) || (await app.ctx.safety.apart(me.id, O.id))) {
+      throw new MatchError("That game isn't available.");
+    }
+    await unwatch(conn);
+    conn.watching = { match, stop: await bus.watch(match.id, conn.send) };
+    await app.ctx.redis
+      .multi()
+      .sadd(watchersKey(match.id), me.id)
+      .expire(watchersKey(match.id), 3600)
+      .exec();
+    const count = await announceWatchers(match);
+    return { t: 'watching', match, count };
+  }
+
+  async function unwatch(conn) {
+    const was = conn.watching;
+    if (!was) return null;
+    conn.watching = null;
+    await was.stop();
+    await app.ctx.redis.srem(watchersKey(was.match.id), conn.me.id);
+    await announceWatchers(was.match);
+    return null;
+  }
+
   async function react(me, msg) {
     if (!isReaction(msg.emoji)) return { t: 'error', message: 'Unknown reaction.' };
     if (typeof msg.match !== 'string' || msg.match.length > 64) {
@@ -101,11 +149,15 @@ export default async function liveRoutes(app) {
     const first = await app.ctx.redis.set(`react:${me.id}`, '1', 'PX', REACTION_GAP_MS, 'NX');
     if (!first) return null;
     const out = { t: 'reaction', match: match.id, from: me.id, emoji: msg.emoji };
-    await Promise.all([bus.send(match.players.X.id, out), bus.send(match.players.O.id, out)]);
+    await Promise.all([
+      bus.send(match.players.X.id, out),
+      bus.send(match.players.O.id, out),
+      bus.toWatchers(match.id, out),
+    ]);
     return null;
   }
 
-  async function handle(me, msg) {
+  async function handle(me, msg, conn) {
     switch (msg.t) {
       case 'ping':
         return { t: 'pong' };
@@ -134,6 +186,10 @@ export default async function liveRoutes(app) {
         return matchmaking.leave(me.id);
       case 'react':
         return react(me, msg);
+      case 'watch':
+        return watch(me, msg, conn);
+      case 'unwatch':
+        return unwatch(conn);
       default:
         return { t: 'error', message: 'Unknown request.' };
     }
@@ -170,6 +226,8 @@ export default async function liveRoutes(app) {
           : msg;
       socket.send(JSON.stringify(out));
     };
+    // This connection's own state: the match it's watching, if any
+    const conn = { me, send, watching: null };
     socket.alive = true;
     socket.on('pong', () => {
       socket.alive = true;
@@ -195,6 +253,7 @@ export default async function liveRoutes(app) {
     let closed = false;
     socket.on('close', async () => {
       closed = true;
+      unwatch(conn).catch((err) => app.log.error(err));
       entry.sockets.delete(socket);
       if (entry.sockets.size === 0 && local.get(me.id) === entry) local.delete(me.id);
       try {
@@ -226,7 +285,7 @@ export default async function liveRoutes(app) {
       }
       if (!msg || typeof msg !== 'object') return send({ t: 'error', message: 'Invalid message.' });
       try {
-        const reply = await handle(me, msg);
+        const reply = await handle(me, msg, conn);
         if (reply?.t) send(reply);
       } catch (err) {
         if (err instanceof InviteError || err instanceof MatchError) {

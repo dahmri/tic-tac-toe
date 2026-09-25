@@ -364,6 +364,13 @@
             <p class="empty" id="playersEmpty" hidden></p>
             <button id="morePlayers" type="button" class="btn ghostbtn" hidden>Show more</button>
           </div>
+          <div class="room watch-info" id="watchInfo" hidden>
+            <div class="room-head">
+              <span class="who">👀 Watching</span>
+              <strong class="opponent" id="watchNames"></strong>
+              <button id="stopWatching" type="button" class="btn ghostbtn">Stop watching</button>
+            </div>
+          </div>
           <div class="room" id="roomInfo" hidden>
             <div class="room-head">
               <span class="who">Playing</span>
@@ -372,6 +379,7 @@
               <button id="leave" type="button" class="btn ghostbtn">Leave</button>
             </div>
             <p class="room-role" id="roomRole"></p>
+            <p class="spectators" id="spectators" hidden></p>
             <div class="reactions" id="reactions" role="group" aria-label="Send a reaction"></div>
           </div>
           <p class="net-msg" id="netMsg" role="alert"></p>
