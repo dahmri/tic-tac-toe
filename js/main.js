@@ -8,7 +8,7 @@ import { canPlayOnline, currentUser, initAccount, isGuest, leaveGuest } from './
 import { initLobby } from './lobby.js';
 import { initStats, recordCpuGame, recordGuestGame } from './stats.js';
 import { initLeaderboard } from './leaderboard.js';
-import { initReplay } from './replay.js';
+import { initReplay, openReplay } from './replay.js';
 import { checkAchievements } from './achievements-ui.js';
 import { setSound, sound, soundOn } from './sound.js';
 import { onLangChange, t } from './i18n.js';
@@ -44,6 +44,7 @@ import {
   goOnline,
   inMatch,
   initOnline,
+  lostRound,
   matchMoves,
   online,
   onlineLocked,
@@ -155,10 +156,21 @@ function render() {
   $('reset').hidden = online();
   $('next').closest('.actions').hidden = (online() && !inMatch()) || puzzle;
   renderPuzzle(puzzle);
+  $('whyBtn').hidden = !lostGame();
 
   tally($('tX'), settings.scores.X);
   tally($('tO'), settings.scores.O);
   tally($('tD'), settings.scores.D);
+}
+
+// The game just lost against the computer or online, to analyse, or null
+function lostGame() {
+  if (online()) return lostRound();
+  if (settings.mode !== 'cpu' || !game.over || round.variant !== 'classic') return null;
+  const w = gameResult(game.board, round.moves.length, 'classic');
+  return w?.p === 'O'
+    ? { squares: round.moves, starter: round.starter, symbol: 'X', variant: 'classic' }
+    : null;
 }
 
 /* ---------- Local play ---------- */
@@ -339,6 +351,10 @@ document
   );
 $('next').addEventListener('click', newRound);
 $('hintBtn').addEventListener('click', showHint);
+$('whyBtn').addEventListener('click', () => {
+  const lost = lostGame();
+  if (lost) openReplay(lost, t('Your last game'), { analyze: true });
+});
 function renderSound() {
   $('soundBtn').setAttribute('aria-pressed', String(soundOn()));
   $('soundBtn').textContent = soundOn() ? '🔊' : '🔇';

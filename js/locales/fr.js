@@ -218,6 +218,12 @@ export default {
   'More for {name}': "Plus d'options pour {name}",
   'Most played opponents': 'Adversaires les plus joués',
   'Move {n} of {total}': 'Coup {n} sur {total}',
+  'Move {n}: row {row}, column {col} gave away the win. Row {bestRow}, column {bestCol} would have won.':
+    'Coup {n} : ligne {row}, colonne {col} a laissé filer la victoire. Ligne {bestRow}, colonne {bestCol} aurait gagné.',
+  'Move {n}: row {row}, column {col} lost the game. Row {bestRow}, column {bestCol} would have held the draw.':
+    'Coup {n} : ligne {row}, colonne {col} a perdu la partie. Ligne {bestRow}, colonne {bestCol} aurait tenu le match nul.',
+  'Move {n}: row {row}, column {col} turned a win into a loss. Row {bestRow}, column {bestCol} would have won.':
+    'Coup {n} : ligne {row}, colonne {col} a transformé une victoire en défaite. Ligne {bestRow}, colonne {bestCol} aurait gagné.',
   'Moves after the end of the game.': 'Des coups après la fin de la partie.',
   'Mystery Guest': 'Invité mystère',
   'New code made. Your old one no longer works.': "Nouveau code créé. L'ancien ne fonctionne plus.",
@@ -235,6 +241,7 @@ export default {
   'No games yet.': "Aucune partie pour l'instant.",
   "No harassment: don't use invitations or reactions to bother other players.":
     "Pas de harcèlement : n'utilise pas les invitations ou les réactions pour embêter les autres joueurs.",
+  'No mistakes: you played this one perfectly.': 'Aucune erreur : tu as joué parfaitement.',
   'No one else is online right now. Invite a friend to sign up!':
     "Personne d'autre n'est en ligne pour l'instant. Invite un ami à s'inscrire !",
   'No one from {country} is online right now.': "Aucun joueur en ligne pour l'instant ({country}).",
@@ -519,6 +526,7 @@ export default {
   'Your email is already confirmed.': 'Ton e-mail est déjà confirmé.',
   'Your games, ratings, statistics, friends and daily puzzle results.':
     'Tes parties, cotes, statistiques, amis et résultats du défi du jour.',
+  'Your last game': 'Ta dernière partie',
   'Your move, {mark}': 'À toi de jouer, {mark}',
   'Your new password is saved. Other devices have been logged out.':
     'Ton nouveau mot de passe est enregistré. Tes autres appareils ont été déconnectés.',
@@ -564,6 +572,8 @@ export default {
   '✉️ Add your email to play online': '✉️ Ajoute ton e-mail pour jouer en ligne',
   '✉️ Confirm your email to play online': '✉️ Confirme ton e-mail pour jouer en ligne',
   '🌍 Whole world': '🌍 Monde entier',
+  '🔍 Show my mistake': '🔍 Montrer mon erreur',
+  '🔍 Why did I lose?': '🔍 Pourquoi ai-je perdu ?',
   '🔒 Online games need a free account': '🔒 Les parties en ligne demandent un compte gratuit',
   '🔥 Streak: {n} · Best: {best} · Solved: {total}':
     '🔥 Série : {n} · Record : {best} · Résolus : {total}',

@@ -53,6 +53,14 @@ export const variant = () =>
       ? 'classic'
       : settings.variant;
 
+// The round just lost on the board (for "Why did I lose?"), or null.
+// Losses by leaving or by the clock have no mistake to show.
+export function lostRound() {
+  if (!inMatch() || !game.over || (match.variant ?? 'classic') !== 'classic') return null;
+  if (match.forfeit || match.result === 'D' || match.result === mySymbol()) return null;
+  return { squares: match.moves, starter: match.starter, symbol: mySymbol(), variant: 'classic' };
+}
+
 // The player whose turn it is may move, if the connection is up
 export const canMove = () => inMatch() && isConnected() && game.turn === mySymbol();
 

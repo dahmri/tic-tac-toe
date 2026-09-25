@@ -21,6 +21,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Username filter.** New usernames (and renames) can't contain
   offensive words in English, French or Spanish, even written with
   look-alike digits, or pretend to be staff ("admin", "support"...).
+- **Why did I lose?** After losing a classic game against the computer or
+  online, one tap shows the move that cost you the game, and the move
+  that would have saved it. In any replay, **Show my mistake** does the
+  same (a perfect computer checks every move you made).
 
 ### Changed
 
