@@ -368,6 +368,7 @@
             <div class="room-head">
               <span class="who">Playing</span>
               <strong class="opponent" id="opponentName"></strong>
+              <span id="opponentMore"></span>
               <button id="leave" type="button" class="btn ghostbtn">Leave</button>
             </div>
             <p class="room-role" id="roomRole"></p>
@@ -537,6 +538,10 @@
         <p class="form-msg" role="status"></p>
         <button type="submit" class="btn">Make a new recovery code</button>
       </form>
+
+      <h3>Blocked players</h3>
+      <p class="empty" id="blockedEmpty">You haven't blocked anyone.</p>
+      <ul class="players" id="blockedList" aria-label="Blocked players"></ul>
 
       <h3>Your data</h3>
       <p class="help">
@@ -782,6 +787,44 @@
       <h3>Law</h3>
       <p>These terms are governed by the law of [country]. Questions: [contact email].</p>
       <p class="note">Last updated: 24 September 2026.</p>
+    </dialog>
+
+    <dialog class="dialog" id="playerDialog" aria-labelledby="pmTitle">
+      <div class="dialog-head">
+        <h2 id="pmTitle"><span id="pmWho"></span></h2>
+        <button type="button" class="btn ghostbtn" data-close>Close</button>
+      </div>
+      <p class="help" id="pmBlockNote"></p>
+      <div class="form-actions">
+        <button type="button" class="btn" id="pmBlock">Block</button>
+        <button type="button" class="btn ghostbtn" id="pmReport">Report…</button>
+      </div>
+      <form class="form" id="reportForm" novalidate hidden>
+        <fieldset class="field">
+          <legend>What's wrong?</legend>
+          <label class="choice"
+            ><input type="radio" name="reason" value="username" /> An offensive username</label
+          >
+          <label class="choice"
+            ><input type="radio" name="reason" value="cheating" /> Cheating (bots, scripts)</label
+          >
+          <label class="choice"
+            ><input type="radio" name="reason" value="harassment" /> Harassment</label
+          >
+          <label class="choice"
+            ><input type="radio" name="reason" value="other" /> Something else</label
+          >
+        </fieldset>
+        <label class="field">
+          <span>Anything to add? <em>(optional)</em></span>
+          <textarea name="details" maxlength="500" rows="3"></textarea>
+        </label>
+        <label class="choice"
+          ><input type="checkbox" name="alsoBlock" checked /> Also block this player</label
+        >
+        <button type="submit" class="btn primary">Send report</button>
+      </form>
+      <p class="form-msg" id="pmMsg" role="status"></p>
     </dialog>
 
     <div class="toast" id="toast" role="status" hidden></div>

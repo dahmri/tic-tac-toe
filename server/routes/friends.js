@@ -8,7 +8,7 @@
 import { FriendError } from '../friends.js';
 
 export default async function friendsRoutes(app) {
-  const { friends, rateLimit } = app.ctx;
+  const { friends, rateLimit, safety } = app.ctx;
 
   app.get('/api/friends', { preHandler: app.requireUser }, async (req) => ({
     friends: await friends.list(req.userId),
@@ -20,6 +20,9 @@ export default async function friendsRoutes(app) {
       return reply
         .code(429)
         .send({ error: 'Too many attempts. Wait a few minutes and try again.' });
+    if (Number.isInteger(req.body?.id) && (await safety.apart(req.userId, req.body.id))) {
+      return reply.code(400).send({ error: "That player isn't available." });
+    }
     try {
       const id = await friends.add(req.userId, {
         id: req.body?.id,

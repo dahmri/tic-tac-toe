@@ -189,7 +189,8 @@ export default async function liveRoutes(app) {
       else if (msg.t === 'match' && !msg.match.ended) entry.waiting = false;
       send(msg);
     });
-    const connected = presence.connect(me);
+    // Who this player is kept apart from, for matchmaking (from the database)
+    const connected = Promise.all([presence.connect(me), app.ctx.safety.refresh(me.id)]);
 
     let closed = false;
     socket.on('close', async () => {

@@ -63,7 +63,9 @@ export function createMatchmaking(redis, { presence, matches, stats, bus }) {
             local conns = tonumber(redis.call('GET', 'conns:' .. id) or 0)
             local seen = tonumber(redis.call('ZSCORE', KEYS[3], id) or 0)
             local since = tonumber(redis.call('HGET', KEYS[2], id) or now)
-            if redis.call('EXISTS', 'ingame:' .. id) == 1 then
+            if redis.call('SISMEMBER', 'avoid:' .. me, id) == 1 then
+              -- blocked, one way or the other: never paired, both stay waiting
+            elseif redis.call('EXISTS', 'ingame:' .. id) == 1 then
               drop(id) -- started a game some other way
             elseif conns > 0 and seen < onlineSince then
               drop(id) -- their server stopped reporting them (a crash)

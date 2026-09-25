@@ -15,6 +15,7 @@ import { onLangChange, t } from './i18n.js';
 import { initLanguage } from './language.js';
 import { initMonitor } from './monitor.js';
 import { initLegal } from './legal.js';
+import { initPlayerMenu } from './player-menu.js';
 import {
   celebrate,
   clearBoard,
@@ -365,6 +366,7 @@ document.addEventListener('keydown', (e) => {
 initStats();
 initReplay();
 initLegal();
+initPlayerMenu();
 
 // Installable, and playable offline (see sw.js). Browsers only allow it
 // over https or on localhost; elsewhere this quietly does nothing.

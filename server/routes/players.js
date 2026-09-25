@@ -9,7 +9,7 @@ const MAX_LIMIT = 50;
 const MAX_OFFSET = 5000;
 
 export default async function playersRoutes(app) {
-  const { presence, users } = app.ctx;
+  const { presence, users, safety } = app.ctx;
 
   app.get('/api/players/online', { preHandler: app.requireUser }, async (req, reply) => {
     if (!(await users.publicProfile(req.userId))?.verified) {
@@ -25,6 +25,7 @@ export default async function playersRoutes(app) {
       offset: clamp(req.query.offset, MAX_OFFSET, 0),
       limit: clamp(req.query.limit, MAX_LIMIT, 30) || 30,
       excludeId: req.userId,
+      avoid: await safety.avoidSet(req.userId),
     });
   });
 }

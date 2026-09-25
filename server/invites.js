@@ -25,7 +25,7 @@ export class InviteError extends Error {
   }
 }
 
-export function createInvites(redis, { bus, presence, matches }) {
+export function createInvites(redis, { bus, presence, matches, safety }) {
   // Removes an invitation and returns it, or null if it was already gone
   async function take(id) {
     if (typeof id !== 'string' || id.length > 64) return null;
@@ -63,6 +63,10 @@ export function createInvites(redis, { bus, presence, matches }) {
       const to = await presence.profile(toId);
       if (!to || !(await presence.isOnline(toId))) {
         throw new InviteError('That player is no longer online.');
+      }
+      // Blocked either way: said as if they'd just gone, so a block stays private
+      if (await safety?.apart(from.id, toId)) {
+        throw new InviteError("That player isn't available.");
       }
       if (await matches.isPlaying(from.id)) throw new InviteError('Finish your game first.');
       if (await matches.isPlaying(toId)) {

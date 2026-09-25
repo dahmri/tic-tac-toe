@@ -12,6 +12,7 @@ import { signed } from './stats.js';
 import { sound } from './sound.js';
 import { REACTIONS } from './reactions.js';
 import { checkAchievements } from './achievements-ui.js';
+import { menuButton } from './player-menu.js';
 import { t } from './i18n.js';
 import { celebrate, drawWin, isWon, syncMarks } from './board.js';
 import { game, saveSettings, settings, zeroScores } from './game.js';
@@ -143,6 +144,11 @@ export function renderOnline() {
     chip.title = t('Rating');
     chip.textContent = String(ratingOf(rival));
     $('opponentName').append(' ', chip);
+    // Rebuilt only for a new opponent, so it doesn't lose focus
+    if ($('opponentMore').dataset.id !== String(rival.id)) {
+      $('opponentMore').dataset.id = String(rival.id);
+      $('opponentMore').replaceChildren(menuButton(rival));
+    }
     const role = mySymbol() === 'X' ? t('You are X and open the first round.') : t('You are O.');
     $('roomRole').textContent = variant() === 'vanish' ? `${role} ${t('3-mark rules.')}` : role;
   }
