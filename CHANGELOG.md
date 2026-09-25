@@ -12,6 +12,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
   and from the sign-up form (also at `/#privacy` and `/#terms`), in all
   three languages. They're drafts: the site owner's name, contact email,
   country and backup period are placeholders to fill in before launch.
+- **Block and report.** The ⋯ next to a player (in the lobby, your
+  friends, your last opponent, or the player you're facing) lets you
+  block or report them. Blocked players can't invite you or be matched
+  with you, and you don't see each other online; they aren't told.
+  Reports say what's wrong (username, cheating, harassment, something
+  else) and go to whoever runs the site. Unblock anyone from your profile.
+- **Username filter.** New usernames (and renames) can't contain
+  offensive words in English, French or Spanish, even written with
+  look-alike digits, or pretend to be staff ("admin", "support"...).
 
 ### Changed
 

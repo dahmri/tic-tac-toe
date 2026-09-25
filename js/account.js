@@ -420,6 +420,39 @@ async function deleteAccount(e) {
   $('loginForm').querySelector('.form-msg').textContent = t('Your account has been deleted.');
 }
 
+/* ---------- Blocked players, in the profile ---------- */
+
+async function loadBlocked() {
+  let list = [];
+  try {
+    ({ blocked: list } = await api('GET', '/api/blocks'));
+  } catch {
+    /* the section stays as it was */
+  }
+  $('blockedEmpty').hidden = list.length > 0;
+  $('blockedList').replaceChildren(
+    ...list.map((p) => {
+      const li = document.createElement('li');
+      li.className = 'player';
+      const name = document.createElement('span');
+      name.className = 'who-line';
+      name.textContent = `${avatarEmoji(p.avatar)} ${countryFlag(p.country)} ${p.username}`;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn';
+      b.textContent = t('Unblock');
+      b.setAttribute('aria-label', t('Unblock {name}', { name: p.username }));
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await api('DELETE', `/api/blocks/${p.id}`).catch(() => {});
+        loadBlocked();
+      });
+      li.append(name, b);
+      return li;
+    }),
+  );
+}
+
 /* ---------- Profile dialog ---------- */
 
 function openProfile() {
@@ -442,6 +475,7 @@ function openProfile() {
     showErrors($(id));
   }
   showErrors(form);
+  loadBlocked();
   $('profileDialog').showModal();
 }
 

@@ -3,6 +3,7 @@
 // a map of field -> message for anything that isn't acceptable.
 
 import { isAvatar } from './avatars.js';
+import { usernameProblem } from './username-filter.js';
 import { isCountryCode } from './countries.js';
 
 // The youngest age to create an account: 16, the age of digital consent
@@ -58,7 +59,7 @@ function checkUsername(value) {
     return [v, 'Usernames are 3 to 20 characters.'];
   }
   if (!USERNAME_RE.test(v)) return [v, 'Use letters, numbers and _ only.'];
-  return [v, null];
+  return [v, usernameProblem(v)];
 }
 
 // Age in whole years on `today`, from a YYYY-MM-DD string

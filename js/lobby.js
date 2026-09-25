@@ -8,6 +8,13 @@ import { countryFlag, countryName, sortedCountries } from './countries.js';
 import { sound } from './sound.js';
 import { onLangChange, t } from './i18n.js';
 import { checkAchievements } from './achievements-ui.js';
+import { menuButton } from './player-menu.js';
+
+// After a block or unblock: the lists change
+const reloadLists = () => {
+  load();
+  loadFriends();
+};
 
 const PAGE = 20;
 const REFRESH_MS = 10_000;
@@ -149,6 +156,7 @@ function renderPlayers() {
         el('span', 'where', countryName(p.country)),
         starButton(p),
         inviteControl(p),
+        menuButton(p, reloadLists),
       );
       return li;
     }),
@@ -183,6 +191,7 @@ function renderFriends() {
       const status = f.playing ? t('Playing') : f.online ? t('Online') : t('Offline');
       li.append(who(f), el('span', 'where', status), starButton(f));
       if (f.online) li.append(inviteControl(f));
+      li.append(menuButton(f, reloadLists));
       return li;
     }),
   );
@@ -325,6 +334,7 @@ function renderQuick() {
       ...sentence('Last game: vs {who}', who(lastOpponent)),
       ' ',
       starButton(lastOpponent),
+      menuButton(lastOpponent, reloadLists),
     );
     const invited = [...outgoing.values()].some((i) => i.to.id === lastOpponent.id);
     $('inviteAgain').disabled = invited;
