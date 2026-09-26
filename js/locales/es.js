@@ -58,8 +58,8 @@ export default {
   'Arena standings': 'Clasificación de la arena',
   "As far as the law allows, we aren't responsible for lost games, ratings or data, or for the site being unavailable.":
     'En la medida en que la ley lo permita, no somos responsables de partidas, puntuaciones o datos perdidos, ni de que el sitio no esté disponible.',
-  'As long as you have an account. When you delete it in your profile, your data is deleted at once; your online games stay in your opponents\' histories as "Deleted player". Backups are kept for up to [30] days.':
-    'Mientras tengas una cuenta. Cuando la eliminas desde tu perfil, tus datos se eliminan de inmediato; tus partidas en línea quedan en el historial de tus rivales como «Jugador eliminado». Las copias de seguridad se guardan [30] días como máximo.',
+  'As long as you have an account. When you delete it in your profile, your data is deleted at once; your online games stay in your opponents\' histories as "Deleted player". Backups are kept for up to 14 days.':
+    'Mientras tengas una cuenta. Cuando la eliminas desde tu perfil, tus datos se eliminan de inmediato; tus partidas en línea quedan en el historial de tus rivales como «Jugador eliminado». Las copias de seguridad se guardan 14 días como máximo.',
   'At least 10 characters. A few random words work well.':
     'Al menos 10 caracteres. Unas cuantas palabras al azar funcionan bien.',
   Avatar: 'Avatar',
@@ -149,8 +149,6 @@ export default {
   'Download everything we keep about you: your profile, stats and every game, as a JSON file.':
     'Descarga todo lo que guardamos sobre ti: tu perfil, tus estadísticas y todas tus partidas, en un archivo JSON.',
   'Download my data': 'Descargar mis datos',
-  'Draft: the name and contact details of the person running the site are still to be added.':
-    'Borrador: aún faltan el nombre y los datos de contacto de la persona que gestiona el sitio.',
   'Drama Llama': 'Llama dramática',
   Draw: 'Empate',
   Drawn: 'Empates',
@@ -245,7 +243,7 @@ export default {
   'Last game: vs {who}': 'Última partida: contra {who}',
   'Last move': 'Última jugada',
   'Last name': 'Apellido',
-  'Last updated: 24 September 2026.': 'Última actualización: 24 de septiembre de 2026.',
+  'Last updated: 26 September 2026.': 'Última actualización: 26 de septiembre de 2026.',
   Law: 'Ley aplicable',
   Leaderboard: 'Clasificación',
   'Leaderboard for': 'Clasificación de',
@@ -367,8 +365,8 @@ export default {
   'Pencil Tic-Tac-Toe': 'Tres en raya a lápiz',
   'Pencil Tic-Tac-Toe is free. We do our best to keep it running, but it comes as it is, without any guarantee.':
     'Tres en raya a lápiz es gratis. Hacemos lo posible para que funcione, pero se ofrece tal cual, sin ninguna garantía.',
-  'Pencil Tic-Tac-Toe is run by [Your name]. For any question about your data, write to [contact email].':
-    'Tres en raya a lápiz lo gestiona [Your name]. Para cualquier pregunta sobre tus datos, escribe a [contact email].',
+  'Pencil Tic-Tac-Toe is run by Dz Game, in France. For any question about your data, write to contact.pencilxo@gmail.com.':
+    'Tres en raya a lápiz lo gestiona Dz Game, en Francia. Para cualquier pregunta sobre tus datos, escribe a contact.pencilxo@gmail.com.',
   'Phone number': 'Número de teléfono',
   "Pick a username that isn't offensive, hateful, or pretending to be someone else.":
     'Elige un nombre de usuario que no sea ofensivo ni de odio, y que no se haga pasar por otra persona.',
@@ -522,8 +520,10 @@ export default {
   'Theme: automatic': 'Tema: automático',
   'Theme: dark': 'Tema: oscuro',
   'Theme: light': 'Tema: claro',
-  'These terms are governed by the law of [country]. Questions: [contact email].':
-    'Estas condiciones se rigen por la ley de [country]. Preguntas: [contact email].',
+  'The site is hosted by Amazon Web Services EMEA SARL, 38 avenue John F. Kennedy, L-1855 Luxembourg. Your data is stored in its Paris region, in France, and our emails are sent from there too.':
+    'El sitio está alojado por Amazon Web Services EMEA SARL, 38 avenue John F. Kennedy, L-1855 Luxemburgo. Tus datos se guardan en su región de París, en Francia, y nuestros correos también se envían desde allí.',
+  'These terms are governed by French law. Questions: contact.pencilxo@gmail.com.':
+    'Estas condiciones se rigen por la ley francesa. Preguntas: contact.pencilxo@gmail.com.',
   'This account is suspended until {date}.': 'Esta cuenta está suspendida hasta el {date}.',
   'This account is suspended.': 'Esta cuenta está suspendida.',
   'This deletes your profile, stats and games against the computer for good. Your online games stay in your opponents\' histories as "Deleted player".':
@@ -646,8 +646,8 @@ export default {
   'You can block players, and report the ones who break these rules.':
     'Puedes bloquear a jugadores y denunciar a los que incumplan estas reglas.',
   'You can have up to 200 friends.': 'Puedes tener hasta 200 amigos.',
-  "You can see and download your data (Profile, Download my data), correct it (Profile), delete it (Profile, Delete account) and object to how it's used. Write to [contact email] for anything else. You can also complain to your data protection authority (in France, the CNIL).":
-    'Puedes ver y descargar tus datos (Perfil, Descargar mis datos), corregirlos (Perfil), eliminarlos (Perfil, Eliminar la cuenta) y oponerte a su uso. Escribe a [contact email] para cualquier otra cosa. También puedes reclamar ante tu autoridad de protección de datos (en España, la AEPD).',
+  "You can see and download your data (Profile, Download my data), correct it (Profile), delete it (Profile, Delete account) and object to how it's used. Write to contact.pencilxo@gmail.com for anything else. You can also complain to your data protection authority (in France, the CNIL).":
+    'Puedes ver y descargar tus datos (Perfil, Descargar mis datos), corregirlos (Perfil), eliminarlos (Perfil, Eliminar la cuenta) y oponerte a su uso. Escribe a contact.pencilxo@gmail.com para cualquier otra cosa. También puedes reclamar ante tu autoridad de protección de datos (en España, la AEPD).',
   'You have two marks. Place your third one: tap the bottom-left corner.':
     'Tienes dos marcas. Pon la tercera: toca la esquina de abajo a la izquierda.',
   "You haven't blocked anyone.": 'No has bloqueado a nadie.',
