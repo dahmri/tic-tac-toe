@@ -6,6 +6,23 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-09-26
+
+### Added
+
+- **Going live on AWS EC2.** `deploy/ec2-setup.sh` prepares a fresh
+  Ubuntu server in one command: Docker, the deploy user, generated
+  secrets, HTTPS with Caddy (a free sslip.io name if there's no domain
+  yet), security updates, a swap file and daily database backups.
+  docs/DEPLOYMENT.md walks through the AWS console, Amazon SES for email,
+  and snapshots.
+
+### Fixed
+
+- Behind an HTTPS proxy on the same machine, every player looked like the
+  same address, so a handful of sign-ups or failed logins anywhere
+  blocked everyone. nginx now takes the player's address from the proxy.
+
 ## [1.11.0] - 2026-09-25
 
 ### Added

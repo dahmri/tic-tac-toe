@@ -108,10 +108,11 @@ ttt.example.com {
 ```
 
 The session cookie is marked `Secure`, so logging in only works over HTTPS.
-If the proxy is on another machine, have it pass `X-Forwarded-For` and
-`X-Forwarded-Proto`, change `X-Forwarded-For $remote_addr` in
-`deploy/nginx.conf` to `$proxy_add_x_forwarded_for`, and set `TRUST_PROXY`
-to `2` in `compose.yaml`, so rate limits see players' real addresses.
+nginx takes players' addresses from the `X-Forwarded-For` header of a
+proxy on the same machine or a private network (`set_real_ip_from` in
+`deploy/nginx.conf`), so rate limits count each player, not the proxy. A
+proxy elsewhere must pass `X-Forwarded-For` and `X-Forwarded-Proto`, and
+its address must be added there.
 
 ### 4. Create a deploy key
 
@@ -143,6 +144,78 @@ And one variable:
 | `SITE_URL` | `https://ttt.example.com` | After deploying, checks `/version.json` shows the new commit |
 
 Delete the local `deploy_key` files once the secret is saved.
+
+## On AWS EC2
+
+Steps 1 to 3 above, done by [`deploy/ec2-setup.sh`](../deploy/ec2-setup.sh)
+on one instance. Pick a region near your players (the examples use
+`eu-west-3`, Paris) and stay in it for everything below.
+
+1. **Deploy key**, on your computer. The private key goes into GitHub
+   (step 6), the public one onto the server (step 4):
+   ```sh
+   ssh-keygen -t ed25519 -N "" -C github-deploy -f deploy_key
+   ```
+2. **Launch the instance** (EC2 → Launch instance):
+   - Image: **Ubuntu Server LTS**, 64-bit (x86).
+   - Type: **t3.small** (2 vCPU, 2 GB) is enough to start; go up to
+     t3.medium if the load test on it says so.
+   - Key pair: create one for yourself (this is for you, not GitHub).
+   - Security group: **SSH (22)**, **HTTP (80)** and **HTTPS (443)** from
+     anywhere. SSH must be open to anywhere because GitHub's deploy runners
+     have no fixed address; Ubuntu only accepts keys, never passwords.
+     Nothing else: PostgreSQL, Redis and nginx stay on the machine.
+   - Storage: 30 GB gp3.
+3. **A fixed address:** EC2 → Elastic IPs → Allocate, then Associate it
+   with the instance. Without it the address (and the site's name) changes
+   when the instance stops.
+4. **Set it up:**
+   ```sh
+   scp -i my-key.pem deploy/ec2-setup.sh ubuntu@<elastic-ip>:
+   ssh -i my-key.pem ubuntu@<elastic-ip> \
+     "sudo bash ec2-setup.sh --deploy-key '$(cat deploy_key.pub)'"
+   ```
+   Add `--domain ttt.example.com` if you have a domain (with an A record
+   pointing at the Elastic IP). Without one the site is
+   `https://<ip-with-dashes>.sslip.io`, with a real certificate; run the
+   script again with `--domain` later to move. It prints
+   `DATA_ENCRYPTION_KEY`: **save it in a password manager.**
+5. **Backups off the machine:** the script keeps 14 days of database dumps
+   in `/backups`, on the same disk. For copies that survive losing the
+   instance: EC2 → Lifecycle Manager → Create policy → EBS snapshots of the
+   instance's volume, daily, keep 7.
+6. **GitHub:** the `production` environment's secrets and variable, as in
+   step 5 above: `DEPLOY_HOST` = the Elastic IP, `DEPLOY_USER` = `deploy`,
+   `DEPLOY_PATH` = `/srv/tic-tac-toe`, `DEPLOY_SSH_KEY` = `deploy_key`,
+   `DEPLOY_KNOWN_HOSTS` = `ssh-keyscan -H <elastic-ip>`, and `SITE_URL`.
+   The next merge into `main` deploys; or run the Deploy workflow on `main`
+   by hand (Actions → Deploy → Run workflow).
+
+### Email with Amazon SES
+
+1. SES → Identities → Create identity. With a domain: **Domain**, then add
+   the DKIM records it shows to your DNS. Without one: **Email address**
+   (yours), and click the link SES sends.
+2. SES → SMTP settings → **Create SMTP credentials**. Note the endpoint
+   (`email-smtp.eu-west-3.amazonaws.com`), user name and password.
+3. New SES accounts are in a sandbox and can only send to verified
+   addresses. SES → Account dashboard → **Request production access**:
+   say the emails are sign-up confirmations and password resets, sent only
+   when a player asks. It usually takes about a day. AWS approves more
+   readily, and mail lands in inboxes more often, when you send from your
+   own domain rather than a Gmail-type address.
+4. On the server, fill in these lines of `/srv/tic-tac-toe/.env`
+   (`sudo -u deploy nano /srv/tic-tac-toe/.env`), then restart:
+   ```sh
+   SMTP_HOST=email-smtp.eu-west-3.amazonaws.com
+   SMTP_PORT=587
+   SMTP_USER=<SMTP user name>
+   SMTP_PASS=<SMTP password>
+   MAIL_FROM="Pencil Tic-Tac-Toe <the-verified-address>"
+   ```
+   ```sh
+   cd /srv/tic-tac-toe/current && sudo -u deploy docker compose up -d
+   ```
 
 ## Running it by hand
 
