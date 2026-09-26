@@ -6,6 +6,17 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-09-26
+
+### Fixed
+
+- Signing up (and anything else that changes something) was refused as a
+  "cross-site request" on the live https site. Since Fastify 5.12, a number
+  in `TRUST_PROXY` trusts no proxy at all, so the game server took every
+  request for plain http and every player for nginx, sharing one address
+  for rate limits. It now trusts nginx by address (`loopback,uniquelocal`),
+  and refuses to start with a number of hops.
+
 ## [1.12.0] - 2026-09-26
 
 ### Added

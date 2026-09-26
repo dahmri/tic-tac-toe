@@ -11,6 +11,15 @@ test('production needs SITE_URL, so email links never follow a forged Host', () 
   assert.equal(c.siteUrl, 'https://ttt.example.com');
 });
 
+test('TRUST_PROXY takes addresses; a number of hops is refused (Fastify trusts nobody for it)', () => {
+  assert.equal(loadConfig({}).trustProxy, false);
+  assert.deepEqual(loadConfig({ TRUST_PROXY: 'loopback, uniquelocal' }).trustProxy, [
+    'loopback',
+    'uniquelocal',
+  ]);
+  assert.throws(() => loadConfig({ TRUST_PROXY: '1' }), /TRUST_PROXY/);
+});
+
 test('SMTP settings, and the test outbox refused next to a real mail server', () => {
   const c = loadConfig({ SMTP_HOST: 'smtp.example.com', SMTP_PORT: '465', SMTP_USER: 'u' });
   assert.deepEqual(
