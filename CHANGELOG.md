@@ -6,6 +6,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-09-26
+
 ### Added
 
 - **Going live on AWS EC2.** `deploy/ec2-setup.sh` prepares a fresh
