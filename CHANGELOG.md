@@ -9,7 +9,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - **The privacy policy and terms are complete.** They name who runs the
-  site (Dz Game, in France), a contact address (contact@pencilxo.com), the
+  site (Dz Game, in France), a contact address (contact.pencilxo@gmail.com), the
   host (Amazon Web Services, with the data in Paris), how long backups are
   kept (14 days) and the law that applies (French). The "Draft" notices
   are gone, in all three languages.

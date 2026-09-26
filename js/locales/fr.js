@@ -365,8 +365,8 @@ export default {
   'Pencil Tic-Tac-Toe': 'Morpion au crayon',
   'Pencil Tic-Tac-Toe is free. We do our best to keep it running, but it comes as it is, without any guarantee.':
     "Morpion au crayon est gratuit. Nous faisons de notre mieux pour qu'il fonctionne, mais il est fourni tel quel, sans aucune garantie.",
-  'Pencil Tic-Tac-Toe is run by Dz Game, in France. For any question about your data, write to contact@pencilxo.com.':
-    'Morpion au crayon est géré par Dz Game, en France. Pour toute question sur tes données, écris à contact@pencilxo.com.',
+  'Pencil Tic-Tac-Toe is run by Dz Game, in France. For any question about your data, write to contact.pencilxo@gmail.com.':
+    'Morpion au crayon est géré par Dz Game, en France. Pour toute question sur tes données, écris à contact.pencilxo@gmail.com.',
   'Phone number': 'Numéro de téléphone',
   "Pick a username that isn't offensive, hateful, or pretending to be someone else.":
     "Choisis un nom d'utilisateur qui ne soit ni offensant, ni haineux, et qui ne se fasse pas passer pour quelqu'un d'autre.",
@@ -523,8 +523,8 @@ export default {
   'Theme: light': 'Thème : clair',
   'The site is hosted by Amazon Web Services EMEA SARL, 38 avenue John F. Kennedy, L-1855 Luxembourg. Your data is stored in its Paris region, in France, and our emails are sent from there too.':
     'Le site est hébergé par Amazon Web Services EMEA SARL, 38 avenue John F. Kennedy, L-1855 Luxembourg. Tes données sont stockées dans sa région de Paris, en France, et nos e-mails partent aussi de là.',
-  'These terms are governed by French law. Questions: contact@pencilxo.com.':
-    'Ces conditions sont régies par le droit français. Questions : contact@pencilxo.com.',
+  'These terms are governed by French law. Questions: contact.pencilxo@gmail.com.':
+    'Ces conditions sont régies par le droit français. Questions : contact.pencilxo@gmail.com.',
   'This account is suspended until {date}.': "Ce compte est suspendu jusqu'au {date}.",
   'This account is suspended.': 'Ce compte est suspendu.',
   'This deletes your profile, stats and games against the computer for good. Your online games stay in your opponents\' histories as "Deleted player".':
@@ -645,8 +645,8 @@ export default {
   'You can block players, and report the ones who break these rules.':
     'Tu peux bloquer des joueurs, et signaler ceux qui enfreignent ces règles.',
   'You can have up to 200 friends.': "Tu peux avoir jusqu'à 200 amis.",
-  "You can see and download your data (Profile, Download my data), correct it (Profile), delete it (Profile, Delete account) and object to how it's used. Write to contact@pencilxo.com for anything else. You can also complain to your data protection authority (in France, the CNIL).":
-    "Tu peux voir et télécharger tes données (Profil, Télécharger mes données), les corriger (Profil), les supprimer (Profil, Supprimer le compte) et t'opposer à leur utilisation. Écris à contact@pencilxo.com pour tout le reste. Tu peux aussi porter plainte auprès de ton autorité de protection des données (en France, la CNIL).",
+  "You can see and download your data (Profile, Download my data), correct it (Profile), delete it (Profile, Delete account) and object to how it's used. Write to contact.pencilxo@gmail.com for anything else. You can also complain to your data protection authority (in France, the CNIL).":
+    "Tu peux voir et télécharger tes données (Profil, Télécharger mes données), les corriger (Profil), les supprimer (Profil, Supprimer le compte) et t'opposer à leur utilisation. Écris à contact.pencilxo@gmail.com pour tout le reste. Tu peux aussi porter plainte auprès de ton autorité de protection des données (en France, la CNIL).",
   'You have two marks. Place your third one: tap the bottom-left corner.':
     'Tu as deux marques. Place la troisième : touche le coin en bas à gauche.',
   "You haven't blocked anyone.": "Tu n'as bloqué personne.",
