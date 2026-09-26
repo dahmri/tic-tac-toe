@@ -1531,12 +1531,6 @@ a.btn {
   padding-left: 1.2em;
   margin: 0;
 }
-.draft {
-  padding: 8px 10px;
-  border: 2px dashed var(--o);
-  border-radius: 8px;
-  font-weight: 700;
-}
 
 /* The player menu: block and report */
 .btn.more {
